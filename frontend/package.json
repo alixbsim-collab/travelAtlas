@@ -7,7 +7,13 @@
     "cra-template-pwa": "2.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-router-dom": "^6.21.0",
     "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
   },
   "scripts": {
     "start": "react-scripts start",
