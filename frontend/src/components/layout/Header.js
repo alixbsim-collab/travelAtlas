@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // TODO: Connect to actual auth
+  const isAuthenticated = false; // TODO: Connect to actual auth state management
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
