@@ -1,0 +1,96 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+  background: #DEE3E1;
+  color: #2C4251;
+}
+
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background: #2C4251;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.main-nav a {
+  color: #BBD3DD;
+  text-decoration: none;
+  margin-left: 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.main-nav a:hover {
+  color: #FFDB70;
+}
+
+main {
+  padding: 2rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+section {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(44,66,81,0.08);
+  padding: 2rem;
+  min-width: 320px;
+  max-width: 480px;
+  flex: 1 1 400px;
+}
+
+section h2 {
+  color: #EF8557;
+  margin-top: 0;
+}
+
+.placeholder {
+  background: #BBD3DD;
+  color: #2C4251;
+  border: 2px dashed #FFDB70;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  font-size: 1.2rem;
+  margin-top: 1rem;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

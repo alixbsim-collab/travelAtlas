@@ -1,0 +1,11 @@
+# Supabase local development configuration
+# Link to your Supabase project: supabase link --project-ref your-project-ref
+
+[db]
+port = 54322
+
+[api]
+port = 54321
+
+[studio]
+port = 54323

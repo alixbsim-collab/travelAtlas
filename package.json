@@ -1,0 +1,27 @@
+{
+  "name": "travel-atlas-monorepo",
+  "version": "1.0.0",
+  "description": "Travel Atlas - Full stack travel application",
+  "scripts": {
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:all": "npm run install:frontend && npm run install:backend",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alixbsim-collab/travelAtlas.git"
+  },
+  "keywords": [
+    "travel",
+    "atlas",
+    "react",
+    "express",
+    "supabase"
+  ],
+  "author": "",
+  "license": "ISC"
+}
