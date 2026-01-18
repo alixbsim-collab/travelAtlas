@@ -132,12 +132,13 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
   const activitiesPerDay = {
     'relaxed': 2,
     'moderate': 3,
-    'balanced': 4,
-    'active': 5,
-    'packed': 6
+    'balanced': 3,
+    'active': 4,
+    'packed': 4
   };
 
-  const dailyActivities = activitiesPerDay[travelPace] || 4;
+  // Limit activities for longer trips to avoid token limits
+  const dailyActivities = Math.min(activitiesPerDay[travelPace] || 3, tripLength > 5 ? 3 : 4);
 
   const prompt = `You are an expert travel planner. Create a detailed ${tripLength}-day itinerary for ${destination}.
 
@@ -194,7 +195,7 @@ Create an amazing, personalized itinerary!`;
     messages: [
       {
         role: "system",
-        content: "You are an expert travel planner who creates personalized, detailed itineraries. Always respond with valid JSON."
+        content: "You are an expert travel planner who creates personalized, detailed itineraries. Always respond with valid JSON. Keep responses concise to avoid truncation."
       },
       {
         role: "user",
@@ -202,12 +203,23 @@ Create an amazing, personalized itinerary!`;
       }
     ],
     response_format: { type: "json_object" },
-    temperature: 0.8,
-    max_tokens: 4000
+    temperature: 0.7,
+    max_tokens: 8000
   });
 
-  const result = JSON.parse(completion.choices[0].message.content);
-  return result;
+  const content = completion.choices[0].message.content;
+
+  if (!content || content.trim() === '') {
+    throw new Error('OpenAI returned empty response');
+  }
+
+  try {
+    const result = JSON.parse(content);
+    return result;
+  } catch (parseError) {
+    console.error('Failed to parse OpenAI response:', content);
+    throw new Error('OpenAI returned invalid JSON: ' + parseError.message);
+  }
 }
 
 async function generateOpenAIChat(message, conversationHistory, itineraryContext) {
