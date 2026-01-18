@@ -94,7 +94,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
 
     try {
       // Call backend API for AI response
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://travel-atlas-api.onrender.com';
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
       const response = await fetch(`${apiUrl}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

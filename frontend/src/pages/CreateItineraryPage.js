@@ -86,7 +86,7 @@ function CreateItineraryPage() {
 
       // Generate AI itinerary immediately
       try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://travel-atlas-api.onrender.com';
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
         const response = await fetch(`${apiUrl}/api/ai/generate-itinerary`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
