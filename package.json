@@ -23,5 +23,8 @@
     "supabase"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "wrangler": "^4.59.2"
+  }
 }
