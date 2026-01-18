@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -15,6 +16,11 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
+
+// OpenAI client initialization
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -45,20 +51,36 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
   try {
     const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles } = req.body;
 
-    // This is a placeholder for AI integration
-    // In production, this would call an AI service (OpenAI, Anthropic, etc.)
-    const generatedItinerary = generateMockItinerary({
-      destination,
-      tripLength,
-      travelPace,
-      budget,
-      travelerProfiles
-    });
+    // Use OpenAI if API key is configured, otherwise fall back to mock
+    if (process.env.OPENAI_API_KEY) {
+      const generatedItinerary = await generateOpenAIItinerary({
+        destination,
+        tripLength,
+        travelPace,
+        budget,
+        travelerProfiles
+      });
 
-    res.json({
-      success: true,
-      itinerary: generatedItinerary
-    });
+      res.json({
+        success: true,
+        itinerary: generatedItinerary
+      });
+    } else {
+      // Fallback to mock for testing without API key
+      console.warn('OPENAI_API_KEY not set, using mock responses');
+      const generatedItinerary = generateMockItinerary({
+        destination,
+        tripLength,
+        travelPace,
+        budget,
+        travelerProfiles
+      });
+
+      res.json({
+        success: true,
+        itinerary: generatedItinerary
+      });
+    }
   } catch (error) {
     console.error('Error generating itinerary:', error);
     res.status(500).json({
@@ -73,14 +95,26 @@ app.post('/api/ai/chat', async (req, res) => {
   try {
     const { itineraryId, message, conversationHistory } = req.body;
 
-    // This is a placeholder for AI chat integration
-    const response = generateMockChatResponse(message, conversationHistory);
+    // Use OpenAI if API key is configured
+    if (process.env.OPENAI_API_KEY) {
+      const response = await generateOpenAIChat(message, conversationHistory);
 
-    res.json({
-      success: true,
-      response: response.message,
-      updatedActivities: response.activities
-    });
+      res.json({
+        success: true,
+        response: response.message,
+        updatedActivities: response.activities
+      });
+    } else {
+      // Fallback to mock
+      console.warn('OPENAI_API_KEY not set, using mock responses');
+      const response = generateMockChatResponse(message, conversationHistory);
+
+      res.json({
+        success: true,
+        response: response.message,
+        updatedActivities: response.activities
+      });
+    }
   } catch (error) {
     console.error('Error in AI chat:', error);
     res.status(500).json({
@@ -89,6 +123,124 @@ app.post('/api/ai/chat', async (req, res) => {
     });
   }
 });
+
+// ============================================
+// OPENAI INTEGRATION FUNCTIONS
+// ============================================
+
+async function generateOpenAIItinerary({ destination, tripLength, travelPace, budget, travelerProfiles }) {
+  const activitiesPerDay = {
+    'relaxed': 2,
+    'moderate': 3,
+    'balanced': 4,
+    'active': 5,
+    'packed': 6
+  };
+
+  const dailyActivities = activitiesPerDay[travelPace] || 4;
+
+  const prompt = `You are an expert travel planner. Create a detailed ${tripLength}-day itinerary for ${destination}.
+
+TRAVEL PREFERENCES:
+- Travel Pace: ${travelPace} (${dailyActivities} activities per day)
+- Budget Level: ${budget}
+- Traveler Profiles: ${travelerProfiles.join(', ')}
+
+REQUIREMENTS:
+1. Generate ${tripLength} days of activities
+2. Each day should have approximately ${dailyActivities} activities
+3. Activities must match the traveler profiles (e.g., ${travelerProfiles[0]} would enjoy specific types of activities)
+4. Consider the ${budget} budget when suggesting activities and their costs
+5. Include diverse categories: food, culture, nature, adventure, relaxation, etc.
+
+FORMAT YOUR RESPONSE AS JSON:
+{
+  "summary": "A 2-3 sentence overview of the itinerary",
+  "activities": [
+    {
+      "day_number": 1,
+      "position": 0,
+      "title": "Activity name",
+      "description": "What you'll do and why it's great",
+      "location": "Specific location or area",
+      "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|transport|accommodation|other",
+      "duration_minutes": 120,
+      "estimated_cost_min": 20,
+      "estimated_cost_max": 50
+    }
+  ],
+  "accommodations": [
+    {
+      "name": "Hotel/Hostel/Airbnb name",
+      "type": "hotel|hostel|airbnb|guesthouse|resort|camping|other",
+      "location": "Area or neighborhood",
+      "price_per_night": 80
+    }
+  ]
+}
+
+Create an amazing, personalized itinerary!`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: "You are an expert travel planner who creates personalized, detailed itineraries. Always respond with valid JSON."
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.8,
+    max_tokens: 4000
+  });
+
+  const result = JSON.parse(completion.choices[0].message.content);
+  return result;
+}
+
+async function generateOpenAIChat(message, conversationHistory) {
+  const messages = [
+    {
+      role: "system",
+      content: "You are a helpful travel planning assistant. Help users adjust their itinerary based on their requests. Be concise but informative. If they ask to modify their trip, suggest specific changes."
+    }
+  ];
+
+  // Add conversation history (last 5 messages to stay within limits)
+  if (conversationHistory && conversationHistory.length > 0) {
+    const recentHistory = conversationHistory.slice(-5);
+    messages.push(...recentHistory.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    })));
+  }
+
+  // Add current message
+  messages.push({
+    role: "user",
+    content: message
+  });
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: messages,
+    temperature: 0.7,
+    max_tokens: 500
+  });
+
+  return {
+    message: completion.choices[0].message.content,
+    activities: null // Could enhance to return updated activities
+  };
+}
+
+// ============================================
+// MOCK FUNCTIONS (FALLBACK)
+// ============================================
 
 // Helper function to generate mock itinerary
 function generateMockItinerary({ destination, tripLength, travelPace, budget, travelerProfiles }) {
