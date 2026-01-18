@@ -46,9 +46,8 @@ function SortableActivity({ activity, onEdit, onDelete }) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className="bg-white border-l-4 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow mb-3"
       style={{ ...style, borderLeftColor: categoryInfo.color }}
+      className="bg-white border-l-4 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow mb-3"
     >
       <div className="flex items-start gap-3">
         <div

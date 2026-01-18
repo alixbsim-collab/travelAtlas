@@ -3,8 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import AIAssistant from '../components/planner/AIAssistant';
 import DragDropPlanner from '../components/planner/DragDropPlanner';
+import MapView from '../components/planner/MapView';
 import Button from '../components/ui/Button';
-import { Save, Share2, Download, ArrowLeft } from 'lucide-react';
+import { Save, Share2, Download, ArrowLeft, Map, List } from 'lucide-react';
 
 function PlannerPage() {
   const { id } = useParams();
@@ -14,6 +15,7 @@ function PlannerPage() {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
 
   useEffect(() => {
     fetchItineraryData();
@@ -174,6 +176,32 @@ function PlannerPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-neutral-100 rounded-lg p-1 mr-2">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-white shadow-sm text-neutral-charcoal'
+                    : 'text-neutral-500 hover:text-neutral-charcoal'
+                }`}
+              >
+                <List size={16} />
+                <span className="text-sm font-medium">List</span>
+              </button>
+              <button
+                onClick={() => setViewMode('map')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded transition-all ${
+                  viewMode === 'map'
+                    ? 'bg-white shadow-sm text-neutral-charcoal'
+                    : 'text-neutral-500 hover:text-neutral-charcoal'
+                }`}
+              >
+                <Map size={16} />
+                <span className="text-sm font-medium">Map</span>
+              </button>
+            </div>
+
             <Button
               variant="outline"
               size="sm"
@@ -220,13 +248,20 @@ function PlannerPage() {
             />
           </div>
 
-          {/* Right: Drag-and-Drop Planner */}
+          {/* Right: Drag-and-Drop Planner or Map View */}
           <div className="h-full">
-            <DragDropPlanner
-              itinerary={itinerary}
-              activities={activities}
-              setActivities={setActivities}
-            />
+            {viewMode === 'list' ? (
+              <DragDropPlanner
+                itinerary={itinerary}
+                activities={activities}
+                setActivities={setActivities}
+              />
+            ) : (
+              <MapView
+                activities={activities}
+                itinerary={itinerary}
+              />
+            )}
           </div>
         </div>
       </div>
