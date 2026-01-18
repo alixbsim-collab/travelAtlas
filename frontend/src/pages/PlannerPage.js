@@ -237,10 +237,10 @@ function PlannerPage() {
       </div>
 
       {/* Split Screen Layout */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full max-w-[1800px] mx-auto grid grid-cols-2 gap-6 p-6">
-          {/* Left: AI Assistant */}
-          <div className="h-full">
+      <div className="flex-1 flex overflow-hidden">
+        <div className="w-full max-w-[1800px] mx-auto flex gap-6 p-6">
+          {/* Left: AI Assistant - Fixed width, scrollable */}
+          <div className="w-1/2 flex flex-col min-w-0">
             <AIAssistant
               itinerary={itinerary}
               onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
@@ -248,8 +248,8 @@ function PlannerPage() {
             />
           </div>
 
-          {/* Right: Drag-and-Drop Planner or Map View */}
-          <div className="h-full">
+          {/* Right: Drag-and-Drop Planner or Map View - Fixed width, scrollable */}
+          <div className="w-1/2 flex flex-col min-w-0">
             {viewMode === 'list' ? (
               <DragDropPlanner
                 itinerary={itinerary}
