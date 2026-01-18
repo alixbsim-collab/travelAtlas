@@ -84,9 +84,12 @@ function CreateItineraryPage() {
 
       if (error) throw error;
 
-      // Generate AI itinerary immediately
+      // Generate AI itinerary immediately with timeout
       try {
         const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
         const response = await fetch(`${apiUrl}/api/ai/generate-itinerary`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -97,9 +100,11 @@ function CreateItineraryPage() {
             travelPace: formData.travelPace,
             budget: formData.budget,
             travelerProfiles: formData.travelerProfiles
-          })
+          }),
+          signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
         const aiData = await response.json();
 
         if (aiData.success && aiData.itinerary.activities) {
