@@ -141,18 +141,18 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
   const dailyActivities = Math.min(activitiesPerDay[travelPace] || 3, tripLength > 5 ? 2 : 3);
   const limitedTripLength = Math.min(tripLength, 7); // Cap at 7 days for API response
 
-  const prompt = `Create a ${limitedTripLength}-day itinerary for ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
+  const totalActivities = dailyActivities * limitedTripLength;
 
-Return JSON with this EXACT structure (keep descriptions SHORT, under 50 words each):
-{
-  "summary": "Brief 1-2 sentence overview",
-  "activities": [
-    {"day_number":1,"position":0,"title":"Activity Name","description":"Brief description","location":"Place, Area","category":"culture","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":35.71,"longitude":139.79}
-  ],
-  "accommodations": [{"name":"Hotel Name","type":"hotel","location":"Area","price_per_night":80,"latitude":35.68,"longitude":139.76}]
-}
+  const prompt = `Create a ${limitedTripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
 
-Generate exactly ${dailyActivities} activities per day for ${limitedTripLength} days. Use real coordinates. Categories: food, culture, nature, adventure, relaxation, shopping, nightlife.`;
+IMPORTANT: Generate EXACTLY ${totalActivities} activities total (${dailyActivities} per day for ${limitedTripLength} days).
+
+Return JSON:
+{"summary":"1 sentence overview","activities":[${Array.from({length: limitedTripLength}, (_, day) =>
+  `{"day_number":${day+1},"position":0,"title":"...","description":"20 words max","location":"Place","category":"culture|food|nature","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}`
+).join(',')}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
+
+Fill in real activities for days 1-${limitedTripLength}. Use real ${destination} coordinates. Keep descriptions under 20 words.`;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
