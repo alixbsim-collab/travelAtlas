@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import AIAssistant from '../components/planner/AIAssistant';
 import DragDropPlanner from '../components/planner/DragDropPlanner';
-import MapView from '../components/planner/MapView';
+import MapViewEnhanced from '../components/planner/MapViewEnhanced';
 import Button from '../components/ui/Button';
 import { Save, Share2, Download, ArrowLeft, Map, List } from 'lucide-react';
 
@@ -257,7 +257,7 @@ function PlannerPage() {
                 setActivities={setActivities}
               />
             ) : (
-              <MapView
+              <MapViewEnhanced
                 activities={activities}
                 itinerary={itinerary}
               />
