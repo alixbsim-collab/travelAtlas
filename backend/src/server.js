@@ -93,11 +93,11 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
 // AI Chat
 app.post('/api/ai/chat', async (req, res) => {
   try {
-    const { itineraryId, message, conversationHistory } = req.body;
+    const { itineraryId, message, conversationHistory, itineraryContext } = req.body;
 
     // Use OpenAI if API key is configured
     if (process.env.OPENAI_API_KEY) {
-      const response = await generateOpenAIChat(message, conversationHistory);
+      const response = await generateOpenAIChat(message, conversationHistory, itineraryContext);
 
       res.json({
         success: true,
@@ -152,33 +152,41 @@ REQUIREMENTS:
 3. Activities must match the traveler profiles (e.g., ${travelerProfiles[0]} would enjoy specific types of activities)
 4. Consider the ${budget} budget when suggesting activities and their costs
 5. Include diverse categories: food, culture, nature, adventure, relaxation, etc.
+6. IMPORTANT: Include real, specific locations with approximate coordinates
+7. Assign time_of_day for each activity (morning, afternoon, evening, night, or all-day)
 
 FORMAT YOUR RESPONSE AS JSON:
 {
-  "summary": "A 2-3 sentence overview of the itinerary",
+  "summary": "A 2-3 sentence overview of the itinerary highlighting the best experiences",
   "activities": [
     {
       "day_number": 1,
       "position": 0,
-      "title": "Activity name",
-      "description": "What you'll do and why it's great",
-      "location": "Specific location or area",
-      "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|transport|accommodation|other",
+      "title": "Activity name (be specific, e.g., 'Visit Senso-ji Temple' not 'Temple visit')",
+      "description": "What you'll do, what makes it special, and why it matches the traveler profile",
+      "location": "Specific place name and area (e.g., 'Asakusa, Tokyo' or 'Piazza del Duomo, Milan')",
+      "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|transport|other",
       "duration_minutes": 120,
       "estimated_cost_min": 20,
-      "estimated_cost_max": 50
+      "estimated_cost_max": 50,
+      "time_of_day": "morning|afternoon|evening|night|all-day",
+      "latitude": 35.7148,
+      "longitude": 139.7967
     }
   ],
   "accommodations": [
     {
-      "name": "Hotel/Hostel/Airbnb name",
+      "name": "Specific hotel/hostel/airbnb name or area recommendation",
       "type": "hotel|hostel|airbnb|guesthouse|resort|camping|other",
-      "location": "Area or neighborhood",
-      "price_per_night": 80
+      "location": "Neighborhood name in ${destination}",
+      "price_per_night": 80,
+      "latitude": 35.6812,
+      "longitude": 139.7671
     }
   ]
 }
 
+CRITICAL: Use real coordinates for ${destination} landmarks. Research actual latitude/longitude values.
 Create an amazing, personalized itinerary!`;
 
   const completion = await openai.chat.completions.create({
@@ -202,40 +210,104 @@ Create an amazing, personalized itinerary!`;
   return result;
 }
 
-async function generateOpenAIChat(message, conversationHistory) {
-  const messages = [
+async function generateOpenAIChat(message, conversationHistory, itineraryContext) {
+  // Check if user is asking for activity suggestions
+  const needsActivities = message.toLowerCase().match(/add|suggest|recommend|more|create|plan|itinerary|activities|day/);
+
+  if (needsActivities) {
+    // Generate activity suggestions with structured response
+    const messages = [
+      {
+        role: "system",
+        content: `You are a travel planning assistant. The user is planning a trip to ${itineraryContext?.destination || 'their destination'}.
+When they ask for activity suggestions, respond with:
+1. A friendly message explaining what you're suggesting
+2. A JSON array of 2-4 specific activities that match their request
+
+Always respond in this exact format:
+{
+  "message": "Your friendly response text here",
+  "activities": [
     {
-      role: "system",
-      content: "You are a helpful travel planning assistant. Help users adjust their itinerary based on their requests. Be concise but informative. If they ask to modify their trip, suggest specific changes."
+      "day_number": 1,
+      "position": 0,
+      "title": "Specific activity name",
+      "description": "Detailed description",
+      "location": "Specific place with area",
+      "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|other",
+      "duration_minutes": 120,
+      "estimated_cost_min": 10,
+      "estimated_cost_max": 30,
+      "time_of_day": "morning|afternoon|evening|night|all-day",
+      "latitude": 0.0,
+      "longitude": 0.0
     }
-  ];
+  ]
+}`
+      }
+    ];
 
-  // Add conversation history (last 5 messages to stay within limits)
-  if (conversationHistory && conversationHistory.length > 0) {
-    const recentHistory = conversationHistory.slice(-5);
-    messages.push(...recentHistory.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    })));
+    // Add conversation history
+    if (conversationHistory && conversationHistory.length > 0) {
+      const recentHistory = conversationHistory.slice(-3);
+      messages.push(...recentHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })));
+    }
+
+    messages.push({
+      role: "user",
+      content: `${message}\n\nContext: ${itineraryContext?.tripLength || 7}-day trip, ${itineraryContext?.budget || 'medium'} budget, ${itineraryContext?.travelPace || 'balanced'} pace.`
+    });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: messages,
+      response_format: { type: "json_object" },
+      temperature: 0.8,
+      max_tokens: 1500
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content);
+    return {
+      message: result.message || completion.choices[0].message.content,
+      activities: result.activities || []
+    };
+  } else {
+    // Simple conversational response
+    const messages = [
+      {
+        role: "system",
+        content: "You are a friendly travel planning assistant. Answer questions about travel, give advice, and help with itinerary planning. Be concise and helpful."
+      }
+    ];
+
+    if (conversationHistory && conversationHistory.length > 0) {
+      const recentHistory = conversationHistory.slice(-5);
+      messages.push(...recentHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })));
+    }
+
+    messages.push({
+      role: "user",
+      content: message
+    });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 500
+    });
+
+    return {
+      message: completion.choices[0].message.content,
+      activities: []
+    };
   }
-
-  // Add current message
-  messages.push({
-    role: "user",
-    content: message
-  });
-
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: messages,
-    temperature: 0.7,
-    max_tokens: 500
-  });
-
-  return {
-    message: completion.choices[0].message.content,
-    activities: null // Could enhance to return updated activities
-  };
 }
 
 // ============================================

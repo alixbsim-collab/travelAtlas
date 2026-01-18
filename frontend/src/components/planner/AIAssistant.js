@@ -101,7 +101,14 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
         body: JSON.stringify({
           itineraryId: itinerary.id,
           message: inputMessage,
-          conversationHistory: messages
+          conversationHistory: messages,
+          itineraryContext: {
+            destination: itinerary.destination,
+            tripLength: itinerary.trip_length,
+            travelPace: itinerary.travel_pace,
+            budget: itinerary.budget,
+            travelerProfiles: itinerary.traveler_profiles
+          }
         })
       });
 
