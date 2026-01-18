@@ -84,9 +84,81 @@ function CreateItineraryPage() {
 
       if (error) throw error;
 
+      // Generate AI itinerary immediately
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://travel-atlas-api.onrender.com';
+        const response = await fetch(`${apiUrl}/api/ai/generate-itinerary`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            itineraryId: itinerary.id,
+            destination: formData.destination,
+            tripLength: formData.tripLength,
+            travelPace: formData.travelPace,
+            budget: formData.budget,
+            travelerProfiles: formData.travelerProfiles
+          })
+        });
+
+        const aiData = await response.json();
+
+        if (aiData.success && aiData.itinerary.activities) {
+          // Insert generated activities
+          const activitiesToInsert = aiData.itinerary.activities.map((activity, index) => ({
+            itinerary_id: itinerary.id,
+            day_number: activity.day_number,
+            position: index,
+            title: activity.title,
+            description: activity.description,
+            location: activity.location,
+            category: activity.category,
+            duration_minutes: activity.duration_minutes,
+            estimated_cost_min: activity.estimated_cost_min,
+            estimated_cost_max: activity.estimated_cost_max,
+            latitude: activity.latitude,
+            longitude: activity.longitude,
+            time_of_day: activity.time_of_day
+          }));
+
+          const { error: activitiesError } = await supabase
+            .from('activities')
+            .insert(activitiesToInsert);
+
+          if (activitiesError) {
+            console.error('Error inserting activities:', activitiesError);
+          }
+
+          // Insert accommodations if any
+          if (aiData.itinerary.accommodations && aiData.itinerary.accommodations.length > 0) {
+            const accommodationsToInsert = aiData.itinerary.accommodations.map(acc => ({
+              itinerary_id: itinerary.id,
+              name: acc.name,
+              type: acc.type,
+              location: acc.location,
+              price_per_night: acc.price_per_night,
+              check_in_date: acc.check_in_date,
+              check_out_date: acc.check_out_date,
+              latitude: acc.latitude,
+              longitude: acc.longitude
+            }));
+
+            const { error: accError } = await supabase
+              .from('accommodations')
+              .insert(accommodationsToInsert);
+
+            if (accError) {
+              console.error('Error inserting accommodations:', accError);
+            }
+          }
+        }
+      } catch (aiError) {
+        console.error('Error generating AI itinerary:', aiError);
+        // Continue anyway - user can add activities manually
+      }
+
       // Navigate to the planner with the new itinerary
       navigate(`/designer/planner/${itinerary.id}`, {
-        state: { preferences: formData }
+        state: { preferences: formData, generated: true }
       });
 
     } catch (error) {

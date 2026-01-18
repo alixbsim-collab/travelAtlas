@@ -11,15 +11,15 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    // Initial greeting and itinerary generation
+    // Initial greeting only - itinerary is generated on the create page
     const initialMessage = {
       role: 'assistant',
-      content: `Welcome! I'm your AI travel assistant. I'll help you plan your ${itinerary.trip_length}-day trip to ${itinerary.destination}.`,
+      content: `Welcome! I'm your AI travel assistant. I'm here to help you customize your ${itinerary.trip_length}-day trip to ${itinerary.destination}. You can ask me to adjust activities, add specific experiences, or change the pace of your trip.`,
       timestamp: new Date()
     };
 
     setMessages([initialMessage]);
-    generateInitialItinerary();
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -94,7 +94,8 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
 
     try {
       // Call backend API for AI response
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/ai/chat`, {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://travel-atlas-api.onrender.com';
+      const response = await fetch(`${apiUrl}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
