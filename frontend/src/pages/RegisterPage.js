@@ -1,33 +1,82 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 
 function RegisterPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    setError(''); // Clear error when user types
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement registration
+    setError('');
+
+    // Validation
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
-    console.log('Register:', formData);
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Sign up with Supabase
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.name,
+          }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+
+      // Check if email confirmation is required
+      if (data?.user?.identities?.length === 0) {
+        setError('An account with this email already exists');
+        return;
+      }
+
+      // Success! Check if email confirmation is needed
+      if (data.user && !data.session) {
+        alert('Success! Please check your email to confirm your account.');
+        navigate('/login');
+      } else {
+        // Auto-logged in (no email confirmation required)
+        alert('Account created successfully!');
+        navigate('/designer');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError(error.message || 'Failed to create account. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,6 +92,12 @@ function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
           <Input
             label="Full Name"
             type="text"
@@ -71,6 +126,7 @@ function RegisterPage() {
             onChange={handleChange}
             placeholder="••••••••"
             required
+            minLength={6}
           />
 
           <Input
@@ -99,8 +155,8 @@ function RegisterPage() {
             </label>
           </div>
 
-          <Button type="submit" className="w-full" size="lg">
-            Create Account
+          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+            {loading ? 'Creating Account...' : 'Create Account'}
           </Button>
         </form>
 
