@@ -138,57 +138,21 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
   };
 
   // Limit activities for longer trips to avoid token limits
-  const dailyActivities = Math.min(activitiesPerDay[travelPace] || 3, tripLength > 5 ? 3 : 4);
+  const dailyActivities = Math.min(activitiesPerDay[travelPace] || 3, tripLength > 5 ? 2 : 3);
+  const limitedTripLength = Math.min(tripLength, 7); // Cap at 7 days for API response
 
-  const prompt = `You are an expert travel planner. Create a detailed ${tripLength}-day itinerary for ${destination}.
+  const prompt = `Create a ${limitedTripLength}-day itinerary for ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
 
-TRAVEL PREFERENCES:
-- Travel Pace: ${travelPace} (${dailyActivities} activities per day)
-- Budget Level: ${budget}
-- Traveler Profiles: ${travelerProfiles.join(', ')}
-
-REQUIREMENTS:
-1. Generate ${tripLength} days of activities
-2. Each day should have approximately ${dailyActivities} activities
-3. Activities must match the traveler profiles (e.g., ${travelerProfiles[0]} would enjoy specific types of activities)
-4. Consider the ${budget} budget when suggesting activities and their costs
-5. Include diverse categories: food, culture, nature, adventure, relaxation, etc.
-6. IMPORTANT: Include real, specific locations with approximate coordinates
-7. Assign time_of_day for each activity (morning, afternoon, evening, night, or all-day)
-
-FORMAT YOUR RESPONSE AS JSON:
+Return JSON with this EXACT structure (keep descriptions SHORT, under 50 words each):
 {
-  "summary": "A 2-3 sentence overview of the itinerary highlighting the best experiences",
+  "summary": "Brief 1-2 sentence overview",
   "activities": [
-    {
-      "day_number": 1,
-      "position": 0,
-      "title": "Activity name (be specific, e.g., 'Visit Senso-ji Temple' not 'Temple visit')",
-      "description": "What you'll do, what makes it special, and why it matches the traveler profile",
-      "location": "Specific place name and area (e.g., 'Asakusa, Tokyo' or 'Piazza del Duomo, Milan')",
-      "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|transport|other",
-      "duration_minutes": 120,
-      "estimated_cost_min": 20,
-      "estimated_cost_max": 50,
-      "time_of_day": "morning|afternoon|evening|night|all-day",
-      "latitude": 35.7148,
-      "longitude": 139.7967
-    }
+    {"day_number":1,"position":0,"title":"Activity Name","description":"Brief description","location":"Place, Area","category":"culture","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":35.71,"longitude":139.79}
   ],
-  "accommodations": [
-    {
-      "name": "Specific hotel/hostel/airbnb name or area recommendation",
-      "type": "hotel|hostel|airbnb|guesthouse|resort|camping|other",
-      "location": "Neighborhood name in ${destination}",
-      "price_per_night": 80,
-      "latitude": 35.6812,
-      "longitude": 139.7671
-    }
-  ]
+  "accommodations": [{"name":"Hotel Name","type":"hotel","location":"Area","price_per_night":80,"latitude":35.68,"longitude":139.76}]
 }
 
-CRITICAL: Use real coordinates for ${destination} landmarks. Research actual latitude/longitude values.
-Create an amazing, personalized itinerary!`;
+Generate exactly ${dailyActivities} activities per day for ${limitedTripLength} days. Use real coordinates. Categories: food, culture, nature, adventure, relaxation, shopping, nightlife.`;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
