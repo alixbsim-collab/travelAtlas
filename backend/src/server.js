@@ -51,36 +51,85 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
   try {
     const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles } = req.body;
 
+    let generatedItinerary;
+
     // Use OpenAI if API key is configured, otherwise fall back to mock
     if (process.env.OPENAI_API_KEY) {
-      const generatedItinerary = await generateOpenAIItinerary({
+      generatedItinerary = await generateOpenAIItinerary({
         destination,
         tripLength,
         travelPace,
         budget,
         travelerProfiles
-      });
-
-      res.json({
-        success: true,
-        itinerary: generatedItinerary
       });
     } else {
       // Fallback to mock for testing without API key
       console.warn('OPENAI_API_KEY not set, using mock responses');
-      const generatedItinerary = generateMockItinerary({
+      generatedItinerary = generateMockItinerary({
         destination,
         tripLength,
         travelPace,
         budget,
         travelerProfiles
       });
-
-      res.json({
-        success: true,
-        itinerary: generatedItinerary
-      });
     }
+
+    // If itineraryId provided, insert activities directly into Supabase
+    if (itineraryId && generatedItinerary.activities && generatedItinerary.activities.length > 0) {
+      console.log(`Inserting ${generatedItinerary.activities.length} activities for itinerary ${itineraryId}`);
+
+      const activitiesToInsert = generatedItinerary.activities.map((activity, index) => ({
+        itinerary_id: itineraryId,
+        day_number: activity.day_number,
+        position: index,
+        title: activity.title,
+        description: activity.description,
+        location: activity.location,
+        category: activity.category,
+        duration_minutes: activity.duration_minutes,
+        estimated_cost_min: activity.estimated_cost_min,
+        estimated_cost_max: activity.estimated_cost_max,
+        latitude: activity.latitude,
+        longitude: activity.longitude,
+        time_of_day: activity.time_of_day
+      }));
+
+      const { error: activitiesError } = await supabase
+        .from('activities')
+        .insert(activitiesToInsert);
+
+      if (activitiesError) {
+        console.error('Error inserting activities:', activitiesError);
+      } else {
+        console.log('Activities inserted successfully');
+      }
+
+      // Insert accommodations if any
+      if (generatedItinerary.accommodations && generatedItinerary.accommodations.length > 0) {
+        const accommodationsToInsert = generatedItinerary.accommodations.map(acc => ({
+          itinerary_id: itineraryId,
+          name: acc.name,
+          type: acc.type,
+          location: acc.location,
+          price_per_night: acc.price_per_night,
+          latitude: acc.latitude,
+          longitude: acc.longitude
+        }));
+
+        const { error: accError } = await supabase
+          .from('accommodations')
+          .insert(accommodationsToInsert);
+
+        if (accError) {
+          console.error('Error inserting accommodations:', accError);
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      itinerary: generatedItinerary
+    });
   } catch (error) {
     console.error('Error generating itinerary:', error);
     res.status(500).json({

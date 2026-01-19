@@ -87,7 +87,7 @@ function CreateItineraryPage() {
       // Navigate to the planner immediately - don't wait for AI generation
       const itineraryId = itinerary.id;
 
-      // Start AI generation in background (don't block navigation)
+      // Start AI generation in background - backend will insert activities directly
       const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
 
       fetch(`${apiUrl}/api/ai/generate-itinerary`, {
@@ -101,43 +101,7 @@ function CreateItineraryPage() {
           budget: formData.budget,
           travelerProfiles: formData.travelerProfiles
         })
-      })
-        .then(response => response.json())
-        .then(async (aiData) => {
-          if (aiData.success && aiData.itinerary.activities) {
-            const activitiesToInsert = aiData.itinerary.activities.map((activity, index) => ({
-              itinerary_id: itineraryId,
-              day_number: activity.day_number,
-              position: index,
-              title: activity.title,
-              description: activity.description,
-              location: activity.location,
-              category: activity.category,
-              duration_minutes: activity.duration_minutes,
-              estimated_cost_min: activity.estimated_cost_min,
-              estimated_cost_max: activity.estimated_cost_max,
-              latitude: activity.latitude,
-              longitude: activity.longitude,
-              time_of_day: activity.time_of_day
-            }));
-
-            await supabase.from('activities').insert(activitiesToInsert);
-
-            if (aiData.itinerary.accommodations?.length > 0) {
-              const accommodationsToInsert = aiData.itinerary.accommodations.map(acc => ({
-                itinerary_id: itineraryId,
-                name: acc.name,
-                type: acc.type,
-                location: acc.location,
-                price_per_night: acc.price_per_night,
-                latitude: acc.latitude,
-                longitude: acc.longitude
-              }));
-              await supabase.from('accommodations').insert(accommodationsToInsert);
-            }
-          }
-        })
-        .catch(err => console.error('Background AI generation error:', err));
+      }).catch(err => console.error('Background AI generation error:', err));
 
       // Navigate immediately to planner
       navigate(`/designer/planner/${itineraryId}`, {
