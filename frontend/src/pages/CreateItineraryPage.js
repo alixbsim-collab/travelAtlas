@@ -84,86 +84,64 @@ function CreateItineraryPage() {
 
       if (error) throw error;
 
-      // Generate AI itinerary immediately with timeout
-      try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      // Navigate to the planner immediately - don't wait for AI generation
+      const itineraryId = itinerary.id;
 
-        const response = await fetch(`${apiUrl}/api/ai/generate-itinerary`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            itineraryId: itinerary.id,
-            destination: formData.destination,
-            tripLength: formData.tripLength,
-            travelPace: formData.travelPace,
-            budget: formData.budget,
-            travelerProfiles: formData.travelerProfiles
-          }),
-          signal: controller.signal
-        });
+      // Start AI generation in background (don't block navigation)
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
 
-        clearTimeout(timeoutId);
-        const aiData = await response.json();
-
-        if (aiData.success && aiData.itinerary.activities) {
-          // Insert generated activities
-          const activitiesToInsert = aiData.itinerary.activities.map((activity, index) => ({
-            itinerary_id: itinerary.id,
-            day_number: activity.day_number,
-            position: index,
-            title: activity.title,
-            description: activity.description,
-            location: activity.location,
-            category: activity.category,
-            duration_minutes: activity.duration_minutes,
-            estimated_cost_min: activity.estimated_cost_min,
-            estimated_cost_max: activity.estimated_cost_max,
-            latitude: activity.latitude,
-            longitude: activity.longitude,
-            time_of_day: activity.time_of_day
-          }));
-
-          const { error: activitiesError } = await supabase
-            .from('activities')
-            .insert(activitiesToInsert);
-
-          if (activitiesError) {
-            console.error('Error inserting activities:', activitiesError);
-          }
-
-          // Insert accommodations if any
-          if (aiData.itinerary.accommodations && aiData.itinerary.accommodations.length > 0) {
-            const accommodationsToInsert = aiData.itinerary.accommodations.map(acc => ({
-              itinerary_id: itinerary.id,
-              name: acc.name,
-              type: acc.type,
-              location: acc.location,
-              price_per_night: acc.price_per_night,
-              check_in_date: acc.check_in_date,
-              check_out_date: acc.check_out_date,
-              latitude: acc.latitude,
-              longitude: acc.longitude
+      fetch(`${apiUrl}/api/ai/generate-itinerary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itineraryId: itineraryId,
+          destination: formData.destination,
+          tripLength: formData.tripLength,
+          travelPace: formData.travelPace,
+          budget: formData.budget,
+          travelerProfiles: formData.travelerProfiles
+        })
+      })
+        .then(response => response.json())
+        .then(async (aiData) => {
+          if (aiData.success && aiData.itinerary.activities) {
+            const activitiesToInsert = aiData.itinerary.activities.map((activity, index) => ({
+              itinerary_id: itineraryId,
+              day_number: activity.day_number,
+              position: index,
+              title: activity.title,
+              description: activity.description,
+              location: activity.location,
+              category: activity.category,
+              duration_minutes: activity.duration_minutes,
+              estimated_cost_min: activity.estimated_cost_min,
+              estimated_cost_max: activity.estimated_cost_max,
+              latitude: activity.latitude,
+              longitude: activity.longitude,
+              time_of_day: activity.time_of_day
             }));
 
-            const { error: accError } = await supabase
-              .from('accommodations')
-              .insert(accommodationsToInsert);
+            await supabase.from('activities').insert(activitiesToInsert);
 
-            if (accError) {
-              console.error('Error inserting accommodations:', accError);
+            if (aiData.itinerary.accommodations?.length > 0) {
+              const accommodationsToInsert = aiData.itinerary.accommodations.map(acc => ({
+                itinerary_id: itineraryId,
+                name: acc.name,
+                type: acc.type,
+                location: acc.location,
+                price_per_night: acc.price_per_night,
+                latitude: acc.latitude,
+                longitude: acc.longitude
+              }));
+              await supabase.from('accommodations').insert(accommodationsToInsert);
             }
           }
-        }
-      } catch (aiError) {
-        console.error('Error generating AI itinerary:', aiError);
-        // Continue anyway - user can add activities manually
-      }
+        })
+        .catch(err => console.error('Background AI generation error:', err));
 
-      // Navigate to the planner with the new itinerary
-      navigate(`/designer/planner/${itinerary.id}`, {
-        state: { preferences: formData, generated: true }
+      // Navigate immediately to planner
+      navigate(`/designer/planner/${itineraryId}`, {
+        state: { preferences: formData, generating: true }
       });
 
     } catch (error) {

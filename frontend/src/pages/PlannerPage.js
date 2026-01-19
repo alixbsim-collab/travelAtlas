@@ -15,10 +15,46 @@ function PlannerPage() {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingActivities, setGeneratingActivities] = useState(false);
+
+  // Check if we came from create page with generating flag
+  const isGenerating = location.state?.generating;
 
   useEffect(() => {
     fetchItineraryData();
   }, [id]);
+
+  // Poll for activities if they're being generated
+  useEffect(() => {
+    if (isGenerating && activities.length === 0) {
+      setGeneratingActivities(true);
+      const pollInterval = setInterval(async () => {
+        const { data: activitiesData } = await supabase
+          .from('activities')
+          .select('*')
+          .eq('itinerary_id', id)
+          .order('day_number', { ascending: true })
+          .order('position', { ascending: true });
+
+        if (activitiesData && activitiesData.length > 0) {
+          setActivities(activitiesData);
+          setGeneratingActivities(false);
+          clearInterval(pollInterval);
+        }
+      }, 2000); // Poll every 2 seconds
+
+      // Stop polling after 60 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(pollInterval);
+        setGeneratingActivities(false);
+      }, 60000);
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [id, isGenerating, activities.length]);
 
   const fetchItineraryData = async () => {
     try {
@@ -223,6 +259,14 @@ function PlannerPage() {
 
           {/* Right: Map View + Timeline - Fixed width, scrollable */}
           <div className="w-1/2 flex flex-col min-w-0 gap-4">
+            {/* Generating indicator */}
+            {generatingActivities && (
+              <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500"></div>
+                <p className="text-sm text-primary-700">Generating your personalized itinerary...</p>
+              </div>
+            )}
+
             {/* Map View - Always visible at top */}
             <div className="h-[350px] flex-shrink-0">
               <MapViewEnhanced
