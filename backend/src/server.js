@@ -78,6 +78,9 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
     if (itineraryId && generatedItinerary.activities && generatedItinerary.activities.length > 0) {
       console.log(`Inserting ${generatedItinerary.activities.length} activities for itinerary ${itineraryId}`);
 
+      // Valid categories for database constraint
+      const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
+
       const activitiesToInsert = generatedItinerary.activities.map((activity, index) => ({
         itinerary_id: itineraryId,
         day_number: activity.day_number,
@@ -85,7 +88,8 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
         title: activity.title,
         description: activity.description,
         location: activity.location,
-        category: activity.category,
+        // Validate category - default to 'other' if invalid
+        category: validCategories.includes(activity.category) ? activity.category : 'other',
         duration_minutes: activity.duration_minutes,
         estimated_cost_min: activity.estimated_cost_min,
         estimated_cost_max: activity.estimated_cost_max,
@@ -192,13 +196,18 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
 
   const totalActivities = dailyActivities * limitedTripLength;
 
+  // Valid categories that match database constraint
+  const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'other'];
+
   const prompt = `Create a ${limitedTripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
 
-IMPORTANT: Generate EXACTLY ${totalActivities} activities total (${dailyActivities} per day for ${limitedTripLength} days).
+IMPORTANT:
+- Generate EXACTLY ${totalActivities} activities total (${dailyActivities} per day for ${limitedTripLength} days).
+- Category MUST be one of: ${validCategories.join(', ')}
 
 Return JSON:
 {"summary":"1 sentence overview","activities":[${Array.from({length: limitedTripLength}, (_, day) =>
-  `{"day_number":${day+1},"position":0,"title":"...","description":"20 words max","location":"Place","category":"culture|food|nature","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}`
+  `{"day_number":${day+1},"position":0,"title":"...","description":"20 words max","location":"Place","category":"food|nature|culture|adventure|relaxation|shopping|nightlife|other","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}`
 ).join(',')}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
 
 Fill in real activities for days 1-${limitedTripLength}. Use real ${destination} coordinates. Keep descriptions under 20 words.`;
