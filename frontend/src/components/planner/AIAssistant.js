@@ -176,6 +176,44 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
     return cat?.color || '#71717A';
   };
 
+  // Render message content with markdown links
+  const renderMessageContent = (content) => {
+    if (!content) return null;
+
+    // Convert markdown links [text](url) to clickable links
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = linkRegex.exec(content)) !== null) {
+      // Add text before the link
+      if (match.index > lastIndex) {
+        parts.push(content.substring(lastIndex, match.index));
+      }
+      // Add the link
+      parts.push(
+        <a
+          key={match.index}
+          href={match[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary-600 hover:text-primary-700 underline font-medium"
+        >
+          {match[1]}
+        </a>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : content;
+  };
+
   return (
     <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
       {/* Header */}
@@ -203,7 +241,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
                   : 'bg-neutral-100 text-neutral-charcoal'
               }`}
             >
-              <p className="whitespace-pre-wrap">{message.content}</p>
+              <div className="whitespace-pre-wrap">{renderMessageContent(message.content)}</div>
 
               {/* Activity Cards */}
               {message.activities && message.activities.length > 0 && (

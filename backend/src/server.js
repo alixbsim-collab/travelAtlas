@@ -245,98 +245,172 @@ Fill in real activities for days 1-${limitedTripLength}. Use real ${destination}
 }
 
 async function generateOpenAIChat(message, conversationHistory, itineraryContext) {
-  // Check if user is asking for activity suggestions
-  const needsActivities = message.toLowerCase().match(/add|suggest|recommend|more|create|plan|itinerary|activities|day/);
+  const destination = itineraryContext?.destination || 'the destination';
+  const lowerMessage = message.toLowerCase();
 
-  if (needsActivities) {
-    // Generate activity suggestions with structured response
-    const messages = [
-      {
-        role: "system",
-        content: `You are a travel planning assistant. The user is planning a trip to ${itineraryContext?.destination || 'their destination'}.
-When they ask for activity suggestions, respond with:
-1. A friendly message explaining what you're suggesting
-2. A JSON array of 2-4 specific activities that match their request
+  // Check if user is asking for blogs, links, or external resources
+  const wantsLinks = lowerMessage.match(/blog|link|article|website|review|read|resource|guide|tip/);
 
-Always respond in this exact format:
+  // Check if user is asking about specific places/activities (should always return cards)
+  const wantsRecommendations = lowerMessage.match(/recommend|suggest|best|top|where|what|should|can you|find|show|give|tell me about|looking for|want to|places|things to do|restaurant|hotel|tour|experience|activity|activities/);
+
+  // Valid categories for activities
+  const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'other'];
+
+  // Build the system prompt based on what the user wants
+  let systemPrompt;
+
+  if (wantsLinks) {
+    // User wants blogs/links - search and provide real URLs
+    systemPrompt = `You are an expert travel assistant with web search capabilities for ${destination}.
+
+When users ask for blogs, articles, or links, you MUST:
+1. Provide REAL, WORKING URLs to actual travel blogs and resources
+2. Include 3-5 relevant links with descriptions
+3. ALSO suggest 2-3 related activities they can add to their itinerary
+
+For blog/link requests about ${destination}, include links from:
+- TripAdvisor: https://www.tripadvisor.com/Tourism-g${destination.replace(/\s/g, '_')}-Vacations.html
+- Lonely Planet: https://www.lonelyplanet.com/${destination.toLowerCase().replace(/\s/g, '-')}
+- Culture Trip: https://theculturetrip.com/search?q=${encodeURIComponent(destination)}
+- Travel blogs: Search for "${destination} travel blog" or "${destination} things to do"
+- GetYourGuide: https://www.getyourguide.com/s/?q=${encodeURIComponent(destination)}
+- Viator: https://www.viator.com/searchResults/all?text=${encodeURIComponent(destination)}
+
+ALWAYS respond with this JSON format:
 {
-  "message": "Your friendly response text here",
+  "message": "Your helpful response with embedded [link text](URL) markdown links for blogs and resources",
   "activities": [
     {
       "day_number": 1,
       "position": 0,
-      "title": "Specific activity name",
-      "description": "Detailed description",
-      "location": "Specific place with area",
+      "title": "Activity name based on what blogs recommend",
+      "description": "Brief description",
+      "location": "Specific location in ${destination}",
       "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|other",
       "duration_minutes": 120,
-      "estimated_cost_min": 10,
-      "estimated_cost_max": 30,
-      "time_of_day": "morning|afternoon|evening|night|all-day",
+      "estimated_cost_min": 0,
+      "estimated_cost_max": 50,
+      "time_of_day": "morning|afternoon|evening",
       "latitude": 0.0,
       "longitude": 0.0
     }
   ]
-}`
-      }
-    ];
+}
 
-    // Add conversation history
-    if (conversationHistory && conversationHistory.length > 0) {
-      const recentHistory = conversationHistory.slice(-3);
-      messages.push(...recentHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })));
+Include actual clickable links in the message field using markdown format [text](url).`;
+
+  } else if (wantsRecommendations) {
+    // User wants recommendations - ALWAYS provide activity cards
+    systemPrompt = `You are an expert travel planner for ${destination}.
+
+IMPORTANT: For ANY recommendation or suggestion, you MUST provide draggable activity cards.
+
+When users ask about places, restaurants, tours, experiences, or anything travel-related:
+1. Give a helpful response
+2. ALWAYS include 2-4 specific activity cards they can drag to their itinerary
+
+ALWAYS respond with this JSON format:
+{
+  "message": "Your helpful response here",
+  "activities": [
+    {
+      "day_number": 1,
+      "position": 0,
+      "title": "Specific place/activity name",
+      "description": "Why this is great and what to expect",
+      "location": "Exact location in ${destination}",
+      "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|other",
+      "duration_minutes": 90,
+      "estimated_cost_min": 0,
+      "estimated_cost_max": 30,
+      "time_of_day": "morning|afternoon|evening",
+      "latitude": 0.0,
+      "longitude": 0.0
     }
+  ]
+}
 
-    messages.push({
-      role: "user",
-      content: `${message}\n\nContext: ${itineraryContext?.tripLength || 7}-day trip, ${itineraryContext?.budget || 'medium'} budget, ${itineraryContext?.travelPace || 'balanced'} pace.`
-    });
+Category MUST be one of: ${validCategories.join(', ')}
+Use real coordinates for ${destination} locations.
+NEVER return an empty activities array for travel-related questions.`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: messages,
-      response_format: { type: "json_object" },
-      temperature: 0.8,
-      max_tokens: 1500
-    });
+  } else {
+    // General conversation - still try to provide activity cards when relevant
+    systemPrompt = `You are a friendly travel assistant helping plan a trip to ${destination}.
 
+For travel-related questions, try to suggest specific activities when possible.
+For non-travel questions, just have a helpful conversation.
+
+Respond with JSON format:
+{
+  "message": "Your response here",
+  "activities": []
+}
+
+If the question is about places, food, things to do, or experiences in ${destination},
+include 1-3 activity suggestions in the activities array with this structure:
+{
+  "day_number": 1,
+  "position": 0,
+  "title": "Activity name",
+  "description": "Description",
+  "location": "Location",
+  "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|other",
+  "duration_minutes": 60,
+  "estimated_cost_min": 0,
+  "estimated_cost_max": 20,
+  "time_of_day": "morning|afternoon|evening",
+  "latitude": 0.0,
+  "longitude": 0.0
+}`;
+  }
+
+  const messages = [
+    { role: "system", content: systemPrompt }
+  ];
+
+  // Add conversation history
+  if (conversationHistory && conversationHistory.length > 0) {
+    const recentHistory = conversationHistory.slice(-4);
+    messages.push(...recentHistory.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    })));
+  }
+
+  messages.push({
+    role: "user",
+    content: `${message}\n\nTrip context: ${itineraryContext?.tripLength || 7}-day trip to ${destination}, ${itineraryContext?.budget || 'medium'} budget.`
+  });
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: messages,
+    response_format: { type: "json_object" },
+    temperature: 0.8,
+    max_tokens: 2000
+  });
+
+  try {
     const result = JSON.parse(completion.choices[0].message.content);
+
+    // Validate and clean activities
+    let activities = result.activities || [];
+    activities = activities.map(activity => ({
+      ...activity,
+      category: validCategories.includes(activity.category) ? activity.category : 'other',
+      day_number: activity.day_number || 1,
+      position: activity.position || 0,
+      duration_minutes: activity.duration_minutes || 60
+    }));
+
     return {
       message: result.message || completion.choices[0].message.content,
-      activities: result.activities || []
+      activities: activities
     };
-  } else {
-    // Simple conversational response
-    const messages = [
-      {
-        role: "system",
-        content: "You are a friendly travel planning assistant. Answer questions about travel, give advice, and help with itinerary planning. Be concise and helpful."
-      }
-    ];
-
-    if (conversationHistory && conversationHistory.length > 0) {
-      const recentHistory = conversationHistory.slice(-5);
-      messages.push(...recentHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })));
-    }
-
-    messages.push({
-      role: "user",
-      content: message
-    });
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: messages,
-      temperature: 0.7,
-      max_tokens: 500
-    });
-
+  } catch (parseError) {
+    console.error('Failed to parse chat response:', completion.choices[0].message.content);
     return {
       message: completion.choices[0].message.content,
       activities: []
