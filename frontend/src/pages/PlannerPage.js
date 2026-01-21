@@ -80,9 +80,14 @@ function SortableActivity({ activity, onEdit, onDelete, onOpenNotes }) {
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 flex-1">
               <button
-                onClick={() => onOpenNotes(activity)}
-                className="text-xl hover:scale-110 transition-transform cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onOpenNotes(activity);
+                }}
+                className="text-xl hover:scale-125 transition-transform cursor-pointer p-1 hover:bg-yellow-100 rounded"
                 title="Click to add notes"
+                type="button"
               >
                 {categoryInfo.emoji}
               </button>
@@ -155,8 +160,8 @@ function NotesModal({ activity, onClose, onSave }) {
   if (!activity) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-neutral-200">
           <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
             Notes for {activity.title}
@@ -171,6 +176,7 @@ function NotesModal({ activity, onClose, onSave }) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add your personal notes here... (e.g., reservation codes, tips, reminders)"
             className="w-full h-32 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+            autoFocus
           />
         </div>
         <div className="flex justify-end gap-2 p-4 border-t border-neutral-200">
@@ -179,6 +185,205 @@ function NotesModal({ activity, onClose, onSave }) {
           </Button>
           <Button size="sm" onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save Notes'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Add Activity Modal Component
+function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    location: '',
+    category: 'other',
+    duration_hours: 1,
+    duration_minutes: 0,
+    time_of_day: 'morning',
+    estimated_cost_min: '',
+    estimated_cost_max: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    if (!formData.title.trim()) {
+      alert('Please enter an activity title');
+      return;
+    }
+    setSaving(true);
+    const duration = (parseInt(formData.duration_hours) || 0) * 60 + (parseInt(formData.duration_minutes) || 0);
+    await onSave({
+      title: formData.title,
+      description: formData.description,
+      location: formData.location,
+      category: formData.category,
+      duration_minutes: duration || 60,
+      time_of_day: formData.time_of_day,
+      estimated_cost_min: formData.estimated_cost_min ? parseFloat(formData.estimated_cost_min) : null,
+      estimated_cost_max: formData.estimated_cost_max ? parseFloat(formData.estimated_cost_max) : null
+    });
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-4 border-b border-neutral-200 sticky top-0 bg-white">
+          <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
+            Add Activity to {dayLabel}
+          </h3>
+          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded">
+            <X size={20} className="text-neutral-500" />
+          </button>
+        </div>
+        <div className="p-4 space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+              Activity Title *
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => handleChange('title', e.target.value)}
+              placeholder="e.g., Visit the Eiffel Tower"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              autoFocus
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+              Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              placeholder="Brief description of the activity..."
+              className="w-full h-20 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+              Location
+            </label>
+            <input
+              type="text"
+              value={formData.location}
+              onChange={(e) => handleChange('location', e.target.value)}
+              placeholder="e.g., Champ de Mars, Paris"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+              Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => handleChange('category', e.target.value)}
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {ACTIVITY_CATEGORIES.map(cat => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.emoji} {cat.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Time of Day */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+              Time of Day
+            </label>
+            <select
+              value={formData.time_of_day}
+              onChange={(e) => handleChange('time_of_day', e.target.value)}
+              className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+              <option value="evening">Evening</option>
+              <option value="night">Night</option>
+              <option value="all-day">All Day</option>
+            </select>
+          </div>
+
+          {/* Duration */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+              Duration
+            </label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <select
+                  value={formData.duration_hours}
+                  onChange={(e) => handleChange('duration_hours', e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  {[0,1,2,3,4,5,6,7,8].map(h => (
+                    <option key={h} value={h}>{h} hour{h !== 1 ? 's' : ''}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <select
+                  value={formData.duration_minutes}
+                  onChange={(e) => handleChange('duration_minutes', e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  {[0, 15, 30, 45].map(m => (
+                    <option key={m} value={m}>{m} min</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Estimated Cost */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+              Estimated Cost (optional)
+            </label>
+            <div className="flex gap-2 items-center">
+              <span className="text-neutral-500">$</span>
+              <input
+                type="number"
+                value={formData.estimated_cost_min}
+                onChange={(e) => handleChange('estimated_cost_min', e.target.value)}
+                placeholder="Min"
+                className="flex-1 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <span className="text-neutral-500">to $</span>
+              <input
+                type="number"
+                value={formData.estimated_cost_max}
+                onChange={(e) => handleChange('estimated_cost_max', e.target.value)}
+                placeholder="Max"
+                className="flex-1 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 p-4 border-t border-neutral-200 sticky bottom-0 bg-white">
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={saving || !formData.title.trim()}>
+            {saving ? 'Adding...' : 'Add Activity'}
           </Button>
         </div>
       </div>
@@ -200,6 +405,7 @@ function PlannerPage() {
   const [selectedDay, setSelectedDay] = useState('all');
   const [notesActivity, setNotesActivity] = useState(null); // For notes modal
   const [dragOverDay, setDragOverDay] = useState(null); // For visual drop feedback
+  const [addActivityDay, setAddActivityDay] = useState(null); // For add activity modal
 
   const isGenerating = location.state?.generating;
 
@@ -417,19 +623,42 @@ function PlannerPage() {
     setActiveId(null);
   };
 
-  const handleAddActivity = async (dayNumber) => {
+  const handleAddActivity = (dayNumber) => {
+    setAddActivityDay(dayNumber);
+  };
+
+  const handleSaveNewActivity = async (activityData) => {
+    const dayNumber = addActivityDay;
+    const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
+
+    // Get activities for this day to put new one at position 0 (top)
+    const dayActivities = activities.filter(a => a.day_number === dayNumber);
+
     const newActivity = {
       itinerary_id: id,
       day_number: dayNumber,
-      position: activities.filter(a => a.day_number === dayNumber).length,
-      title: 'New Activity',
-      description: '',
-      location: '',
-      category: 'other',
-      duration_minutes: 60
+      position: 0, // Add at top
+      title: activityData.title,
+      description: activityData.description || '',
+      location: activityData.location || '',
+      category: validCategories.includes(activityData.category) ? activityData.category : 'other',
+      duration_minutes: activityData.duration_minutes || 60,
+      time_of_day: activityData.time_of_day || null,
+      estimated_cost_min: activityData.estimated_cost_min || null,
+      estimated_cost_max: activityData.estimated_cost_max || null
     };
 
     try {
+      // First, increment positions of existing activities for this day
+      if (dayActivities.length > 0) {
+        for (const activity of dayActivities) {
+          await supabase
+            .from('activities')
+            .update({ position: activity.position + 1 })
+            .eq('id', activity.id);
+        }
+      }
+
       const { data, error } = await supabase
         .from('activities')
         .insert(newActivity)
@@ -437,7 +666,12 @@ function PlannerPage() {
         .single();
 
       if (error) throw error;
-      setActivities([...activities, data]);
+
+      // Update local state - add new activity and update positions
+      const updatedActivities = activities.map(a =>
+        a.day_number === dayNumber ? { ...a, position: a.position + 1 } : a
+      );
+      setActivities([data, ...updatedActivities]);
     } catch (error) {
       console.error('Error adding activity:', error);
       alert('Failed to add activity');
@@ -553,6 +787,22 @@ function PlannerPage() {
     />
   );
 
+  // Render add activity modal if active
+  const addActivityDayLabel = addActivityDay
+    ? (itinerary.start_date
+        ? getDateForDay(itinerary.start_date, addActivityDay)
+        : `Day ${addActivityDay}`)
+    : '';
+
+  const renderAddActivityModal = addActivityDay && (
+    <AddActivityModal
+      dayNumber={addActivityDay}
+      dayLabel={addActivityDayLabel}
+      onClose={() => setAddActivityDay(null)}
+      onSave={handleSaveNewActivity}
+    />
+  );
+
   const days = Array.from({ length: itinerary.trip_length }, (_, i) => i + 1);
   const activitiesWithCoords = activities.filter(a => a.latitude && a.longitude);
   const filteredActivities = selectedDay === 'all'
@@ -562,6 +812,7 @@ function PlannerPage() {
   return (
     <div className="h-screen flex flex-col bg-neutral-50">
       {renderNotesModal}
+      {renderAddActivityModal}
       {/* Top Navigation */}
       <div className="bg-white border-b border-neutral-200 px-6 py-4">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between">
