@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import AIAssistant from '../components/planner/AIAssistant';
 import Button from '../components/ui/Button';
-import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe } from 'lucide-react';
+import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe, X, MessageSquare } from 'lucide-react';
 import { ACTIVITY_CATEGORIES } from '../constants/travelerProfiles';
 import {
   DndContext,
@@ -23,8 +23,23 @@ import {
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// Helper to format date
+const formatDate = (date) => {
+  if (!date) return null;
+  const d = new Date(date);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+};
+
+// Helper to get date for a specific day number
+const getDateForDay = (startDate, dayNumber) => {
+  if (!startDate) return null;
+  const date = new Date(startDate);
+  date.setDate(date.getDate() + (dayNumber - 1));
+  return formatDate(date);
+};
+
 // Sortable Activity Component for Overview
-function SortableActivity({ activity, onEdit, onDelete }) {
+function SortableActivity({ activity, onEdit, onDelete, onOpenNotes }) {
   const {
     attributes,
     listeners,
@@ -64,8 +79,17 @@ function SortableActivity({ activity, onEdit, onDelete }) {
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 flex-1">
-              <span className="text-xl">{categoryInfo.emoji}</span>
+              <button
+                onClick={() => onOpenNotes(activity)}
+                className="text-xl hover:scale-110 transition-transform cursor-pointer"
+                title="Click to add notes"
+              >
+                {categoryInfo.emoji}
+              </button>
               <h4 className="font-heading font-bold">{activity.title}</h4>
+              {activity.custom_notes && (
+                <MessageSquare size={14} className="text-yellow-500" title="Has notes" />
+              )}
             </div>
             <div className="flex gap-1">
               <button
@@ -85,6 +109,12 @@ function SortableActivity({ activity, onEdit, onDelete }) {
 
           {activity.description && (
             <p className="text-sm text-neutral-warm-gray mb-2">{activity.description}</p>
+          )}
+
+          {activity.custom_notes && (
+            <div className="mb-2 p-2 bg-yellow-50 rounded text-xs text-yellow-800 border border-yellow-200">
+              📝 {activity.custom_notes}
+            </div>
           )}
 
           <div className="flex flex-wrap gap-3 text-xs text-neutral-warm-gray">
@@ -110,6 +140,52 @@ function SortableActivity({ activity, onEdit, onDelete }) {
   );
 }
 
+// Notes Modal Component
+function NotesModal({ activity, onClose, onSave }) {
+  const [notes, setNotes] = useState(activity?.custom_notes || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave(activity.id, notes);
+    setSaving(false);
+    onClose();
+  };
+
+  if (!activity) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+          <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
+            Notes for {activity.title}
+          </h3>
+          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded">
+            <X size={20} className="text-neutral-500" />
+          </button>
+        </div>
+        <div className="p-4">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add your personal notes here... (e.g., reservation codes, tips, reminders)"
+            className="w-full h-32 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+          />
+        </div>
+        <div className="flex justify-end gap-2 p-4 border-t border-neutral-200">
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save Notes'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PlannerPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -122,6 +198,8 @@ function PlannerPage() {
   const [activeView, setActiveView] = useState('overview'); // 'overview', 'timeline', 'map'
   const [activeId, setActiveId] = useState(null);
   const [selectedDay, setSelectedDay] = useState('all');
+  const [notesActivity, setNotesActivity] = useState(null); // For notes modal
+  const [dragOverDay, setDragOverDay] = useState(null); // For visual drop feedback
 
   const isGenerating = location.state?.generating;
 
@@ -387,9 +465,28 @@ function PlannerPage() {
     console.log('Edit activity:', activity);
   };
 
+  const handleSaveNotes = async (activityId, notes) => {
+    try {
+      const { error } = await supabase
+        .from('activities')
+        .update({ custom_notes: notes })
+        .eq('id', activityId);
+
+      if (error) throw error;
+
+      setActivities(activities.map(a =>
+        a.id === activityId ? { ...a, custom_notes: notes } : a
+      ));
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      alert('Failed to save notes');
+    }
+  };
+
   // Handle drop from AI chat
   const handleDrop = (e, dayNumber) => {
     e.preventDefault();
+    setDragOverDay(null);
     const activityData = e.dataTransfer.getData('application/json');
     if (activityData) {
       const activity = JSON.parse(activityData);
@@ -397,9 +494,19 @@ function PlannerPage() {
     }
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e, dayNumber) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+    if (dayNumber !== dragOverDay) {
+      setDragOverDay(dayNumber);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    // Only clear if we're leaving the day block entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverDay(null);
+    }
   };
 
   // Get category info helper
@@ -437,6 +544,15 @@ function PlannerPage() {
 
   if (!itinerary) return null;
 
+  // Render notes modal if active
+  const renderNotesModal = notesActivity && (
+    <NotesModal
+      activity={notesActivity}
+      onClose={() => setNotesActivity(null)}
+      onSave={handleSaveNotes}
+    />
+  );
+
   const days = Array.from({ length: itinerary.trip_length }, (_, i) => i + 1);
   const activitiesWithCoords = activities.filter(a => a.latitude && a.longitude);
   const filteredActivities = selectedDay === 'all'
@@ -445,6 +561,7 @@ function PlannerPage() {
 
   return (
     <div className="h-screen flex flex-col bg-neutral-50">
+      {renderNotesModal}
       {/* Top Navigation */}
       <div className="bg-white border-b border-neutral-200 px-6 py-4">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between">
@@ -564,16 +681,25 @@ function PlannerPage() {
                     <div className="space-y-6">
                       {days.map(day => {
                         const dayActivities = activities.filter(a => a.day_number === day);
+                        const isDragOver = dragOverDay === day;
+                        const dayLabel = itinerary.start_date
+                          ? `${getDateForDay(itinerary.start_date, day)}`
+                          : `Day ${day}`;
                         return (
                           <div
                             key={day}
-                            className="bg-neutral-50 rounded-lg p-4 min-h-[150px]"
+                            className={`rounded-lg p-4 min-h-[150px] transition-all ${
+                              isDragOver
+                                ? 'bg-primary-50 border-2 border-dashed border-primary-400 shadow-lg'
+                                : 'bg-neutral-50 border-2 border-transparent'
+                            }`}
                             onDrop={(e) => handleDrop(e, day)}
-                            onDragOver={handleDragOver}
+                            onDragOver={(e) => handleDragOver(e, day)}
+                            onDragLeave={handleDragLeave}
                           >
                             <div className="flex items-center justify-between mb-4">
                               <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
-                                Day {day}
+                                {dayLabel}
                               </h3>
                               <button
                                 onClick={() => handleAddActivity(day)}
@@ -584,7 +710,13 @@ function PlannerPage() {
                               </button>
                             </div>
 
-                            {dayActivities.length === 0 ? (
+                            {isDragOver && (
+                              <div className="mb-3 p-2 bg-primary-100 rounded-lg text-center">
+                                <p className="text-sm text-primary-700 font-medium">Drop here to add to {dayLabel}</p>
+                              </div>
+                            )}
+
+                            {dayActivities.length === 0 && !isDragOver ? (
                               <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center text-neutral-400">
                                 <p className="text-sm">Drop activities here or click "Add Activity"</p>
                               </div>
@@ -599,6 +731,7 @@ function PlannerPage() {
                                     activity={activity}
                                     onEdit={handleEditActivity}
                                     onDelete={handleDeleteActivity}
+                                    onOpenNotes={setNotesActivity}
                                   />
                                 ))}
                               </SortableContext>
@@ -653,6 +786,9 @@ function PlannerPage() {
                       </button>
                       {days.map(day => {
                         const count = activitiesWithCoords.filter(a => a.day_number === day).length;
+                        const dateLabel = itinerary.start_date
+                          ? getDateForDay(itinerary.start_date, day)
+                          : `Day ${day}`;
                         return (
                           <button
                             key={day}
@@ -663,7 +799,7 @@ function PlannerPage() {
                                 : 'bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
                             }`}
                           >
-                            Day {day} ({count})
+                            {dateLabel} ({count})
                           </button>
                         );
                       })}
@@ -686,8 +822,6 @@ function PlannerPage() {
                       <div className="space-y-1.5 flex-1 overflow-y-auto">
                         {filteredActivities.map((activity, index) => {
                           const categoryInfo = getCategoryInfo(activity.category);
-                          const isFirst = index === 0;
-                          const isLast = index === filteredActivities.length - 1;
 
                           return (
                             <div
@@ -695,12 +829,12 @@ function PlannerPage() {
                               onClick={() => openInGoogleMaps(activity)}
                               className="flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-50 cursor-pointer transition-colors border border-transparent hover:border-neutral-200"
                             >
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                                isFirst ? 'bg-green-500 text-white' :
-                                isLast ? 'bg-red-500 text-white' :
-                                'bg-neutral-200 text-neutral-700'
-                              }`}>
-                                {selectedDay === 'all' ? `D${activity.day_number}` : index + 1}
+                              <div className="w-auto min-w-[2.5rem] h-6 px-2 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-primary-100 text-primary-700">
+                                {selectedDay === 'all'
+                                  ? (itinerary.start_date
+                                      ? getDateForDay(itinerary.start_date, activity.day_number)?.split(', ')[0] || `D${activity.day_number}`
+                                      : `D${activity.day_number}`)
+                                  : index + 1}
                               </div>
 
                               <span className="text-lg flex-shrink-0">{categoryInfo.emoji}</span>
@@ -731,16 +865,8 @@ function PlannerPage() {
                     <div className="pt-3 border-t border-neutral-200 mt-4">
                       <div className="flex items-center justify-center gap-4 text-xs text-neutral-500">
                         <span className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                          Start
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                          End
-                        </span>
-                        <span className="flex items-center gap-1">
                           <ExternalLink size={10} />
-                          Click to view
+                          Click activity to view in Maps
                         </span>
                       </div>
                     </div>
@@ -780,3 +906,5 @@ function PlannerPage() {
 }
 
 export default PlannerPage;
+
+// Note: NotesModal is rendered inside PlannerPage component

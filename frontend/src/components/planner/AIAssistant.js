@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Loader } from 'lucide-react';
+import { Send, Sparkles, Loader, GripVertical } from 'lucide-react';
 import Button from '../ui/Button';
 import { ACTIVITY_CATEGORIES } from '../../constants/travelerProfiles';
 
@@ -7,7 +7,9 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('AI is thinking...');
   const [suggestedActivities, setSuggestedActivities] = useState([]);
+  const [draggingId, setDraggingId] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -91,6 +93,12 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setLoading(true);
+    setLoadingMessage('Connecting to AI...');
+
+    // Show progressive loading messages
+    const loadingTimer = setTimeout(() => {
+      setLoadingMessage('AI is thinking... (this may take a moment on first request)');
+    }, 3000);
 
     try {
       // Call backend API for AI response
@@ -134,18 +142,33 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
       console.error('Error sending message:', error);
       const errorMessage = {
         role: 'assistant',
-        content: "I'm sorry, I couldn't process that request. Please try rephrasing your question.",
+        content: "I'm sorry, I couldn't process that request. The server might be waking up - please try again in a moment.",
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
+      clearTimeout(loadingTimer);
       setLoading(false);
+      setLoadingMessage('AI is thinking...');
     }
   };
 
-  const handleDragStart = (e, activity) => {
+  const handleDragStart = (e, activity, idx) => {
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('application/json', JSON.stringify(activity));
+    setDraggingId(idx);
+    // Create a visual drag image
+    const dragImage = e.target.cloneNode(true);
+    dragImage.style.opacity = '0.8';
+    dragImage.style.position = 'absolute';
+    dragImage.style.top = '-1000px';
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    setTimeout(() => document.body.removeChild(dragImage), 0);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
   };
 
   const getCategoryColor = (category) => {
@@ -190,11 +213,17 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
                     <div
                       key={actIdx}
                       draggable
-                      onDragStart={(e) => handleDragStart(e, activity)}
-                      className="bg-white text-neutral-charcoal p-3 rounded-lg border-2 border-dashed border-neutral-300 cursor-move hover:border-primary-500 transition-all"
+                      onDragStart={(e) => handleDragStart(e, activity, `${idx}-${actIdx}`)}
+                      onDragEnd={handleDragEnd}
+                      className={`bg-white text-neutral-charcoal p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing transition-all ${
+                        draggingId === `${idx}-${actIdx}`
+                          ? 'border-primary-500 bg-primary-50 opacity-50'
+                          : 'border-neutral-300 hover:border-primary-400 hover:shadow-md'
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
+                          <GripVertical size={16} className="text-neutral-400" />
                           <span className="text-lg">
                             {ACTIVITY_CATEGORIES.find(c => c.value === activity.category)?.emoji || '📍'}
                           </span>
@@ -221,8 +250,9 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
                         )}
                       </div>
 
-                      <div className="mt-2 text-xs text-primary-600 font-medium">
-                        ⬆️ Drag to add to your itinerary
+                      <div className="mt-2 text-xs text-primary-600 font-medium flex items-center gap-1">
+                        <GripVertical size={12} />
+                        Drag to add to your itinerary (right panel)
                       </div>
                     </div>
                   ))}
@@ -241,7 +271,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
             <div className="bg-neutral-100 rounded-lg p-4">
               <div className="flex items-center gap-2">
                 <Loader className="animate-spin" size={20} />
-                <span className="text-sm text-neutral-warm-gray">AI is thinking...</span>
+                <span className="text-sm text-neutral-warm-gray">{loadingMessage}</span>
               </div>
             </div>
           </div>
