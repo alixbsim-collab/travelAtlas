@@ -52,11 +52,34 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
     const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles } = req.body;
 
     let generatedItinerary;
+    let finalDestination = destination;
+
+    // Handle "Undecided" destination - AI picks based on preferences
+    if (destination.toLowerCase() === 'undecided' && process.env.OPENAI_API_KEY) {
+      console.log('User selected Undecided - AI will pick destination based on preferences');
+      finalDestination = await pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles });
+      console.log(`AI picked destination: ${finalDestination}`);
+
+      // Update the itinerary with the chosen destination
+      if (itineraryId) {
+        const { error: updateError } = await supabase
+          .from('itineraries')
+          .update({
+            destination: finalDestination,
+            title: `${finalDestination} - ${tripLength} days`
+          })
+          .eq('id', itineraryId);
+
+        if (updateError) {
+          console.error('Error updating itinerary destination:', updateError);
+        }
+      }
+    }
 
     // Use OpenAI if API key is configured, otherwise fall back to mock
     if (process.env.OPENAI_API_KEY) {
       generatedItinerary = await generateOpenAIItinerary({
-        destination,
+        destination: finalDestination,
         tripLength,
         travelPace,
         budget,
@@ -180,6 +203,61 @@ app.post('/api/ai/chat', async (req, res) => {
 // ============================================
 // OPENAI INTEGRATION FUNCTIONS
 // ============================================
+
+// Pick a destination for users who selected "Undecided"
+async function pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles }) {
+  const budgetDescriptions = {
+    'budget': 'budget-friendly, affordable destinations',
+    'medium': 'moderately priced destinations with good value',
+    'premium': 'upscale destinations with premium experiences',
+    'luxury': 'luxury destinations with high-end experiences'
+  };
+
+  const paceDescriptions = {
+    'relaxed': 'relaxing, laid-back destinations perfect for unwinding',
+    'moderate': 'destinations with a good mix of activities and relaxation',
+    'balanced': 'versatile destinations offering diverse experiences',
+    'active': 'exciting destinations with plenty to see and do',
+    'packed': 'action-packed destinations for adventure seekers'
+  };
+
+  const prompt = `Based on these travel preferences, suggest ONE perfect destination (city and country):
+
+Travel Style: ${travelerProfiles.join(', ')}
+Budget: ${budgetDescriptions[budget] || budget}
+Pace: ${paceDescriptions[travelPace] || travelPace}
+Trip Length: ${tripLength} days
+
+Consider:
+- Cultural explorers love history-rich cities like Rome, Kyoto, Istanbul
+- Food lovers enjoy culinary capitals like Tokyo, Bangkok, Barcelona
+- Adventure seekers want Queenstown, Costa Rica, Iceland
+- Beach lovers prefer Bali, Maldives, Santorini
+- Nature enthusiasts love Norway, New Zealand, Patagonia
+
+Return ONLY the destination in format "City, Country" (e.g., "Tokyo, Japan"). No other text.`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: "You are a travel expert. Respond with ONLY the destination name in 'City, Country' format. Nothing else."
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ],
+    temperature: 0.9, // Higher temperature for variety
+    max_tokens: 50
+  });
+
+  const destination = completion.choices[0].message.content.trim();
+
+  // Clean up the response - remove any quotes or extra formatting
+  return destination.replace(/['"]/g, '').trim();
+}
 
 async function generateOpenAIItinerary({ destination, tripLength, travelPace, budget, travelerProfiles }) {
   const activitiesPerDay = {
