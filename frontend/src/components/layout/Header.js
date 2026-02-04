@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { User, ChevronDown, LogIn, UserPlus, Settings, Heart, LogOut } from 'lucide-react';
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef(null);
   const isAuthenticated = false; // TODO: Connect to actual auth state management
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -38,29 +52,78 @@ function Header() {
               Atlas Files
             </Link>
 
-            {isAuthenticated ? (
-              <Link
-                to="/profile"
-                className="text-neutral-charcoal hover:text-primary-600 font-medium transition-colors"
+            {/* My Profile Dropdown */}
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center gap-2 text-neutral-charcoal hover:text-primary-600 font-medium transition-colors"
               >
+                <User size={20} />
                 My Profile
-              </Link>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="text-neutral-charcoal hover:text-primary-600 font-medium transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-primary-500 text-white px-6 py-2 rounded-lg hover:bg-primary-600 transition-colors font-medium"
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
+                <ChevronDown size={16} className={`transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-neutral-100 py-2 z-50">
+                  {isAuthenticated ? (
+                    <>
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-3 px-4 py-3 text-neutral-charcoal hover:bg-neutral-50 transition-colors"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <User size={18} />
+                        Account
+                      </Link>
+                      <Link
+                        to="/designer"
+                        className="flex items-center gap-3 px-4 py-3 text-neutral-charcoal hover:bg-neutral-50 transition-colors"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <Heart size={18} />
+                        Saved Trips
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="flex items-center gap-3 px-4 py-3 text-neutral-charcoal hover:bg-neutral-50 transition-colors"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <Settings size={18} />
+                        Settings
+                      </Link>
+                      <div className="border-t border-neutral-100 my-2"></div>
+                      <button
+                        className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors w-full"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <LogOut size={18} />
+                        Log Out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/login"
+                        className="flex items-center gap-3 px-4 py-3 text-neutral-charcoal hover:bg-neutral-50 transition-colors"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <LogIn size={18} />
+                        Sign In
+                      </Link>
+                      <Link
+                        to="/register"
+                        className="flex items-center gap-3 px-4 py-3 text-neutral-charcoal hover:bg-neutral-50 transition-colors"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <UserPlus size={18} />
+                        Sign Up
+                      </Link>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile menu button */}
@@ -117,32 +180,55 @@ function Header() {
             >
               Atlas Files
             </Link>
-            {isAuthenticated ? (
-              <Link
-                to="/profile"
-                className="block text-neutral-charcoal hover:text-primary-600 font-medium py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
+
+            {/* My Profile Section for Mobile */}
+            <div className="border-t border-neutral-100 pt-3 mt-3">
+              <p className="text-sm text-neutral-warm-gray mb-2 flex items-center gap-2">
+                <User size={16} />
                 My Profile
-              </Link>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="block text-neutral-charcoal hover:text-primary-600 font-medium py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="block bg-primary-500 text-white px-6 py-2 rounded-lg hover:bg-primary-600 transition-colors font-medium text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sign Up
-                </Link>
-              </>
-            )}
+              </p>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/profile"
+                    className="block text-neutral-charcoal hover:text-primary-600 font-medium py-2 pl-6"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Account
+                  </Link>
+                  <Link
+                    to="/designer"
+                    className="block text-neutral-charcoal hover:text-primary-600 font-medium py-2 pl-6"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Saved Trips
+                  </Link>
+                  <button
+                    className="block text-red-600 hover:text-red-700 font-medium py-2 pl-6 w-full text-left"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="block text-neutral-charcoal hover:text-primary-600 font-medium py-2 pl-6"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="block text-neutral-charcoal hover:text-primary-600 font-medium py-2 pl-6"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         )}
       </nav>

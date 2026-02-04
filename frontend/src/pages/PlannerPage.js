@@ -3,6 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import AIAssistant from '../components/planner/AIAssistant';
 import Button from '../components/ui/Button';
+import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe, X, MessageSquare } from 'lucide-react';
 import { ACTIVITY_CATEGORIES } from '../constants/travelerProfiles';
 import {
@@ -36,6 +39,45 @@ const getDateForDay = (startDate, dayNumber) => {
   const date = new Date(startDate);
   date.setDate(date.getDate() + (dayNumber - 1));
   return formatDate(date);
+};
+
+// Fix Leaflet default marker icon issue with webpack
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+// Day colors for map markers and route lines
+const DAY_COLORS = [
+  '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
+  '#EC4899', '#06B6D4', '#F97316', '#6366F1', '#14B8A6'
+];
+
+// Create colored marker icon
+const createDayIcon = (dayNumber) => {
+  const color = DAY_COLORS[(dayNumber - 1) % DAY_COLORS.length];
+  return L.divIcon({
+    className: 'custom-map-marker',
+    html: `<div style="
+      background-color: ${color};
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+    ">${dayNumber}</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14],
+  });
 };
 
 // Sortable Activity Component for Overview
@@ -424,6 +466,7 @@ function PlannerPage() {
     if (isGenerating && activities.length === 0) {
       setGeneratingActivities(true);
       const pollInterval = setInterval(async () => {
+        // Check for activities
         const { data: activitiesData } = await supabase
           .from('activities')
           .select('*')
@@ -435,6 +478,17 @@ function PlannerPage() {
           setActivities(activitiesData);
           setGeneratingActivities(false);
           clearInterval(pollInterval);
+
+          // Also refetch itinerary to get updated destination (for Undecided picks)
+          const { data: updatedItinerary } = await supabase
+            .from('itineraries')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+          if (updatedItinerary) {
+            setItinerary(updatedItinerary);
+          }
         }
       }, 2000);
 
@@ -1126,24 +1180,133 @@ function PlannerPage() {
 
                 {/* MAP VIEW - Placeholder for Google Maps */}
                 {activeView === 'map' && (
-                  <div className="h-full flex items-center justify-center bg-neutral-50 rounded-lg">
-                    <div className="text-center p-8">
-                      <MapIcon size={48} className="mx-auto mb-4 text-neutral-400" />
-                      <h3 className="text-lg font-heading font-bold text-neutral-charcoal mb-2">
-                        Map View Coming Soon
-                      </h3>
-                      <p className="text-sm text-neutral-warm-gray mb-4">
-                        Visualize your entire trip on an interactive map
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={openAllInGoogleMaps}
-                        className="gap-2"
+                  <div className="h-full flex flex-col rounded-lg overflow-hidden">
+                    {/* Day filter for map */}
+                    <div className="flex gap-2 p-3 bg-white border-b border-neutral-200 overflow-x-auto">
+                      <button
+                        onClick={() => setSelectedDay('all')}
+                        className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
+                          selectedDay === 'all'
+                            ? 'bg-primary-500 text-white'
+                            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                        }`}
                       >
-                        <ExternalLink size={16} />
-                        Open Route in Google Maps
-                      </Button>
+                        All Days
+                      </button>
+                      {days.map(day => {
+                        const dayColor = DAY_COLORS[(day - 1) % DAY_COLORS.length];
+                        return (
+                          <button
+                            key={day}
+                            onClick={() => setSelectedDay(day.toString())}
+                            className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
+                              selectedDay === day.toString()
+                                ? 'text-white'
+                                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                            }`}
+                            style={selectedDay === day.toString() ? { backgroundColor: dayColor } : {}}
+                          >
+                            {itinerary.start_date ? getDateForDay(itinerary.start_date, day) : `Day ${day}`}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Map */}
+                    {activitiesWithCoords.length > 0 ? (
+                      <div className="flex-1 relative" style={{ minHeight: '400px' }}>
+                        <MapContainer
+                          center={[
+                            filteredActivities.length > 0
+                              ? filteredActivities.reduce((sum, a) => sum + a.latitude, 0) / filteredActivities.length
+                              : activitiesWithCoords[0].latitude,
+                            filteredActivities.length > 0
+                              ? filteredActivities.reduce((sum, a) => sum + a.longitude, 0) / filteredActivities.length
+                              : activitiesWithCoords[0].longitude
+                          ]}
+                          zoom={13}
+                          style={{ height: '100%', width: '100%' }}
+                          key={`${selectedDay}-${filteredActivities.length}`}
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+
+                          {/* Markers for each activity */}
+                          {filteredActivities.map((activity) => (
+                            <Marker
+                              key={activity.id}
+                              position={[activity.latitude, activity.longitude]}
+                              icon={createDayIcon(activity.day_number)}
+                            >
+                              <Popup>
+                                <div className="text-sm">
+                                  <p className="font-bold">{activity.title}</p>
+                                  <p className="text-neutral-500">{activity.location}</p>
+                                  {activity.duration_minutes && (
+                                    <p className="text-xs text-neutral-400 mt-1">
+                                      {Math.floor(activity.duration_minutes / 60)}h {activity.duration_minutes % 60}m
+                                    </p>
+                                  )}
+                                </div>
+                              </Popup>
+                            </Marker>
+                          ))}
+
+                          {/* Dotted route lines connecting activities by day */}
+                          {(selectedDay === 'all' ? days : [parseInt(selectedDay)]).map(day => {
+                            const dayActs = filteredActivities
+                              .filter(a => a.day_number === day)
+                              .sort((a, b) => (a.position || 0) - (b.position || 0));
+                            if (dayActs.length < 2) return null;
+                            const positions = dayActs.map(a => [a.latitude, a.longitude]);
+                            return (
+                              <Polyline
+                                key={`route-day-${day}`}
+                                positions={positions}
+                                pathOptions={{
+                                  color: DAY_COLORS[(day - 1) % DAY_COLORS.length],
+                                  weight: 3,
+                                  dashArray: '8, 12',
+                                  opacity: 0.7
+                                }}
+                              />
+                            );
+                          })}
+                        </MapContainer>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center bg-neutral-50">
+                        <div className="text-center p-8">
+                          <MapIcon size={48} className="mx-auto mb-4 text-neutral-400" />
+                          <h3 className="text-lg font-heading font-bold text-neutral-charcoal mb-2">
+                            No locations to show yet
+                          </h3>
+                          <p className="text-sm text-neutral-warm-gray">
+                            Activities with coordinates will appear on the map
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Legend */}
+                    <div className="p-3 bg-white border-t border-neutral-200">
+                      <div className="flex flex-wrap gap-3 justify-center">
+                        {(selectedDay === 'all' ? days : [parseInt(selectedDay)]).map(day => {
+                          const count = filteredActivities.filter(a => a.day_number === day).length;
+                          if (count === 0) return null;
+                          return (
+                            <span key={day} className="flex items-center gap-1 text-xs text-neutral-600">
+                              <span
+                                className="w-3 h-3 rounded-full inline-block"
+                                style={{ backgroundColor: DAY_COLORS[(day - 1) % DAY_COLORS.length] }}
+                              />
+                              {itinerary.start_date ? getDateForDay(itinerary.start_date, day) : `Day ${day}`} ({count})
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}

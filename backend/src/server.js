@@ -55,24 +55,62 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
     let finalDestination = destination;
 
     // Handle "Undecided" destination - AI picks based on preferences
-    if (destination.toLowerCase() === 'undecided' && process.env.OPENAI_API_KEY) {
+    if (destination.toLowerCase() === 'undecided') {
       console.log('User selected Undecided - AI will pick destination based on preferences');
-      finalDestination = await pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles });
-      console.log(`AI picked destination: ${finalDestination}`);
+      console.log('Preferences:', { tripLength, travelPace, budget, travelerProfiles });
 
-      // Update the itinerary with the chosen destination
-      if (itineraryId) {
-        const { error: updateError } = await supabase
-          .from('itineraries')
-          .update({
-            destination: finalDestination,
-            title: `${finalDestination} - ${tripLength} days`
-          })
-          .eq('id', itineraryId);
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          finalDestination = await pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles });
+          console.log(`AI picked destination: ${finalDestination}`);
 
-        if (updateError) {
-          console.error('Error updating itinerary destination:', updateError);
+          // Validate the destination was picked
+          if (!finalDestination || finalDestination.toLowerCase().includes('undecided')) {
+            // Fallback destinations based on traveler profile
+            const fallbacks = {
+              'cultural-explorer': 'Rome, Italy',
+              'foodie': 'Tokyo, Japan',
+              'adventure-seeker': 'Queenstown, New Zealand',
+              'beach-bum': 'Bali, Indonesia',
+              'nature-lover': 'Reykjavik, Iceland',
+              'nightlife': 'Barcelona, Spain',
+              'luxury': 'Dubai, UAE',
+              'budget': 'Bangkok, Thailand',
+              'wellness': 'Ubud, Bali',
+              'family': 'Orlando, USA'
+            };
+            const primaryProfile = travelerProfiles[0] || 'cultural-explorer';
+            finalDestination = fallbacks[primaryProfile] || 'Paris, France';
+            console.log(`Used fallback destination: ${finalDestination}`);
+          }
+
+          // Update the itinerary with the chosen destination
+          if (itineraryId) {
+            console.log(`Updating itinerary ${itineraryId} with destination: ${finalDestination}`);
+            const { error: updateError } = await supabase
+              .from('itineraries')
+              .update({
+                destination: finalDestination,
+                title: `${finalDestination} - ${tripLength} days`
+              })
+              .eq('id', itineraryId);
+
+            if (updateError) {
+              console.error('Error updating itinerary destination:', updateError);
+            } else {
+              console.log('Itinerary destination updated successfully');
+            }
+          }
+        } catch (pickError) {
+          console.error('Error picking destination:', pickError);
+          // Use fallback
+          finalDestination = 'Paris, France';
+          console.log(`Error occurred, using fallback: ${finalDestination}`);
         }
+      } else {
+        // No OpenAI key, use fallback
+        finalDestination = 'Paris, France';
+        console.log(`No OpenAI key, using fallback: ${finalDestination}`);
       }
     }
 
