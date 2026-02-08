@@ -191,16 +191,18 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
       if (match.index > lastIndex) {
         parts.push(content.substring(lastIndex, match.index));
       }
-      // Add the link
+      // Add the link with external icon
       parts.push(
         <a
           key={match.index}
           href={match[2]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary-600 hover:text-primary-700 underline font-medium"
+          className="text-primary-600 hover:text-primary-700 underline font-medium inline-flex items-center gap-0.5"
+          title="AI-suggested link - may not be available"
         >
           {match[1]}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block ml-0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
       );
       lastIndex = match.index + match[0].length;

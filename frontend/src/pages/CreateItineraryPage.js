@@ -1,43 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { TRAVELER_PROFILES, TRAVEL_PACE_OPTIONS, BUDGET_OPTIONS } from '../constants/travelerProfiles';
-import { MapPin, Calendar, Users, DollarSign, Gauge, Sparkles, ArrowRight, ArrowLeft, Check, Search } from 'lucide-react';
+import { MapPin, Calendar, Users, DollarSign, Gauge, Sparkles, ArrowRight, ArrowLeft, Check, Search, X, Globe, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-// Popular destinations for autocomplete suggestions
+// Popular destinations for autocomplete suggestions (cities + countries)
 const POPULAR_DESTINATIONS = [
-  { name: 'Tokyo, Japan', country: 'Japan' },
-  { name: 'Paris, France', country: 'France' },
-  { name: 'New York, USA', country: 'USA' },
-  { name: 'London, UK', country: 'UK' },
-  { name: 'Rome, Italy', country: 'Italy' },
-  { name: 'Barcelona, Spain', country: 'Spain' },
-  { name: 'Dubai, UAE', country: 'UAE' },
-  { name: 'Bali, Indonesia', country: 'Indonesia' },
-  { name: 'Sydney, Australia', country: 'Australia' },
-  { name: 'Bangkok, Thailand', country: 'Thailand' },
-  { name: 'Amsterdam, Netherlands', country: 'Netherlands' },
-  { name: 'Singapore', country: 'Singapore' },
-  { name: 'Lisbon, Portugal', country: 'Portugal' },
-  { name: 'Istanbul, Turkey', country: 'Turkey' },
-  { name: 'Prague, Czech Republic', country: 'Czech Republic' },
-  { name: 'Vienna, Austria', country: 'Austria' },
-  { name: 'Berlin, Germany', country: 'Germany' },
-  { name: 'Athens, Greece', country: 'Greece' },
-  { name: 'Marrakech, Morocco', country: 'Morocco' },
-  { name: 'Cape Town, South Africa', country: 'South Africa' },
-  { name: 'Reykjavik, Iceland', country: 'Iceland' },
-  { name: 'Buenos Aires, Argentina', country: 'Argentina' },
-  { name: 'Mexico City, Mexico', country: 'Mexico' },
-  { name: 'Kyoto, Japan', country: 'Japan' },
-  { name: 'Florence, Italy', country: 'Italy' },
-  { name: 'Santorini, Greece', country: 'Greece' },
-  { name: 'Machu Picchu, Peru', country: 'Peru' },
-  { name: 'Cairo, Egypt', country: 'Egypt' },
-  { name: 'Seoul, South Korea', country: 'South Korea' },
-  { name: 'Hong Kong', country: 'China' },
+  { name: 'Tokyo, Japan', country: 'Japan', type: 'city' },
+  { name: 'Paris, France', country: 'France', type: 'city' },
+  { name: 'New York, USA', country: 'USA', type: 'city' },
+  { name: 'London, UK', country: 'UK', type: 'city' },
+  { name: 'Rome, Italy', country: 'Italy', type: 'city' },
+  { name: 'Barcelona, Spain', country: 'Spain', type: 'city' },
+  { name: 'Dubai, UAE', country: 'UAE', type: 'city' },
+  { name: 'Bali, Indonesia', country: 'Indonesia', type: 'city' },
+  { name: 'Sydney, Australia', country: 'Australia', type: 'city' },
+  { name: 'Bangkok, Thailand', country: 'Thailand', type: 'city' },
+  { name: 'Amsterdam, Netherlands', country: 'Netherlands', type: 'city' },
+  { name: 'Singapore', country: 'Singapore', type: 'city' },
+  { name: 'Lisbon, Portugal', country: 'Portugal', type: 'city' },
+  { name: 'Istanbul, Turkey', country: 'Turkey', type: 'city' },
+  { name: 'Prague, Czech Republic', country: 'Czech Republic', type: 'city' },
+  { name: 'Vienna, Austria', country: 'Austria', type: 'city' },
+  { name: 'Berlin, Germany', country: 'Germany', type: 'city' },
+  { name: 'Athens, Greece', country: 'Greece', type: 'city' },
+  { name: 'Marrakech, Morocco', country: 'Morocco', type: 'city' },
+  { name: 'Cape Town, South Africa', country: 'South Africa', type: 'city' },
+  { name: 'Reykjavik, Iceland', country: 'Iceland', type: 'city' },
+  { name: 'Buenos Aires, Argentina', country: 'Argentina', type: 'city' },
+  { name: 'Mexico City, Mexico', country: 'Mexico', type: 'city' },
+  { name: 'Kyoto, Japan', country: 'Japan', type: 'city' },
+  { name: 'Florence, Italy', country: 'Italy', type: 'city' },
+  { name: 'Santorini, Greece', country: 'Greece', type: 'city' },
+  { name: 'Machu Picchu, Peru', country: 'Peru', type: 'city' },
+  { name: 'Cairo, Egypt', country: 'Egypt', type: 'city' },
+  { name: 'Seoul, South Korea', country: 'South Korea', type: 'city' },
+  { name: 'Hong Kong', country: 'China', type: 'city' },
+  // Countries
+  { name: 'Japan', country: 'Japan', type: 'country' },
+  { name: 'Italy', country: 'Italy', type: 'country' },
+  { name: 'France', country: 'France', type: 'country' },
+  { name: 'Spain', country: 'Spain', type: 'country' },
+  { name: 'Greece', country: 'Greece', type: 'country' },
+  { name: 'Thailand', country: 'Thailand', type: 'country' },
+  { name: 'Portugal', country: 'Portugal', type: 'country' },
+  { name: 'Australia', country: 'Australia', type: 'country' },
+  { name: 'Mexico', country: 'Mexico', type: 'country' },
+  { name: 'Morocco', country: 'Morocco', type: 'country' },
+  { name: 'Peru', country: 'Peru', type: 'country' },
+  { name: 'Indonesia', country: 'Indonesia', type: 'country' },
+  { name: 'South Korea', country: 'South Korea', type: 'country' },
+  { name: 'Turkey', country: 'Turkey', type: 'country' },
+];
+
+// Regions for "Undecided" flow
+const REGIONS = [
+  { id: 'europe', name: 'Europe', emoji: '🏰', description: 'France, Italy, Spain, Greece...' },
+  { id: 'north-america', name: 'North America', emoji: '🗽', description: 'USA, Canada, Mexico...' },
+  { id: 'south-america', name: 'South America', emoji: '🌎', description: 'Brazil, Argentina, Peru...' },
+  { id: 'south-east-asia', name: 'South & East Asia', emoji: '🏯', description: 'Japan, Thailand, Bali...' },
+  { id: 'central-asia', name: 'Central Asia', emoji: '🐪', description: 'Turkey, UAE, India...' },
+  { id: 'oceania', name: 'Oceania', emoji: '🏄', description: 'Australia, New Zealand, Fiji...' },
 ];
 
 const STEPS = [
@@ -51,14 +77,23 @@ const STEPS = [
 
 function CreateItineraryPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredDestinations, setFilteredDestinations] = useState([]);
+  const [isMultiDestination, setIsMultiDestination] = useState(false);
+  const [destinations, setDestinations] = useState([]); // For multi-destination mode
+  const [destinationInput, setDestinationInput] = useState(''); // Current input for multi-dest
+  const [showUndecidedModal, setShowUndecidedModal] = useState(false);
   const destinationRef = useRef(null);
 
+  // Check for prefilled destination from navigation state
+  const prefillDestination = location.state?.prefillDestination || '';
+
   const [formData, setFormData] = useState({
-    destination: '',
+    destination: prefillDestination,
+    region: '', // For Undecided flow
     tripLength: 7,
     startDate: null,
     endDate: null,
@@ -67,6 +102,13 @@ function CreateItineraryPage() {
     budget: 'medium',
     travelerProfiles: []
   });
+
+  // If destination is prefilled, skip to step 2
+  useEffect(() => {
+    if (prefillDestination && currentStep === 1) {
+      setCurrentStep(2);
+    }
+  }, [prefillDestination]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -81,24 +123,58 @@ function CreateItineraryPage() {
 
   // Filter destinations based on input
   useEffect(() => {
-    if (formData.destination.length > 0) {
+    const searchTerm = isMultiDestination ? destinationInput : formData.destination;
+    if (searchTerm.length > 0) {
       const filtered = POPULAR_DESTINATIONS.filter(dest =>
-        dest.name.toLowerCase().includes(formData.destination.toLowerCase()) ||
-        dest.country.toLowerCase().includes(formData.destination.toLowerCase())
-      ).slice(0, 6);
+        dest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        dest.country.toLowerCase().includes(searchTerm.toLowerCase())
+      ).filter(dest => !destinations.includes(dest.name)) // Exclude already added
+      .slice(0, 6);
       setFilteredDestinations(filtered);
     } else {
-      setFilteredDestinations(POPULAR_DESTINATIONS.slice(0, 6));
+      setFilteredDestinations(POPULAR_DESTINATIONS.filter(dest => !destinations.includes(dest.name)).slice(0, 6));
     }
-  }, [formData.destination]);
+  }, [formData.destination, destinationInput, destinations, isMultiDestination]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleDestinationSelect = (destination) => {
-    setFormData(prev => ({ ...prev, destination: destination.name }));
-    setShowSuggestions(false);
+    if (destination.name === 'Undecided') {
+      setShowUndecidedModal(true);
+      setShowSuggestions(false);
+      return;
+    }
+    if (isMultiDestination) {
+      if (!destinations.includes(destination.name)) {
+        setDestinations(prev => [...prev, destination.name]);
+      }
+      setDestinationInput('');
+      setShowSuggestions(false);
+    } else {
+      setFormData(prev => ({ ...prev, destination: destination.name }));
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleRemoveDestination = (destName) => {
+    setDestinations(prev => prev.filter(d => d !== destName));
+  };
+
+  const handleAddCustomDestination = () => {
+    const trimmed = destinationInput.trim();
+    if (trimmed && !destinations.includes(trimmed)) {
+      setDestinations(prev => [...prev, trimmed]);
+      setDestinationInput('');
+    }
+  };
+
+  const handleSelectUndecided = (region) => {
+    setFormData(prev => ({ ...prev, destination: 'Undecided', region }));
+    setShowUndecidedModal(false);
+    setIsMultiDestination(false);
+    setDestinations([]);
   };
 
   const handleProfileToggle = (profileId) => {
@@ -113,6 +189,7 @@ function CreateItineraryPage() {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
+        if (isMultiDestination) return destinations.length > 0;
         return formData.destination.trim().length > 0;
       case 2:
         return formData.tripLength > 0;
@@ -129,6 +206,10 @@ function CreateItineraryPage() {
 
   const handleNext = () => {
     if (canProceed() && currentStep < 6) {
+      // Sync multi-dest to formData when leaving step 1
+      if (currentStep === 1 && isMultiDestination && destinations.length > 0) {
+        setFormData(prev => ({ ...prev, destination: destinations.join(', ') }));
+      }
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -191,7 +272,8 @@ function CreateItineraryPage() {
           tripLength: formData.tripLength,
           travelPace: formData.travelPace,
           budget: formData.budget,
-          travelerProfiles: formData.travelerProfiles
+          travelerProfiles: formData.travelerProfiles,
+          region: formData.region || null
         })
       }).catch(err => console.error('Background AI generation error:', err));
 
@@ -261,48 +343,159 @@ function CreateItineraryPage() {
               Where do you want to go?
             </h2>
             <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
-              Enter a city, region, or country. Type "Undecided" if you want us to inspire you.
+              Enter a city, country, or multiple destinations. Select "Undecided" to let us inspire you.
             </p>
+
+            {/* Multi-destination toggle */}
+            <div className="max-w-lg mx-auto mb-4">
+              <label className="flex items-center justify-center gap-3 cursor-pointer p-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={isMultiDestination}
+                  onChange={(e) => {
+                    setIsMultiDestination(e.target.checked);
+                    if (!e.target.checked) {
+                      // Sync back to single destination
+                      if (destinations.length > 0) {
+                        setFormData(prev => ({ ...prev, destination: destinations[0] }));
+                      }
+                      setDestinations([]);
+                    } else {
+                      // Move single destination to multi array
+                      if (formData.destination && formData.destination !== 'Undecided') {
+                        setDestinations([formData.destination]);
+                        setFormData(prev => ({ ...prev, destination: '' }));
+                      }
+                    }
+                  }}
+                  className="w-5 h-5 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
+                />
+                <Globe size={18} className="text-neutral-500" />
+                <span className="text-neutral-charcoal font-medium">Multi-destination trip</span>
+              </label>
+            </div>
+
+            {/* Multi-destination tag chips */}
+            {isMultiDestination && destinations.length > 0 && (
+              <div className="max-w-lg mx-auto mb-4 flex flex-wrap gap-2 justify-center">
+                {destinations.map((dest) => (
+                  <span
+                    key={dest}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+                    style={{ backgroundColor: '#DBEAFE', color: '#1E4D73' }}
+                  >
+                    <MapPin size={14} />
+                    {dest}
+                    <button
+                      onClick={() => handleRemoveDestination(dest)}
+                      className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="max-w-lg mx-auto relative" ref={destinationRef}>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
                 <input
                   type="text"
-                  value={formData.destination}
-                  onChange={(e) => handleInputChange('destination', e.target.value)}
+                  value={isMultiDestination ? destinationInput : formData.destination}
+                  onChange={(e) => {
+                    if (isMultiDestination) {
+                      setDestinationInput(e.target.value);
+                    } else {
+                      handleInputChange('destination', e.target.value);
+                    }
+                  }}
                   onFocus={() => setShowSuggestions(true)}
-                  placeholder="Search destination..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && isMultiDestination && destinationInput.trim()) {
+                      e.preventDefault();
+                      handleAddCustomDestination();
+                    }
+                  }}
+                  placeholder={isMultiDestination ? 'Add another destination...' : 'Search destination...'}
                   className="w-full pl-12 pr-4 py-4 text-lg border-2 border-neutral-200 rounded-xl focus:outline-none focus:border-primary-500 transition-colors"
                   autoFocus
                 />
               </div>
 
               {showSuggestions && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-neutral-100 overflow-hidden z-50">
-                  <button
-                    onClick={() => handleDestinationSelect({ name: 'Undecided' })}
-                    className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors border-b border-neutral-100 flex items-center gap-3"
-                  >
-                    <Sparkles size={18} className="text-primary-500" />
-                    <div>
-                      <span className="font-medium">Undecided</span>
-                      <span className="text-sm text-neutral-400 ml-2">- Let us inspire you</span>
-                    </div>
-                  </button>
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-neutral-100 overflow-hidden z-50 max-h-[300px] overflow-y-auto">
+                  {!isMultiDestination && (
+                    <button
+                      onClick={() => handleDestinationSelect({ name: 'Undecided' })}
+                      className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors border-b border-neutral-100 flex items-center gap-3"
+                    >
+                      <Sparkles size={18} className="text-primary-500" />
+                      <div>
+                        <span className="font-medium">Undecided</span>
+                        <span className="text-sm text-neutral-400 ml-2">- Let us inspire you</span>
+                      </div>
+                    </button>
+                  )}
                   {filteredDestinations.map((dest, index) => (
                     <button
                       key={index}
                       onClick={() => handleDestinationSelect(dest)}
                       className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors flex items-center gap-3"
                     >
-                      <MapPin size={18} className="text-neutral-400" />
+                      {dest.type === 'country' ? (
+                        <Globe size={18} className="text-neutral-400" />
+                      ) : (
+                        <MapPin size={18} className="text-neutral-400" />
+                      )}
                       <span>{dest.name}</span>
+                      {dest.type === 'country' && (
+                        <span className="text-xs text-neutral-400 ml-auto">Country</span>
+                      )}
                     </button>
                   ))}
                 </div>
               )}
             </div>
+
+            {/* Undecided Region Selection Modal */}
+            {showUndecidedModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowUndecidedModal(false)}>
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 p-8" onClick={(e) => e.stopPropagation()}>
+                  <div className="text-center mb-6">
+                    <Sparkles size={32} className="mx-auto mb-3 text-primary-500" />
+                    <h3 className="text-2xl font-heading font-bold text-neutral-charcoal mb-2">
+                      Let us inspire you!
+                    </h3>
+                    <p className="text-neutral-warm-gray">
+                      Pick a region and we'll suggest the perfect destination based on your preferences.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                    {REGIONS.map((region) => (
+                      <button
+                        key={region.id}
+                        onClick={() => handleSelectUndecided(region.id)}
+                        className="p-4 rounded-xl border-2 border-neutral-200 hover:border-primary-500 hover:bg-primary-50 transition-all text-center"
+                      >
+                        <div className="text-3xl mb-2">{region.emoji}</div>
+                        <div className="font-bold text-sm text-neutral-charcoal">{region.name}</div>
+                        <div className="text-xs text-neutral-400 mt-1">{region.description}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="text-center border-t border-neutral-200 pt-4">
+                    <p className="text-sm text-neutral-warm-gray mb-3">Or browse curated itineraries for inspiration</p>
+                    <Link to="/atlas" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-charcoal font-medium text-sm transition-colors">
+                      <BookOpen size={16} />
+                      Browse Atlas Files
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -547,7 +740,14 @@ function CreateItineraryPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <MapPin size={18} className="text-neutral-400" />
-                  <span className="text-neutral-charcoal font-medium">{formData.destination}</span>
+                  <span className="text-neutral-charcoal font-medium">
+                    {formData.destination}
+                    {formData.destination === 'Undecided' && formData.region && (
+                      <span className="text-sm text-neutral-400 ml-2">
+                        ({REGIONS.find(r => r.id === formData.region)?.name || formData.region})
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar size={18} className="text-neutral-400" />

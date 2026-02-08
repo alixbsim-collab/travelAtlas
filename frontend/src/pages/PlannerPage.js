@@ -6,7 +6,7 @@ import Button from '../components/ui/Button';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe, X, MessageSquare } from 'lucide-react';
+import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe, X, MessageSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { ACTIVITY_CATEGORIES } from '../constants/travelerProfiles';
 import {
   DndContext,
@@ -81,7 +81,9 @@ const createDayIcon = (dayNumber) => {
 };
 
 // Sortable Activity Component for Overview
-function SortableActivity({ activity, onEdit, onDelete, onOpenNotes }) {
+function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState(activity.custom_notes || '');
   const {
     attributes,
     listeners,
@@ -125,10 +127,10 @@ function SortableActivity({ activity, onEdit, onDelete, onOpenNotes }) {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  onOpenNotes(activity);
+                  setEditingNotes(true);
                 }}
                 className="text-xl hover:scale-125 transition-transform cursor-pointer p-1 hover:bg-yellow-100 rounded"
-                title="Click to add notes"
+                title="Click to add/edit notes"
                 type="button"
               >
                 {categoryInfo.emoji}
@@ -158,17 +160,45 @@ function SortableActivity({ activity, onEdit, onDelete, onOpenNotes }) {
             <p className="text-sm text-neutral-warm-gray mb-2">{activity.description}</p>
           )}
 
-          {activity.custom_notes && (
-            <div className="mb-2 p-2 bg-yellow-50 rounded text-xs text-yellow-800 border border-yellow-200">
+          {editingNotes ? (
+            <div className="mb-2">
+              <textarea
+                value={notesValue}
+                onChange={(e) => setNotesValue(e.target.value)}
+                onBlur={() => {
+                  setEditingNotes(false);
+                  if (notesValue !== (activity.custom_notes || '')) {
+                    onSaveNotes(activity.id, notesValue);
+                  }
+                }}
+                placeholder="Add your notes here..."
+                className="w-full h-20 px-2 py-1.5 text-xs border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none bg-yellow-50"
+                autoFocus
+              />
+            </div>
+          ) : activity.custom_notes ? (
+            <div
+              className="mb-2 p-2 bg-yellow-50 rounded text-xs text-yellow-800 border border-yellow-200 cursor-pointer hover:bg-yellow-100"
+              onClick={(e) => { e.stopPropagation(); setEditingNotes(true); }}
+            >
               📝 {activity.custom_notes}
             </div>
-          )}
+          ) : null}
 
           <div className="flex flex-wrap gap-3 text-xs text-neutral-warm-gray">
             {activity.location && (
-              <span className="flex items-center gap-1">
+              <a
+                href={activity.latitude && activity.longitude
+                  ? `https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`
+                  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-primary-600 hover:text-primary-700 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
                 📍 {activity.location}
-              </span>
+                <ExternalLink size={10} />
+              </a>
             )}
             {activity.duration_minutes && (
               <span className="flex items-center gap-1">
@@ -448,6 +478,7 @@ function PlannerPage() {
   const [notesActivity, setNotesActivity] = useState(null); // For notes modal
   const [dragOverDay, setDragOverDay] = useState(null); // For visual drop feedback
   const [addActivityDay, setAddActivityDay] = useState(null); // For add activity modal
+  const [showAssistant, setShowAssistant] = useState(true); // Toggle AI panel
 
   const isGenerating = location.state?.generating;
 
@@ -551,8 +582,40 @@ function PlannerPage() {
   };
 
   const handleLoadItinerary = async (suggestedActivities) => {
+    const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
+    const validTimeOfDay = ['morning', 'afternoon', 'evening', 'night', 'all-day'];
+
+    const sanitizeActivity = (activity, index) => {
+      const duration = parseInt(activity.duration_minutes) || 60;
+      const costMin = activity.estimated_cost_min ? parseFloat(activity.estimated_cost_min) : null;
+      const costMax = activity.estimated_cost_max ? parseFloat(activity.estimated_cost_max) : null;
+      return {
+        itinerary_id: id,
+        day_number: activity.day_number || 1,
+        position: index,
+        title: activity.title || 'Untitled Activity',
+        description: activity.description || '',
+        location: activity.location || '',
+        category: validCategories.includes(activity.category) ? activity.category : 'other',
+        duration_minutes: duration > 0 ? duration : 60,
+        estimated_cost_min: costMin !== null && costMin >= 0 ? costMin : null,
+        estimated_cost_max: costMax !== null && costMin !== null && costMax >= costMin ? costMax : costMin,
+        latitude: activity.latitude && parseFloat(activity.latitude) !== 0 ? parseFloat(activity.latitude) : null,
+        longitude: activity.longitude && parseFloat(activity.longitude) !== 0 ? parseFloat(activity.longitude) : null,
+        time_of_day: validTimeOfDay.includes(activity.time_of_day) ? activity.time_of_day : null
+      };
+    };
+
     try {
+      let mode = 'replace';
       if (activities.length > 0) {
+        const choice = window.confirm(
+          'You already have activities in your itinerary.\n\nClick OK to REPLACE all activities with the suggested ones.\nClick Cancel to ADD the suggestions to your existing itinerary.'
+        );
+        mode = choice ? 'replace' : 'merge';
+      }
+
+      if (mode === 'replace' && activities.length > 0) {
         const { error: deleteError } = await supabase
           .from('activities')
           .delete()
@@ -560,23 +623,16 @@ function PlannerPage() {
         if (deleteError) throw deleteError;
       }
 
-      const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
-
-      const activitiesToInsert = suggestedActivities.map((activity, index) => ({
-        itinerary_id: id,
-        day_number: activity.day_number,
-        position: index,
-        title: activity.title,
-        description: activity.description,
-        location: activity.location,
-        category: validCategories.includes(activity.category) ? activity.category : 'other',
-        duration_minutes: activity.duration_minutes,
-        estimated_cost_min: activity.estimated_cost_min,
-        estimated_cost_max: activity.estimated_cost_max,
-        latitude: activity.latitude,
-        longitude: activity.longitude,
-        time_of_day: activity.time_of_day
-      }));
+      let activitiesToInsert;
+      if (mode === 'merge') {
+        // Add new activities after existing ones in each day
+        activitiesToInsert = suggestedActivities.map((activity, index) => {
+          const existingCount = activities.filter(a => a.day_number === (activity.day_number || 1)).length;
+          return sanitizeActivity(activity, existingCount + index);
+        });
+      } else {
+        activitiesToInsert = suggestedActivities.map((activity, index) => sanitizeActivity(activity, index));
+      }
 
       const { data, error } = await supabase
         .from('activities')
@@ -584,7 +640,12 @@ function PlannerPage() {
         .select();
 
       if (error) throw error;
-      setActivities(data);
+
+      if (mode === 'merge') {
+        setActivities([...activities, ...data]);
+      } else {
+        setActivities(data);
+      }
       alert('Itinerary loaded successfully!');
     } catch (error) {
       console.error('Error loading itinerary:', error);
@@ -595,21 +656,27 @@ function PlannerPage() {
   // Handle adding activity from AI chat drag
   const handleAddActivityFromDrag = async (activityData, dayNumber) => {
     const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
+    const validTimeOfDay = ['morning', 'afternoon', 'evening', 'night', 'all-day'];
+
+    // Validate and sanitize data to match DB constraints
+    const duration = parseInt(activityData.duration_minutes) || 60;
+    const costMin = activityData.estimated_cost_min ? parseFloat(activityData.estimated_cost_min) : null;
+    const costMax = activityData.estimated_cost_max ? parseFloat(activityData.estimated_cost_max) : null;
 
     const newActivity = {
       itinerary_id: id,
       day_number: dayNumber,
       position: activities.filter(a => a.day_number === dayNumber).length,
-      title: activityData.title,
+      title: activityData.title || 'Untitled Activity',
       description: activityData.description || '',
       location: activityData.location || '',
       category: validCategories.includes(activityData.category) ? activityData.category : 'other',
-      duration_minutes: activityData.duration_minutes || 60,
-      estimated_cost_min: activityData.estimated_cost_min || null,
-      estimated_cost_max: activityData.estimated_cost_max || null,
-      latitude: activityData.latitude || null,
-      longitude: activityData.longitude || null,
-      time_of_day: activityData.time_of_day || null
+      duration_minutes: duration > 0 ? duration : 60,
+      estimated_cost_min: costMin !== null && costMin >= 0 ? costMin : null,
+      estimated_cost_max: costMax !== null && costMin !== null && costMax >= costMin ? costMax : costMin,
+      latitude: activityData.latitude && parseFloat(activityData.latitude) !== 0 ? parseFloat(activityData.latitude) : null,
+      longitude: activityData.longitude && parseFloat(activityData.longitude) !== 0 ? parseFloat(activityData.longitude) : null,
+      time_of_day: validTimeOfDay.includes(activityData.time_of_day) ? activityData.time_of_day : null
     };
 
     try {
@@ -623,7 +690,8 @@ function PlannerPage() {
       setActivities([...activities, data]);
     } catch (error) {
       console.error('Error adding activity:', error);
-      alert('Failed to add activity');
+      console.error('Activity data:', newActivity);
+      alert('Failed to add activity: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -890,6 +958,16 @@ function PlannerPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAssistant(!showAssistant)}
+              className="gap-2"
+              title={showAssistant ? 'Hide AI Assistant' : 'Show AI Assistant'}
+            >
+              {showAssistant ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+              {showAssistant ? 'Hide AI' : 'Show AI'}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleSave} disabled={saving} className="gap-2">
               <Save size={16} />
               {saving ? 'Saving...' : 'Save'}
@@ -910,16 +988,18 @@ function PlannerPage() {
       <div className="flex-1 flex overflow-hidden">
         <div className="w-full max-w-[1800px] mx-auto flex gap-6 p-6">
           {/* Left: AI Assistant */}
-          <div className="w-1/2 flex flex-col min-w-0">
-            <AIAssistant
-              itinerary={itinerary}
-              onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
-              onLoadItinerary={handleLoadItinerary}
-            />
-          </div>
+          {showAssistant && (
+            <div className="w-1/2 flex flex-col min-w-0">
+              <AIAssistant
+                itinerary={itinerary}
+                onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
+                onLoadItinerary={handleLoadItinerary}
+              />
+            </div>
+          )}
 
           {/* Right: Unified Panel with 3 views */}
-          <div className="w-1/2 flex flex-col min-w-0">
+          <div className={`${showAssistant ? 'w-1/2' : 'w-full'} flex flex-col min-w-0`}>
             <div className="flex flex-col h-full bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Header with view buttons */}
               <div className="p-4 border-b border-neutral-200">
@@ -1036,7 +1116,7 @@ function PlannerPage() {
                                     activity={activity}
                                     onEdit={handleEditActivity}
                                     onDelete={handleDeleteActivity}
-                                    onOpenNotes={setNotesActivity}
+                                    onSaveNotes={handleSaveNotes}
                                   />
                                 ))}
                               </SortableContext>

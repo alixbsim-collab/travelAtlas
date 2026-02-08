@@ -49,7 +49,7 @@ app.get('/api/destinations', async (req, res) => {
 // AI Itinerary Generation
 app.post('/api/ai/generate-itinerary', async (req, res) => {
   try {
-    const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles } = req.body;
+    const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles, region } = req.body;
 
     let generatedItinerary;
     let finalDestination = destination;
@@ -61,7 +61,7 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
 
       if (process.env.OPENAI_API_KEY) {
         try {
-          finalDestination = await pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles });
+          finalDestination = await pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles, region });
           console.log(`AI picked destination: ${finalDestination}`);
 
           // Validate the destination was picked
@@ -243,7 +243,7 @@ app.post('/api/ai/chat', async (req, res) => {
 // ============================================
 
 // Pick a destination for users who selected "Undecided"
-async function pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles }) {
+async function pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles, region }) {
   const budgetDescriptions = {
     'budget': 'budget-friendly, affordable destinations',
     'medium': 'moderately priced destinations with good value',
@@ -259,12 +259,25 @@ async function pickDestinationForUser({ tripLength, travelPace, budget, traveler
     'packed': 'action-packed destinations for adventure seekers'
   };
 
+  const regionConstraint = region ? `\nIMPORTANT: The destination MUST be in the ${region.replace(/-/g, ' ')} region.` : '';
+
+  const regionExamples = {
+    'europe': 'Europe (e.g., Paris, Rome, Barcelona, Prague, Lisbon, Athens, Amsterdam)',
+    'north-america': 'North America (e.g., New York, Mexico City, Vancouver, San Francisco, Montreal)',
+    'south-america': 'South America (e.g., Buenos Aires, Rio de Janeiro, Lima, Bogota, Santiago)',
+    'south-east-asia': 'South & East Asia (e.g., Tokyo, Bangkok, Bali, Seoul, Singapore, Kyoto)',
+    'central-asia': 'Central Asia & Middle East (e.g., Istanbul, Dubai, Marrakech, Jaipur, Tbilisi)',
+    'oceania': 'Oceania (e.g., Sydney, Auckland, Melbourne, Queenstown, Fiji)'
+  };
+
   const prompt = `Based on these travel preferences, suggest ONE perfect destination (city and country):
 
 Travel Style: ${travelerProfiles.join(', ')}
 Budget: ${budgetDescriptions[budget] || budget}
 Pace: ${paceDescriptions[travelPace] || travelPace}
 Trip Length: ${tripLength} days
+${region ? `Region: ${regionExamples[region] || region}` : ''}
+${regionConstraint}
 
 Consider:
 - Cultural explorers love history-rich cities like Rome, Kyoto, Istanbul
