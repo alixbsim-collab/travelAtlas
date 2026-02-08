@@ -101,8 +101,8 @@ export const ACTIVITY_CATEGORIES = [
   { value: 'relaxation', label: 'Relaxation & Wellness', emoji: '🧘', color: '#06B6D4' },
   { value: 'shopping', label: 'Shopping', emoji: '🛍️', color: '#EC4899' },
   { value: 'nightlife', label: 'Nightlife', emoji: '🌃', color: '#6366F1' },
-  { value: 'transport', label: 'Transportation', emoji: '🚗', color: '#64748B' },
-  { value: 'accommodation', label: 'Accommodation', emoji: '🏨', color: '#0EA5E9' },
+  { value: 'transport', label: 'Transportation', emoji: '✈️', color: '#8B5CF6' },
+  { value: 'accommodation', label: 'Accommodation', emoji: '🏨', color: '#3B82F6' },
   { value: 'other', label: 'Other', emoji: '📍', color: '#71717A' }
 ];
 

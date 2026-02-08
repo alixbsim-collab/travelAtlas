@@ -108,8 +108,12 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, borderLeftColor: categoryInfo.color }}
-      className="bg-white border-l-4 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow mb-3"
+      style={{
+        ...style,
+        borderLeftColor: categoryInfo.color,
+        backgroundColor: activity.category === 'transport' ? '#F5F3FF' : activity.category === 'accommodation' ? '#EFF6FF' : 'white'
+      }}
+      className="border-l-4 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow mb-3"
     >
       <div className="flex items-start gap-3">
         <div
@@ -818,7 +822,7 @@ function PlannerPage() {
   };
 
   const handleEditActivity = (activity) => {
-    console.log('Edit activity:', activity);
+    setNotesActivity(activity);
   };
 
   const handleSaveNotes = async (activityId, notes) => {

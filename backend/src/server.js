@@ -319,34 +319,77 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
     'packed': 4
   };
 
-  // Limit activities for longer trips to avoid token limits
-  const dailyActivities = Math.min(activitiesPerDay[travelPace] || 3, tripLength > 5 ? 2 : 3);
-  const limitedTripLength = Math.min(tripLength, 7); // Cap at 7 days for API response
+  // Scale activities based on trip length to stay within token limits
+  const baseDaily = activitiesPerDay[travelPace] || 3;
+  const dailyActivities = tripLength > 14 ? Math.min(baseDaily, 2) :
+                           tripLength > 7 ? Math.min(baseDaily, 3) :
+                           baseDaily;
+  const limitedTripLength = Math.min(tripLength, 21); // Cap at 21 days for API response
 
   const totalActivities = dailyActivities * limitedTripLength;
 
-  // Valid categories that match database constraint
-  const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'other'];
+  // Valid categories that match database constraint (including transport & accommodation)
+  const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
 
-  const prompt = `Create a ${limitedTripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
+  // Detect multi-destination trips
+  const isMultiDest = destination.includes(',');
+  const destinations = isMultiDest
+    ? destination.split(',').map(d => d.trim()).filter(Boolean)
+    : [destination];
+
+  let prompt;
+  if (isMultiDest) {
+    const daysPerDest = Math.max(1, Math.floor(limitedTripLength / destinations.length));
+    prompt = `Create a ${limitedTripLength}-day multi-destination trip visiting: ${destinations.join(' → ')}.
+Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
+
+MULTI-DESTINATION RULES:
+- Sequence destinations in a geographically logical order to minimize backtracking.
+- Allocate approximately ${daysPerDest} days per destination (${limitedTripLength} days total).
+- Include TRANSPORT activities (category: "transport") for travel between destinations:
+  * Title should include mode of transport (e.g. "Flight from Tokyo to Kyoto", "Train to Osaka")
+  * Set duration_minutes to estimated travel time
+  * Place transport as the first activity on the day of travel to the new destination
+- Include at least one ACCOMMODATION activity (category: "accommodation") at each destination with hotel/hostel name.
+- EVERY day from 1 to ${limitedTripLength} MUST have at least ${dailyActivities} activities. No empty days.
 
 IMPORTANT:
 - Generate EXACTLY ${totalActivities} activities total (${dailyActivities} per day for ${limitedTripLength} days).
 - Category MUST be one of: ${validCategories.join(', ')}
+- time_of_day MUST be one of: morning, afternoon, evening
+- Use real coordinates for each location.
 
 Return JSON:
-{"summary":"1 sentence overview","activities":[${Array.from({length: limitedTripLength}, (_, day) =>
-  `{"day_number":${day+1},"position":0,"title":"...","description":"20 words max","location":"Place","category":"food|nature|culture|adventure|relaxation|shopping|nightlife|other","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}`
-).join(',')}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
+{"summary":"1 sentence overview","activities":[{"day_number":1,"position":0,"title":"...","description":"20 words max","location":"Place","category":"one of valid categories","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
 
-Fill in real activities for days 1-${limitedTripLength}. Use real ${destination} coordinates. Keep descriptions under 20 words.`;
+Fill in real activities for ALL days 1-${limitedTripLength}. Keep descriptions under 20 words.`;
+  } else {
+    prompt = `Create a ${limitedTripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
+
+IMPORTANT:
+- Generate EXACTLY ${totalActivities} activities total (${dailyActivities} per day for ${limitedTripLength} days).
+- EVERY day from 1 to ${limitedTripLength} MUST have exactly ${dailyActivities} activities. No empty days.
+- Category MUST be one of: ${validCategories.join(', ')}
+- time_of_day MUST be one of: morning, afternoon, evening
+- For travel between distant locations within the trip, use category "transport".
+- Include accommodation suggestions using category "accommodation".
+- Optimize activity ordering by geographic proximity and logical daily flow.
+
+Return JSON:
+{"summary":"1 sentence overview","activities":[{"day_number":1,"position":0,"title":"...","description":"20 words max","location":"Place","category":"one of valid categories","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
+
+Fill in real activities for ALL days 1-${limitedTripLength}. Use real ${destination} coordinates. Keep descriptions under 20 words.`;
+  }
+
+  // Scale max_tokens based on trip length
+  const maxTokens = Math.min(16000, 2000 + (totalActivities * 200));
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content: "You are an expert travel planner who creates personalized, detailed itineraries. Always respond with valid JSON. Keep responses concise to avoid truncation."
+        content: "You are an expert travel planner who creates personalized, detailed itineraries. Always respond with valid JSON. You MUST generate activities for every single day requested - never skip days. Keep responses concise to avoid truncation."
       },
       {
         role: "user",
@@ -355,7 +398,7 @@ Fill in real activities for days 1-${limitedTripLength}. Use real ${destination}
     ],
     response_format: { type: "json_object" },
     temperature: 0.7,
-    max_tokens: 8000
+    max_tokens: maxTokens
   });
 
   const content = completion.choices[0].message.content;
@@ -366,6 +409,31 @@ Fill in real activities for days 1-${limitedTripLength}. Use real ${destination}
 
   try {
     const result = JSON.parse(content);
+
+    // Validate all days are covered - fill missing days with placeholders
+    if (result.activities && result.activities.length > 0) {
+      const daysWithActivities = new Set(result.activities.map(a => a.day_number));
+      for (let day = 1; day <= limitedTripLength; day++) {
+        if (!daysWithActivities.has(day)) {
+          console.warn(`Day ${day} has no activities, adding placeholder`);
+          result.activities.push({
+            day_number: day,
+            position: 0,
+            title: `Explore ${destinations[Math.min(Math.floor((day - 1) / Math.max(1, Math.floor(limitedTripLength / destinations.length))), destinations.length - 1)]}`,
+            description: 'Free time to explore at your own pace',
+            location: destinations[0],
+            category: 'other',
+            duration_minutes: 240,
+            estimated_cost_min: 0,
+            estimated_cost_max: 50,
+            time_of_day: 'morning',
+            latitude: 0.0,
+            longitude: 0.0
+          });
+        }
+      }
+    }
+
     return result;
   } catch (parseError) {
     console.error('Failed to parse OpenAI response:', content);
@@ -384,7 +452,7 @@ async function generateOpenAIChat(message, conversationHistory, itineraryContext
   const wantsRecommendations = lowerMessage.match(/recommend|suggest|best|top|where|what|should|can you|find|show|give|tell me about|looking for|want to|places|things to do|restaurant|hotel|tour|experience|activity|activities/);
 
   // Valid categories for activities
-  const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'other'];
+  const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
 
   // Build the system prompt based on what the user wants
   let systemPrompt;

@@ -456,6 +456,16 @@ function CreateItineraryPage() {
                   ))}
                 </div>
               )}
+
+              {/* Custom destination confirmation */}
+              {!isMultiDestination && formData.destination.trim().length > 1 && !showSuggestions &&
+                !POPULAR_DESTINATIONS.some(d => d.name.toLowerCase() === formData.destination.toLowerCase()) &&
+                formData.destination !== 'Undecided' && (
+                <p className="text-sm text-green-600 mt-2 flex items-center justify-center gap-1">
+                  <Check size={14} />
+                  Custom destination accepted — we'll plan your trip!
+                </p>
+              )}
             </div>
 
             {/* Undecided Region Selection Modal */}
