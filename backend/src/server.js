@@ -259,18 +259,42 @@ async function pickDestinationForUser({ tripLength, travelPace, budget, traveler
     'packed': 'action-packed destinations for adventure seekers'
   };
 
-  const regionConstraint = region ? `\nIMPORTANT: The destination MUST be in the ${region.replace(/-/g, ' ')} region.` : '';
+  const regionConstraint = region ? `\nIMPORTANT: The destination(s) MUST be in the ${region.replace(/-/g, ' ')} region.` : '';
 
   const regionExamples = {
     'europe': 'Europe (e.g., Paris, Rome, Barcelona, Prague, Lisbon, Athens, Amsterdam)',
     'north-america': 'North America (e.g., New York, Mexico City, Vancouver, San Francisco, Montreal)',
     'south-america': 'South America (e.g., Buenos Aires, Rio de Janeiro, Lima, Bogota, Santiago)',
     'south-east-asia': 'South & East Asia (e.g., Tokyo, Bangkok, Bali, Seoul, Singapore, Kyoto)',
-    'central-asia': 'Central Asia & Middle East (e.g., Istanbul, Dubai, Marrakech, Jaipur, Tbilisi)',
+    'north-central-asia': 'North & Central Asia (e.g., Istanbul, Dubai, Marrakech, Jaipur, Tbilisi)',
+    'central-asia': 'North & Central Asia (e.g., Istanbul, Dubai, Marrakech, Jaipur, Tbilisi)',
+    'africa': 'Africa (e.g., Cape Town, Marrakech, Nairobi, Cairo, Zanzibar, Accra)',
     'oceania': 'Oceania (e.g., Sydney, Auckland, Melbourne, Queenstown, Fiji)'
   };
 
-  const prompt = `Based on these travel preferences, suggest ONE perfect destination (city and country):
+  // For longer trips (8+ days), suggest multiple destinations
+  const isMultiCity = tripLength >= 8;
+  const numCities = isMultiCity ? Math.min(Math.floor(tripLength / 3), 4) : 1;
+
+  let prompt;
+  if (isMultiCity) {
+    prompt = `Based on these travel preferences, suggest ${numCities} destinations for a ${tripLength}-day multi-city trip:
+
+Travel Style: ${travelerProfiles.join(', ')}
+Budget: ${budgetDescriptions[budget] || budget}
+Pace: ${paceDescriptions[travelPace] || travelPace}
+Trip Length: ${tripLength} days
+${region ? `Region: ${regionExamples[region] || region}` : ''}
+${regionConstraint}
+
+RULES:
+- Pick ${numCities} cities that are geographically close enough to travel between reasonably
+- Cities should complement each other (don't pick 3 beach towns)
+- Order them in a logical travel sequence
+
+Return ONLY the destinations separated by commas in format "City1, City2, City3" (e.g., "Tokyo, Kyoto, Osaka" or "Paris, Barcelona, Rome"). No country names, no other text.`;
+  } else {
+    prompt = `Based on these travel preferences, suggest ONE perfect destination (city and country):
 
 Travel Style: ${travelerProfiles.join(', ')}
 Budget: ${budgetDescriptions[budget] || budget}
@@ -287,21 +311,24 @@ Consider:
 - Nature enthusiasts love Norway, New Zealand, Patagonia
 
 Return ONLY the destination in format "City, Country" (e.g., "Tokyo, Japan"). No other text.`;
+  }
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content: "You are a travel expert. Respond with ONLY the destination name in 'City, Country' format. Nothing else."
+        content: isMultiCity
+          ? "You are a travel expert. Respond with ONLY the destination names separated by commas. Nothing else."
+          : "You are a travel expert. Respond with ONLY the destination name in 'City, Country' format. Nothing else."
       },
       {
         role: "user",
         content: prompt
       }
     ],
-    temperature: 0.9, // Higher temperature for variety
-    max_tokens: 50
+    temperature: 0.9,
+    max_tokens: 100
   });
 
   const destination = completion.choices[0].message.content.trim();

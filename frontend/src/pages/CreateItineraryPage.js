@@ -61,8 +61,9 @@ const REGIONS = [
   { id: 'europe', name: 'Europe', emoji: '🏰', description: 'France, Italy, Spain, Greece...' },
   { id: 'north-america', name: 'North America', emoji: '🗽', description: 'USA, Canada, Mexico...' },
   { id: 'south-america', name: 'South America', emoji: '🌎', description: 'Brazil, Argentina, Peru...' },
+  { id: 'africa', name: 'Africa', emoji: '🌍', description: 'Morocco, South Africa, Kenya...' },
   { id: 'south-east-asia', name: 'South & East Asia', emoji: '🏯', description: 'Japan, Thailand, Bali...' },
-  { id: 'central-asia', name: 'Central Asia', emoji: '🐪', description: 'Turkey, UAE, India...' },
+  { id: 'north-central-asia', name: 'North & Central Asia', emoji: '🐪', description: 'Turkey, UAE, India...' },
   { id: 'oceania', name: 'Oceania', emoji: '🏄', description: 'Australia, New Zealand, Fiji...' },
 ];
 
@@ -412,9 +413,13 @@ function CreateItineraryPage() {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && isMultiDestination && destinationInput.trim()) {
+                    if (e.key === 'Enter') {
                       e.preventDefault();
-                      handleAddCustomDestination();
+                      if (isMultiDestination && destinationInput.trim()) {
+                        handleAddCustomDestination();
+                      } else {
+                        setShowSuggestions(false);
+                      }
                     }
                   }}
                   placeholder={isMultiDestination ? 'Add another destination...' : 'Search destination...'}
@@ -454,6 +459,18 @@ function CreateItineraryPage() {
                       )}
                     </button>
                   ))}
+                  {/* Show hint when no matches found but user typed something */}
+                  {filteredDestinations.length === 0 && (isMultiDestination ? destinationInput : formData.destination).trim().length > 1 && (
+                    <div className="px-4 py-3 text-sm">
+                      <p className="text-green-600 flex items-center gap-1.5">
+                        <Check size={14} />
+                        <span className="font-medium">"{(isMultiDestination ? destinationInput : formData.destination).trim()}"</span> — custom destination accepted!
+                      </p>
+                      <p className="text-neutral-400 text-xs mt-1">
+                        {isMultiDestination ? 'Press Enter to add it' : 'Click Continue to proceed'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

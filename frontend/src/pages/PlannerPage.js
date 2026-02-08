@@ -525,12 +525,13 @@ function PlannerPage() {
             setItinerary(updatedItinerary);
           }
         }
-      }, 2000);
+      }, 3000);
 
+      // Longer timeout for cold-start backends + longer trips
       const timeout = setTimeout(() => {
         clearInterval(pollInterval);
         setGeneratingActivities(false);
-      }, 60000);
+      }, 120000);
 
       return () => {
         clearInterval(pollInterval);
@@ -1050,9 +1051,47 @@ function PlannerPage() {
 
                 {/* Generating indicator */}
                 {generatingActivities && (
-                  <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 flex items-center gap-3">
+                  <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center gap-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500"></div>
-                    <p className="text-sm text-primary-700">Generating your personalized itinerary...</p>
+                    <div>
+                      <p className="text-sm font-medium text-primary-700">Generating your personalized itinerary...</p>
+                      <p className="text-xs text-primary-500 mt-1">
+                        {itinerary?.destination === 'Undecided'
+                          ? 'AI is picking the perfect destination and creating activities. This may take up to 2 minutes on first request.'
+                          : 'Creating activities and planning your trip. This may take up to 2 minutes on first request.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {/* Retry button when generation timed out */}
+                {!generatingActivities && activities.length === 0 && !loading && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                    <p className="text-sm text-amber-800 mb-3">No activities found. The server may still be generating your itinerary.</p>
+                    <button
+                      onClick={() => {
+                        setGeneratingActivities(true);
+                        const pollRetry = setInterval(async () => {
+                          const { data } = await supabase
+                            .from('activities')
+                            .select('*')
+                            .eq('itinerary_id', id)
+                            .order('day_number', { ascending: true })
+                            .order('position', { ascending: true });
+                          if (data && data.length > 0) {
+                            setActivities(data);
+                            setGeneratingActivities(false);
+                            clearInterval(pollRetry);
+                            // Refetch itinerary for updated destination
+                            const { data: updated } = await supabase.from('itineraries').select('*').eq('id', id).single();
+                            if (updated) setItinerary(updated);
+                          }
+                        }, 3000);
+                        setTimeout(() => { clearInterval(pollRetry); setGeneratingActivities(false); }, 120000);
+                      }}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+                    >
+                      Check Again
+                    </button>
                   </div>
                 )}
               </div>
