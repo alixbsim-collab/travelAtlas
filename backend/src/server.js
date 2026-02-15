@@ -142,22 +142,39 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
       // Valid categories for database constraint
       const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
 
-      const activitiesToInsert = generatedItinerary.activities.map((activity, index) => ({
-        itinerary_id: itineraryId,
-        day_number: activity.day_number,
-        position: index,
-        title: activity.title,
-        description: activity.description,
-        location: activity.location,
-        // Validate category - default to 'other' if invalid
-        category: validCategories.includes(activity.category) ? activity.category : 'other',
-        duration_minutes: activity.duration_minutes,
-        estimated_cost_min: activity.estimated_cost_min,
-        estimated_cost_max: activity.estimated_cost_max,
-        latitude: activity.latitude,
-        longitude: activity.longitude,
-        time_of_day: activity.time_of_day
-      }));
+      const validTimesOfDay = ['morning', 'afternoon', 'evening', 'night', 'all-day'];
+
+      const activitiesToInsert = generatedItinerary.activities.map((activity, index) => {
+        // Sanitize duration_minutes: must be > 0
+        let duration = parseInt(activity.duration_minutes) || 60;
+        if (duration <= 0) duration = 60;
+
+        // Sanitize time_of_day: must be a valid enum value
+        const timeOfDay = validTimesOfDay.includes(activity.time_of_day)
+          ? activity.time_of_day
+          : 'morning';
+
+        // Sanitize costs: ensure max >= min, both >= 0
+        const costMin = Math.max(0, parseFloat(activity.estimated_cost_min) || 0);
+        let costMax = Math.max(0, parseFloat(activity.estimated_cost_max) || 0);
+        if (costMax < costMin) costMax = costMin;
+
+        return {
+          itinerary_id: itineraryId,
+          day_number: activity.day_number || 1,
+          position: index,
+          title: activity.title || 'Untitled Activity',
+          description: activity.description || '',
+          location: activity.location || '',
+          category: validCategories.includes(activity.category) ? activity.category : 'other',
+          duration_minutes: duration,
+          estimated_cost_min: costMin,
+          estimated_cost_max: costMax,
+          latitude: activity.latitude || null,
+          longitude: activity.longitude || null,
+          time_of_day: timeOfDay
+        };
+      });
 
       const { error: activitiesError } = await supabase
         .from('activities')
