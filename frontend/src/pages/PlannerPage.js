@@ -632,8 +632,7 @@ function PlannerPage() {
         estimated_cost_max: costMax !== null && costMin !== null && costMax >= costMin ? costMax : costMin,
         latitude: activity.latitude && parseFloat(activity.latitude) !== 0 ? parseFloat(activity.latitude) : null,
         longitude: activity.longitude && parseFloat(activity.longitude) !== 0 ? parseFloat(activity.longitude) : null,
-        time_of_day: validTimeOfDay.includes(activity.time_of_day) ? activity.time_of_day : null,
-        city_name: activity.city_name || null
+        time_of_day: validTimeOfDay.includes(activity.time_of_day) ? activity.time_of_day : null
       };
     };
 
@@ -707,8 +706,7 @@ function PlannerPage() {
       estimated_cost_max: costMax !== null && costMin !== null && costMax >= costMin ? costMax : costMin,
       latitude: activityData.latitude && parseFloat(activityData.latitude) !== 0 ? parseFloat(activityData.latitude) : null,
       longitude: activityData.longitude && parseFloat(activityData.longitude) !== 0 ? parseFloat(activityData.longitude) : null,
-      time_of_day: validTimeOfDay.includes(activityData.time_of_day) ? activityData.time_of_day : null,
-      city_name: activityData.city_name || null
+      time_of_day: validTimeOfDay.includes(activityData.time_of_day) ? activityData.time_of_day : null
     };
 
     try {
