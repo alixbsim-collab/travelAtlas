@@ -1019,11 +1019,11 @@ function PlannerPage() {
       {/* Split Screen Layout - Resizable Panels */}
       <div className="flex-1 overflow-hidden">
         <div className="w-full max-w-[1800px] mx-auto h-full p-6">
-          <PanelGroup direction="horizontal" autoSaveId="planner-layout">
+          <PanelGroup orientation="horizontal" id="planner-layout">
           {/* Left: AI Assistant */}
           {showAssistant && (
             <>
-              <Panel defaultSize={40} minSize={25} maxSize={65} id="ai-panel" order={1}>
+              <Panel defaultSize="40%" minSize="20%" maxSize="65%" id="ai-panel">
                 <div className="h-full flex flex-col min-w-0">
                   <AIAssistant
                     itinerary={itinerary}
@@ -1032,14 +1032,14 @@ function PlannerPage() {
                   />
                 </div>
               </Panel>
-              <PanelResizeHandle className="w-2 mx-1 flex items-center justify-center group hover:bg-primary-100 rounded transition-colors cursor-col-resize">
-                <div className="w-1 h-8 bg-neutral-300 group-hover:bg-primary-400 rounded-full transition-colors" />
+              <PanelResizeHandle className="w-3 flex items-center justify-center hover:bg-primary-100 rounded transition-colors">
+                <div className="w-1 h-8 bg-neutral-300 hover:bg-primary-400 rounded-full transition-colors" />
               </PanelResizeHandle>
             </>
           )}
 
           {/* Right: Unified Panel with 3 views */}
-          <Panel defaultSize={showAssistant ? 60 : 100} minSize={35} id="itinerary-panel" order={2}>
+          <Panel defaultSize={showAssistant ? "60%" : "100%"} minSize="35%" id="itinerary-panel">
           <div className="h-full flex flex-col min-w-0">
             <div className="flex flex-col h-full bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Header with view buttons */}

@@ -249,23 +249,44 @@ function CreateItineraryPage() {
         return;
       }
 
-      const { data: itinerary, error } = await supabase
+      // Build insert object (trip_origin and travel_mode require DB migration)
+      const insertData = {
+        user_id: user.id,
+        title: `${formData.destination} - ${formData.tripLength} days`,
+        destination: formData.destination,
+        trip_length: formData.tripLength,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+        travel_pace: formData.travelPace,
+        budget: formData.budget,
+        traveler_profiles: formData.travelerProfiles,
+      };
+
+      // Try with new columns first, fall back without them
+      let itinerary, error;
+      const resultWithCols = await supabase
         .from('itineraries')
         .insert({
-          user_id: user.id,
-          title: `${formData.destination} - ${formData.tripLength} days`,
-          destination: formData.destination,
-          trip_length: formData.tripLength,
-          start_date: formData.startDate,
-          end_date: formData.endDate,
-          travel_pace: formData.travelPace,
-          budget: formData.budget,
-          traveler_profiles: formData.travelerProfiles,
+          ...insertData,
           trip_origin: formData.tripOrigin || null,
           travel_mode: formData.travelMode || null
         })
         .select()
         .single();
+
+      if (resultWithCols.error) {
+        // Columns may not exist yet — retry without them
+        const resultWithout = await supabase
+          .from('itineraries')
+          .insert(insertData)
+          .select()
+          .single();
+        itinerary = resultWithout.data;
+        error = resultWithout.error;
+      } else {
+        itinerary = resultWithCols.data;
+        error = resultWithCols.error;
+      }
 
       if (error) throw error;
 
