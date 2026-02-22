@@ -146,7 +146,7 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
 
       const validTimesOfDay = ['morning', 'afternoon', 'evening', 'night', 'all-day'];
 
-      const activitiesToInsert = generatedItinerary.activities.map((activity, index) => {
+      const buildActivityRow = (activity, index, includeCityName) => {
         // Sanitize duration_minutes: must be > 0
         let duration = parseInt(activity.duration_minutes) || 60;
         if (duration <= 0) duration = 60;
@@ -161,7 +161,7 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
         let costMax = Math.max(0, parseFloat(activity.estimated_cost_max) || 0);
         if (costMax < costMin) costMax = costMin;
 
-        return {
+        const row = {
           itinerary_id: itineraryId,
           day_number: activity.day_number || 1,
           position: index,
@@ -175,16 +175,31 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
           latitude: activity.latitude || null,
           longitude: activity.longitude || null,
           time_of_day: timeOfDay,
-          city_name: activity.city_name || null
         };
-      });
+        if (includeCityName) {
+          row.city_name = activity.city_name || null;
+        }
+        return row;
+      };
 
-      const { error: activitiesError } = await supabase
+      // Try with city_name first, fall back without it if column doesn't exist
+      let activitiesToInsert = generatedItinerary.activities.map((a, i) => buildActivityRow(a, i, true));
+      let { error: activitiesError } = await supabase
         .from('activities')
         .insert(activitiesToInsert);
 
       if (activitiesError) {
-        console.error('Error inserting activities:', activitiesError);
+        console.error('Error inserting activities (with city_name):', activitiesError.message);
+        // Retry without city_name in case the column doesn't exist yet
+        activitiesToInsert = generatedItinerary.activities.map((a, i) => buildActivityRow(a, i, false));
+        const retryResult = await supabase
+          .from('activities')
+          .insert(activitiesToInsert);
+        if (retryResult.error) {
+          console.error('Error inserting activities (retry):', retryResult.error);
+        } else {
+          console.log('Activities inserted successfully (without city_name)');
+        }
       } else {
         console.log('Activities inserted successfully');
       }
