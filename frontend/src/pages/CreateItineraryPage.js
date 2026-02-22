@@ -3,58 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { TRAVELER_PROFILES, TRAVEL_PACE_OPTIONS, BUDGET_OPTIONS } from '../constants/travelerProfiles';
-import { MapPin, Calendar, Users, DollarSign, Gauge, Sparkles, ArrowRight, ArrowLeft, Check, Search, X, Globe, BookOpen } from 'lucide-react';
+import { DESTINATIONS } from '../constants/destinations';
+import { MapPin, Calendar, Users, DollarSign, Gauge, Sparkles, ArrowRight, ArrowLeft, Check, Search, X, Globe, BookOpen, Plane, Train, Car, Shuffle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-
-// Popular destinations for autocomplete suggestions (cities + countries)
-const POPULAR_DESTINATIONS = [
-  { name: 'Tokyo, Japan', country: 'Japan', type: 'city' },
-  { name: 'Paris, France', country: 'France', type: 'city' },
-  { name: 'New York, USA', country: 'USA', type: 'city' },
-  { name: 'London, UK', country: 'UK', type: 'city' },
-  { name: 'Rome, Italy', country: 'Italy', type: 'city' },
-  { name: 'Barcelona, Spain', country: 'Spain', type: 'city' },
-  { name: 'Dubai, UAE', country: 'UAE', type: 'city' },
-  { name: 'Bali, Indonesia', country: 'Indonesia', type: 'city' },
-  { name: 'Sydney, Australia', country: 'Australia', type: 'city' },
-  { name: 'Bangkok, Thailand', country: 'Thailand', type: 'city' },
-  { name: 'Amsterdam, Netherlands', country: 'Netherlands', type: 'city' },
-  { name: 'Singapore', country: 'Singapore', type: 'city' },
-  { name: 'Lisbon, Portugal', country: 'Portugal', type: 'city' },
-  { name: 'Istanbul, Turkey', country: 'Turkey', type: 'city' },
-  { name: 'Prague, Czech Republic', country: 'Czech Republic', type: 'city' },
-  { name: 'Vienna, Austria', country: 'Austria', type: 'city' },
-  { name: 'Berlin, Germany', country: 'Germany', type: 'city' },
-  { name: 'Athens, Greece', country: 'Greece', type: 'city' },
-  { name: 'Marrakech, Morocco', country: 'Morocco', type: 'city' },
-  { name: 'Cape Town, South Africa', country: 'South Africa', type: 'city' },
-  { name: 'Reykjavik, Iceland', country: 'Iceland', type: 'city' },
-  { name: 'Buenos Aires, Argentina', country: 'Argentina', type: 'city' },
-  { name: 'Mexico City, Mexico', country: 'Mexico', type: 'city' },
-  { name: 'Kyoto, Japan', country: 'Japan', type: 'city' },
-  { name: 'Florence, Italy', country: 'Italy', type: 'city' },
-  { name: 'Santorini, Greece', country: 'Greece', type: 'city' },
-  { name: 'Machu Picchu, Peru', country: 'Peru', type: 'city' },
-  { name: 'Cairo, Egypt', country: 'Egypt', type: 'city' },
-  { name: 'Seoul, South Korea', country: 'South Korea', type: 'city' },
-  { name: 'Hong Kong', country: 'China', type: 'city' },
-  // Countries
-  { name: 'Japan', country: 'Japan', type: 'country' },
-  { name: 'Italy', country: 'Italy', type: 'country' },
-  { name: 'France', country: 'France', type: 'country' },
-  { name: 'Spain', country: 'Spain', type: 'country' },
-  { name: 'Greece', country: 'Greece', type: 'country' },
-  { name: 'Thailand', country: 'Thailand', type: 'country' },
-  { name: 'Portugal', country: 'Portugal', type: 'country' },
-  { name: 'Australia', country: 'Australia', type: 'country' },
-  { name: 'Mexico', country: 'Mexico', type: 'country' },
-  { name: 'Morocco', country: 'Morocco', type: 'country' },
-  { name: 'Peru', country: 'Peru', type: 'country' },
-  { name: 'Indonesia', country: 'Indonesia', type: 'country' },
-  { name: 'South Korea', country: 'South Korea', type: 'country' },
-  { name: 'Turkey', country: 'Turkey', type: 'country' },
-];
 
 // Regions for "Undecided" flow
 const REGIONS = [
@@ -67,13 +19,21 @@ const REGIONS = [
   { id: 'oceania', name: 'Oceania', emoji: '🏄', description: 'Australia, New Zealand, Fiji...' },
 ];
 
+const TRAVEL_MODE_OPTIONS = [
+  { value: 'flight', label: 'Flight', emoji: '✈️', icon: Plane, description: 'Flying to your destination' },
+  { value: 'train', label: 'Train', emoji: '🚄', icon: Train, description: 'Rail travel' },
+  { value: 'car', label: 'Car / Road Trip', emoji: '🚗', icon: Car, description: 'Driving adventure' },
+  { value: 'mixed', label: 'Mixed', emoji: '🧭', icon: Shuffle, description: 'Combination of transport' },
+];
+
 const STEPS = [
   { id: 1, title: 'Destination', icon: MapPin },
-  { id: 2, title: 'Dates', icon: Calendar },
-  { id: 3, title: 'Pace', icon: Gauge },
-  { id: 4, title: 'Profile', icon: Users },
-  { id: 5, title: 'Budget', icon: DollarSign },
-  { id: 6, title: 'Generate', icon: Sparkles },
+  { id: 2, title: 'Travel From', icon: Plane },
+  { id: 3, title: 'Dates', icon: Calendar },
+  { id: 4, title: 'Pace', icon: Gauge },
+  { id: 5, title: 'Profile', icon: Users },
+  { id: 6, title: 'Budget', icon: DollarSign },
+  { id: 7, title: 'Generate', icon: Sparkles },
 ];
 
 function CreateItineraryPage() {
@@ -88,6 +48,10 @@ function CreateItineraryPage() {
   const [destinationInput, setDestinationInput] = useState(''); // Current input for multi-dest
   const [showUndecidedModal, setShowUndecidedModal] = useState(false);
   const destinationRef = useRef(null);
+  // Origin autocomplete state
+  const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
+  const [filteredOrigins, setFilteredOrigins] = useState([]);
+  const originRef = useRef(null);
 
   // Check for prefilled destination from navigation state
   const prefillDestination = location.state?.prefillDestination || '';
@@ -95,6 +59,8 @@ function CreateItineraryPage() {
   const [formData, setFormData] = useState({
     destination: prefillDestination,
     region: '', // For Undecided flow
+    tripOrigin: '',
+    travelMode: '',
     tripLength: 7,
     startDate: null,
     endDate: null,
@@ -117,6 +83,9 @@ function CreateItineraryPage() {
       if (destinationRef.current && !destinationRef.current.contains(event.target)) {
         setShowSuggestions(false);
       }
+      if (originRef.current && !originRef.current.contains(event.target)) {
+        setShowOriginSuggestions(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -126,16 +95,51 @@ function CreateItineraryPage() {
   useEffect(() => {
     const searchTerm = isMultiDestination ? destinationInput : formData.destination;
     if (searchTerm.length > 0) {
-      const filtered = POPULAR_DESTINATIONS.filter(dest =>
-        dest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        dest.country.toLowerCase().includes(searchTerm.toLowerCase())
-      ).filter(dest => !destinations.includes(dest.name)) // Exclude already added
-      .slice(0, 6);
+      const lower = searchTerm.toLowerCase();
+      const filtered = DESTINATIONS
+        .filter(dest =>
+          dest.name.toLowerCase().includes(lower) ||
+          dest.country.toLowerCase().includes(lower)
+        )
+        .filter(dest => !destinations.includes(dest.name))
+        .sort((a, b) => {
+          // Prefix matches first
+          const aPrefix = a.name.toLowerCase().startsWith(lower) ? 0 : 1;
+          const bPrefix = b.name.toLowerCase().startsWith(lower) ? 0 : 1;
+          if (aPrefix !== bPrefix) return aPrefix - bPrefix;
+          // Cities before countries
+          if (a.type !== b.type) return a.type === 'city' ? -1 : 1;
+          return 0;
+        })
+        .slice(0, 8);
       setFilteredDestinations(filtered);
     } else {
-      setFilteredDestinations(POPULAR_DESTINATIONS.filter(dest => !destinations.includes(dest.name)).slice(0, 6));
+      setFilteredDestinations(DESTINATIONS.filter(dest => dest.type === 'city' && !destinations.includes(dest.name)).slice(0, 8));
     }
   }, [formData.destination, destinationInput, destinations, isMultiDestination]);
+
+  // Filter origins based on input
+  useEffect(() => {
+    if (formData.tripOrigin.length > 0) {
+      const lower = formData.tripOrigin.toLowerCase();
+      const filtered = DESTINATIONS
+        .filter(dest =>
+          dest.name.toLowerCase().includes(lower) ||
+          dest.country.toLowerCase().includes(lower)
+        )
+        .sort((a, b) => {
+          const aPrefix = a.name.toLowerCase().startsWith(lower) ? 0 : 1;
+          const bPrefix = b.name.toLowerCase().startsWith(lower) ? 0 : 1;
+          if (aPrefix !== bPrefix) return aPrefix - bPrefix;
+          if (a.type !== b.type) return a.type === 'city' ? -1 : 1;
+          return 0;
+        })
+        .slice(0, 6);
+      setFilteredOrigins(filtered);
+    } else {
+      setFilteredOrigins([]);
+    }
+  }, [formData.tripOrigin]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -193,12 +197,14 @@ function CreateItineraryPage() {
         if (isMultiDestination) return destinations.length > 0;
         return formData.destination.trim().length > 0;
       case 2:
-        return formData.tripLength > 0;
+        return formData.tripOrigin.trim().length > 0;
       case 3:
-        return formData.travelPace !== '';
+        return formData.tripLength > 0;
       case 4:
-        return formData.travelerProfiles.length > 0 && formData.travelerProfiles.length <= 4;
+        return formData.travelPace !== '';
       case 5:
+        return formData.travelerProfiles.length > 0 && formData.travelerProfiles.length <= 4;
+      case 6:
         return formData.budget !== '';
       default:
         return true;
@@ -206,7 +212,7 @@ function CreateItineraryPage() {
   };
 
   const handleNext = () => {
-    if (canProceed() && currentStep < 6) {
+    if (canProceed() && currentStep < 7) {
       // Sync multi-dest to formData when leaving step 1
       if (currentStep === 1 && isMultiDestination && destinations.length > 0) {
         setFormData(prev => ({ ...prev, destination: destinations.join(', ') }));
@@ -254,7 +260,9 @@ function CreateItineraryPage() {
           end_date: formData.endDate,
           travel_pace: formData.travelPace,
           budget: formData.budget,
-          traveler_profiles: formData.travelerProfiles
+          traveler_profiles: formData.travelerProfiles,
+          trip_origin: formData.tripOrigin || null,
+          travel_mode: formData.travelMode || null
         })
         .select()
         .single();
@@ -274,7 +282,9 @@ function CreateItineraryPage() {
           travelPace: formData.travelPace,
           budget: formData.budget,
           travelerProfiles: formData.travelerProfiles,
-          region: formData.region || null
+          region: formData.region || null,
+          tripOrigin: formData.tripOrigin || null,
+          travelMode: formData.travelMode || null
         })
       }).catch(err => console.error('Background AI generation error:', err));
 
@@ -303,7 +313,7 @@ function CreateItineraryPage() {
             <React.Fragment key={step.id}>
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${
                     isCompleted
                       ? 'bg-green-500 text-white'
                       : isCurrent
@@ -312,14 +322,14 @@ function CreateItineraryPage() {
                   }`}
                   style={isCurrent ? { backgroundColor: '#F5C846', color: '#1E4D73' } : {}}
                 >
-                  {isCompleted ? <Check size={20} /> : <StepIcon size={20} />}
+                  {isCompleted ? <Check size={18} /> : <StepIcon size={18} />}
                 </div>
                 <span className={`text-xs mt-2 hidden md:block ${isCurrent ? 'font-bold text-neutral-charcoal' : 'text-neutral-400'}`}>
                   {step.title}
                 </span>
               </div>
               {index < STEPS.length - 1 && (
-                <div className={`flex-1 h-1 mx-2 rounded ${isCompleted ? 'bg-green-500' : 'bg-neutral-200'}`} />
+                <div className={`flex-1 h-1 mx-1 md:mx-2 rounded ${isCompleted ? 'bg-green-500' : 'bg-neutral-200'}`} />
               )}
             </React.Fragment>
           );
@@ -476,7 +486,7 @@ function CreateItineraryPage() {
 
               {/* Custom destination confirmation */}
               {!isMultiDestination && formData.destination.trim().length > 1 && !showSuggestions &&
-                !POPULAR_DESTINATIONS.some(d => d.name.toLowerCase() === formData.destination.toLowerCase()) &&
+                !DESTINATIONS.some(d => d.name.toLowerCase() === formData.destination.toLowerCase()) &&
                 formData.destination !== 'Undecided' && (
                 <p className="text-sm text-green-600 mt-2 flex items-center justify-center gap-1">
                   <Check size={14} />
@@ -527,6 +537,101 @@ function CreateItineraryPage() {
         );
 
       case 2:
+        return (
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DBEAFE' }}>
+              <Plane size={40} style={{ color: '#2D6A9F' }} />
+            </div>
+            <h2 className="text-3xl font-heading font-bold text-neutral-charcoal mb-3">
+              Where are you traveling from?
+            </h2>
+            <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
+              This helps us plan transport, arrival logistics, and your first-day schedule.
+            </p>
+
+            {/* Origin input with autocomplete */}
+            <div className="max-w-lg mx-auto relative mb-8" ref={originRef}>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                <input
+                  type="text"
+                  value={formData.tripOrigin}
+                  onChange={(e) => handleInputChange('tripOrigin', e.target.value)}
+                  onFocus={() => setShowOriginSuggestions(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setShowOriginSuggestions(false);
+                    }
+                  }}
+                  placeholder="Your home city..."
+                  className="w-full pl-12 pr-4 py-4 text-lg border-2 border-neutral-200 rounded-xl focus:outline-none focus:border-primary-500 transition-colors"
+                  autoFocus
+                />
+              </div>
+
+              {showOriginSuggestions && filteredOrigins.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-neutral-100 overflow-hidden z-50 max-h-[250px] overflow-y-auto">
+                  {filteredOrigins.map((dest, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        handleInputChange('tripOrigin', dest.name);
+                        setShowOriginSuggestions(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors flex items-center gap-3"
+                    >
+                      {dest.type === 'country' ? (
+                        <Globe size={18} className="text-neutral-400" />
+                      ) : (
+                        <MapPin size={18} className="text-neutral-400" />
+                      )}
+                      <span>{dest.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Custom origin confirmation */}
+              {formData.tripOrigin.trim().length > 1 && !showOriginSuggestions &&
+                !DESTINATIONS.some(d => d.name.toLowerCase() === formData.tripOrigin.toLowerCase()) && (
+                <p className="text-sm text-green-600 mt-2 flex items-center justify-center gap-1">
+                  <Check size={14} />
+                  Custom origin accepted
+                </p>
+              )}
+            </div>
+
+            {/* Travel mode selection */}
+            <h3 className="text-lg font-heading font-bold text-neutral-charcoal mb-4">
+              How do you want to get there?
+            </h3>
+            <p className="text-neutral-warm-gray mb-6 text-sm">Optional — helps us plan transport segments</p>
+
+            <div className="max-w-2xl mx-auto grid grid-cols-4 gap-3">
+              {TRAVEL_MODE_OPTIONS.map((option) => {
+                const OptionIcon = option.icon;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleInputChange('travelMode', formData.travelMode === option.value ? '' : option.value)}
+                    className={`p-4 rounded-xl border-2 transition-all text-center ${
+                      formData.travelMode === option.value
+                        ? 'border-primary-500 bg-primary-50 scale-105'
+                        : 'border-neutral-200 hover:border-primary-300 bg-white'
+                    }`}
+                  >
+                    <div className="text-3xl mb-2">{option.emoji}</div>
+                    <div className="text-sm font-medium">{option.label}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 3:
         return (
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DBEAFE' }}>
@@ -608,7 +713,7 @@ function CreateItineraryPage() {
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
@@ -650,7 +755,7 @@ function CreateItineraryPage() {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DBEAFE' }}>
@@ -704,7 +809,7 @@ function CreateItineraryPage() {
           </div>
         );
 
-      case 5:
+      case 6:
         return (
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
@@ -747,7 +852,7 @@ function CreateItineraryPage() {
           </div>
         );
 
-      case 6:
+      case 7:
         return (
           <div className="text-center">
             <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
@@ -776,6 +881,17 @@ function CreateItineraryPage() {
                     )}
                   </span>
                 </div>
+                {formData.tripOrigin && (
+                  <div className="flex items-center gap-3">
+                    <Plane size={18} className="text-neutral-400" />
+                    <span className="text-neutral-charcoal">From: {formData.tripOrigin}</span>
+                    {formData.travelMode && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-neutral-100 text-neutral-600 capitalize">
+                        {TRAVEL_MODE_OPTIONS.find(o => o.value === formData.travelMode)?.emoji} {formData.travelMode}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center gap-3">
                   <Calendar size={18} className="text-neutral-400" />
                   <span className="text-neutral-charcoal">{formData.tripLength} days {formData.flexibleDates ? '(flexible)' : ''}</span>
@@ -860,7 +976,7 @@ function CreateItineraryPage() {
               Back
             </button>
 
-            {currentStep < 6 && (
+            {currentStep < 7 && (
               <button
                 onClick={handleNext}
                 disabled={!canProceed()}

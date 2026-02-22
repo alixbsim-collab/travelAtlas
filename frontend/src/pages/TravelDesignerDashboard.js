@@ -5,7 +5,7 @@ import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { TRAVELER_PROFILES } from '../constants/travelerProfiles';
-import { PlusCircle, Calendar, MapPin, Copy, Trash2, Edit, X, Check, Image, Upload, Link as LinkIcon, Search } from 'lucide-react';
+import { PlusCircle, Calendar, MapPin, Copy, Trash2, Edit, X, Check, Image, Upload, Link as LinkIcon, Search, FileText } from 'lucide-react';
 
 // Profile Edit Modal Component
 function ProfileEditModal({ itinerary, onClose, onSave }) {
@@ -455,19 +455,29 @@ function TravelDesignerDashboard() {
                 Create a personalized itinerary with our AI-powered travel designer
               </p>
             </div>
-            <Link to="/designer/create">
-              <button
-                className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg"
-                style={{
-                  backgroundColor: '#F5C846',
-                  color: '#1E4D73',
-                  boxShadow: '0 4px 14px rgba(245, 200, 70, 0.4)'
-                }}
-              >
-                <PlusCircle size={22} />
-                Plan
-              </button>
-            </Link>
+            <div className="flex gap-3">
+              <Link to="/designer/create">
+                <button
+                  className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg"
+                  style={{
+                    backgroundColor: '#F5C846',
+                    color: '#1E4D73',
+                    boxShadow: '0 4px 14px rgba(245, 200, 70, 0.4)'
+                  }}
+                >
+                  <PlusCircle size={22} />
+                  Plan
+                </button>
+              </Link>
+              <Link to="/atlas/new">
+                <button
+                  className="flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-white/20 text-white border-2 border-white/40 hover:bg-white/30"
+                >
+                  <FileText size={22} />
+                  Atlas File
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -568,6 +578,16 @@ function TravelDesignerDashboard() {
                         <Button variant="outline" size="sm" className="w-full gap-2">
                           <Edit size={16} />
                           Edit
+                        </Button>
+                      </Link>
+                      <Link to={`/atlas/new?fromItinerary=${itinerary.id}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          title="Convert to Atlas File"
+                        >
+                          <FileText size={16} />
                         </Button>
                       </Link>
                       <Button

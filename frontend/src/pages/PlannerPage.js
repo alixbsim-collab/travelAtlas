@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import AIAssistant from '../components/planner/AIAssistant';
+import SkeletonActivityCard from '../components/planner/SkeletonActivityCard';
 import Button from '../components/ui/Button';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe, X, MessageSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { ACTIVITY_CATEGORIES } from '../constants/travelerProfiles';
 import {
@@ -483,6 +485,7 @@ function PlannerPage() {
   const [dragOverDay, setDragOverDay] = useState(null); // For visual drop feedback
   const [addActivityDay, setAddActivityDay] = useState(null); // For add activity modal
   const [showAssistant, setShowAssistant] = useState(true); // Toggle AI panel
+  const [progressMessage, setProgressMessage] = useState('');
 
   const isGenerating = location.state?.generating;
 
@@ -500,8 +503,27 @@ function PlannerPage() {
   useEffect(() => {
     if (isGenerating && activities.length === 0) {
       setGeneratingActivities(true);
+      let msgIndex = 0;
+
+      const progressMessages = [
+        'Waking up the server...',
+        'Server is warming up...',
+        'Connecting to AI...',
+        `Designing your ${itinerary?.trip_length || ''}-day adventure...`,
+        'Generating activities for your trip...',
+        'Adding local recommendations...',
+        'Finalizing your personalized itinerary...',
+        'Almost there, adding the finishing touches...',
+      ];
+
+      setProgressMessage(progressMessages[0]);
+      const messageInterval = setInterval(() => {
+        msgIndex++;
+        const idx = Math.min(msgIndex, progressMessages.length - 1);
+        setProgressMessage(progressMessages[idx]);
+      }, 5000);
+
       const pollInterval = setInterval(async () => {
-        // Check for activities
         const { data: activitiesData } = await supabase
           .from('activities')
           .select('*')
@@ -512,9 +534,10 @@ function PlannerPage() {
         if (activitiesData && activitiesData.length > 0) {
           setActivities(activitiesData);
           setGeneratingActivities(false);
+          setProgressMessage('');
           clearInterval(pollInterval);
+          clearInterval(messageInterval);
 
-          // Also refetch itinerary to get updated destination (for Undecided picks)
           const { data: updatedItinerary } = await supabase
             .from('itineraries')
             .select('*')
@@ -527,14 +550,16 @@ function PlannerPage() {
         }
       }, 3000);
 
-      // Longer timeout for cold-start backends + longer trips
       const timeout = setTimeout(() => {
         clearInterval(pollInterval);
+        clearInterval(messageInterval);
         setGeneratingActivities(false);
+        setProgressMessage('');
       }, 120000);
 
       return () => {
         clearInterval(pollInterval);
+        clearInterval(messageInterval);
         clearTimeout(timeout);
       };
     }
@@ -607,7 +632,8 @@ function PlannerPage() {
         estimated_cost_max: costMax !== null && costMin !== null && costMax >= costMin ? costMax : costMin,
         latitude: activity.latitude && parseFloat(activity.latitude) !== 0 ? parseFloat(activity.latitude) : null,
         longitude: activity.longitude && parseFloat(activity.longitude) !== 0 ? parseFloat(activity.longitude) : null,
-        time_of_day: validTimeOfDay.includes(activity.time_of_day) ? activity.time_of_day : null
+        time_of_day: validTimeOfDay.includes(activity.time_of_day) ? activity.time_of_day : null,
+        city_name: activity.city_name || null
       };
     };
 
@@ -681,7 +707,8 @@ function PlannerPage() {
       estimated_cost_max: costMax !== null && costMin !== null && costMax >= costMin ? costMax : costMin,
       latitude: activityData.latitude && parseFloat(activityData.latitude) !== 0 ? parseFloat(activityData.latitude) : null,
       longitude: activityData.longitude && parseFloat(activityData.longitude) !== 0 ? parseFloat(activityData.longitude) : null,
-      time_of_day: validTimeOfDay.includes(activityData.time_of_day) ? activityData.time_of_day : null
+      time_of_day: validTimeOfDay.includes(activityData.time_of_day) ? activityData.time_of_day : null,
+      city_name: activityData.city_name || null
     };
 
     try {
@@ -989,22 +1016,31 @@ function PlannerPage() {
         </div>
       </div>
 
-      {/* Split Screen Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-full max-w-[1800px] mx-auto flex gap-6 p-6">
+      {/* Split Screen Layout - Resizable Panels */}
+      <div className="flex-1 overflow-hidden">
+        <div className="w-full max-w-[1800px] mx-auto h-full p-6">
+          <PanelGroup direction="horizontal" autoSaveId="planner-layout">
           {/* Left: AI Assistant */}
           {showAssistant && (
-            <div className="w-1/2 flex flex-col min-w-0">
-              <AIAssistant
-                itinerary={itinerary}
-                onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
-                onLoadItinerary={handleLoadItinerary}
-              />
-            </div>
+            <>
+              <Panel defaultSize={40} minSize={25} maxSize={65} id="ai-panel" order={1}>
+                <div className="h-full flex flex-col min-w-0">
+                  <AIAssistant
+                    itinerary={itinerary}
+                    onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
+                    onLoadItinerary={handleLoadItinerary}
+                  />
+                </div>
+              </Panel>
+              <PanelResizeHandle className="w-2 mx-1 flex items-center justify-center group hover:bg-primary-100 rounded transition-colors cursor-col-resize">
+                <div className="w-1 h-8 bg-neutral-300 group-hover:bg-primary-400 rounded-full transition-colors" />
+              </PanelResizeHandle>
+            </>
           )}
 
           {/* Right: Unified Panel with 3 views */}
-          <div className={`${showAssistant ? 'w-1/2' : 'w-full'} flex flex-col min-w-0`}>
+          <Panel defaultSize={showAssistant ? 60 : 100} minSize={35} id="itinerary-panel" order={2}>
+          <div className="h-full flex flex-col min-w-0">
             <div className="flex flex-col h-full bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Header with view buttons */}
               <div className="p-4 border-b border-neutral-200">
@@ -1054,11 +1090,11 @@ function PlannerPage() {
                   <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center gap-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500"></div>
                     <div>
-                      <p className="text-sm font-medium text-primary-700">Generating your personalized itinerary...</p>
+                      <p className="text-sm font-medium text-primary-700">
+                        {progressMessage || 'Generating your personalized itinerary...'}
+                      </p>
                       <p className="text-xs text-primary-500 mt-1">
-                        {itinerary?.destination === 'Undecided'
-                          ? 'AI is picking the perfect destination and creating activities. This may take up to 2 minutes on first request.'
-                          : 'Creating activities and planning your trip. This may take up to 2 minutes on first request.'}
+                        This may take up to 2 minutes on first request.
                       </p>
                     </div>
                   </div>
@@ -1110,9 +1146,12 @@ function PlannerPage() {
                       {days.map(day => {
                         const dayActivities = activities.filter(a => a.day_number === day);
                         const isDragOver = dragOverDay === day;
+                        const cityName = dayActivities[0]?.city_name || null;
                         const dayLabel = itinerary.start_date
                           ? `${getDateForDay(itinerary.start_date, day)}`
                           : `Day ${day}`;
+                        const dayHeader = cityName ? `${dayLabel} — ${cityName}` : dayLabel;
+                        const skeletonCount = itinerary.travel_pace === 'relaxed' ? 2 : itinerary.travel_pace === 'packed' ? 4 : 3;
                         return (
                           <div
                             key={day}
@@ -1127,7 +1166,7 @@ function PlannerPage() {
                           >
                             <div className="flex items-center justify-between mb-4">
                               <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
-                                {dayLabel}
+                                {dayHeader}
                               </h3>
                               <button
                                 onClick={() => handleAddActivity(day)}
@@ -1145,9 +1184,17 @@ function PlannerPage() {
                             )}
 
                             {dayActivities.length === 0 && !isDragOver ? (
-                              <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center text-neutral-400">
-                                <p className="text-sm">Drop activities here or click "Add Activity"</p>
-                              </div>
+                              generatingActivities ? (
+                                <div>
+                                  {Array.from({ length: skeletonCount }).map((_, i) => (
+                                    <SkeletonActivityCard key={i} />
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center text-neutral-400">
+                                  <p className="text-sm">Drop activities here or click "Add Activity"</p>
+                                </div>
+                              )
                             ) : (
                               <SortableContext
                                 items={dayActivities.map(a => a.id)}
@@ -1214,9 +1261,11 @@ function PlannerPage() {
                       </button>
                       {days.map(day => {
                         const count = activitiesWithCoords.filter(a => a.day_number === day).length;
+                        const dayCity = activities.find(a => a.day_number === day)?.city_name;
                         const dateLabel = itinerary.start_date
                           ? getDateForDay(itinerary.start_date, day)
                           : `Day ${day}`;
+                        const buttonLabel = dayCity ? `${dateLabel} — ${dayCity}` : dateLabel;
                         return (
                           <button
                             key={day}
@@ -1227,7 +1276,7 @@ function PlannerPage() {
                                 : 'bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
                             }`}
                           >
-                            {dateLabel} ({count})
+                            {buttonLabel} ({count})
                           </button>
                         );
                       })}
@@ -1436,6 +1485,8 @@ function PlannerPage() {
               </div>
             </div>
           </div>
+          </Panel>
+          </PanelGroup>
         </div>
       </div>
     </div>
@@ -1443,5 +1494,3 @@ function PlannerPage() {
 }
 
 export default PlannerPage;
-
-// Note: NotesModal is rendered inside PlannerPage component

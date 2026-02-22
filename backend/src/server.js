@@ -49,7 +49,7 @@ app.get('/api/destinations', async (req, res) => {
 // AI Itinerary Generation
 app.post('/api/ai/generate-itinerary', async (req, res) => {
   try {
-    const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles, region } = req.body;
+    const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles, region, tripOrigin, travelMode } = req.body;
 
     let generatedItinerary;
     let finalDestination = destination;
@@ -121,7 +121,9 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
         tripLength,
         travelPace,
         budget,
-        travelerProfiles
+        travelerProfiles,
+        tripOrigin,
+        travelMode
       });
     } else {
       // Fallback to mock for testing without API key
@@ -172,7 +174,8 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
           estimated_cost_max: costMax,
           latitude: activity.latitude || null,
           longitude: activity.longitude || null,
-          time_of_day: timeOfDay
+          time_of_day: timeOfDay,
+          city_name: activity.city_name || null
         };
       });
 
@@ -354,7 +357,7 @@ Return ONLY the destination in format "City, Country" (e.g., "Tokyo, Japan"). No
   return destination.replace(/['"]/g, '').trim();
 }
 
-async function generateOpenAIItinerary({ destination, tripLength, travelPace, budget, travelerProfiles }) {
+async function generateOpenAIItinerary({ destination, tripLength, travelPace, budget, travelerProfiles, tripOrigin, travelMode }) {
   const activitiesPerDay = {
     'relaxed': 2,
     'moderate': 3,
@@ -381,11 +384,17 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
     ? destination.split(',').map(d => d.trim()).filter(Boolean)
     : [destination];
 
+  // Build origin/travel mode context
+  const originContext = tripOrigin
+    ? `\nOrigin: Traveling from ${tripOrigin}${travelMode ? ` by ${travelMode}` : ''}.
+IMPORTANT: Since the traveler is coming from ${tripOrigin}${travelMode ? ` by ${travelMode}` : ''}, include arrival logistics on Day 1 (e.g., airport transfer, train station arrival) and departure logistics on the last day. Factor in travel time and jet lag if applicable.`
+    : '';
+
   let prompt;
   if (isMultiDest) {
     const daysPerDest = Math.max(1, Math.floor(limitedTripLength / destinations.length));
     prompt = `Create a ${limitedTripLength}-day multi-destination trip visiting: ${destinations.join(' → ')}.
-Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
+Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.${originContext}
 
 MULTI-DESTINATION RULES:
 - Sequence destinations in a geographically logical order to minimize backtracking.
@@ -396,6 +405,7 @@ MULTI-DESTINATION RULES:
   * Place transport as the first activity on the day of travel to the new destination
 - Include at least one ACCOMMODATION activity (category: "accommodation") at each destination with hotel/hostel name.
 - EVERY day from 1 to ${limitedTripLength} MUST have at least ${dailyActivities} activities. No empty days.
+- Include a "city_name" field on EVERY activity indicating which city that activity takes place in (just the city name, not the country).
 
 IMPORTANT:
 - Generate EXACTLY ${totalActivities} activities total (${dailyActivities} per day for ${limitedTripLength} days).
@@ -404,11 +414,12 @@ IMPORTANT:
 - Use real coordinates for each location.
 
 Return JSON:
-{"summary":"1 sentence overview","activities":[{"day_number":1,"position":0,"title":"...","description":"20 words max","location":"Place","category":"one of valid categories","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
+{"summary":"1 sentence overview","activities":[{"day_number":1,"position":0,"title":"...","description":"20 words max","location":"Place","city_name":"CityName","category":"one of valid categories","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
 
 Fill in real activities for ALL days 1-${limitedTripLength}. Keep descriptions under 20 words.`;
   } else {
-    prompt = `Create a ${limitedTripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
+    const cityName = destination.split(',')[0].trim();
+    prompt = `Create a ${limitedTripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.${originContext}
 
 IMPORTANT:
 - Generate EXACTLY ${totalActivities} activities total (${dailyActivities} per day for ${limitedTripLength} days).
@@ -418,9 +429,10 @@ IMPORTANT:
 - For travel between distant locations within the trip, use category "transport".
 - Include accommodation suggestions using category "accommodation".
 - Optimize activity ordering by geographic proximity and logical daily flow.
+- Include a "city_name" field on every activity set to "${cityName}" (or the specific area for day trips).
 
 Return JSON:
-{"summary":"1 sentence overview","activities":[{"day_number":1,"position":0,"title":"...","description":"20 words max","location":"Place","category":"one of valid categories","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
+{"summary":"1 sentence overview","activities":[{"day_number":1,"position":0,"title":"...","description":"20 words max","location":"Place","city_name":"${cityName}","category":"one of valid categories","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning|afternoon|evening","latitude":0.0,"longitude":0.0}],"accommodations":[{"name":"Hotel","type":"hotel","location":"Area","price_per_night":80,"latitude":0.0,"longitude":0.0}]}
 
 Fill in real activities for ALL days 1-${limitedTripLength}. Use real ${destination} coordinates. Keep descriptions under 20 words.`;
   }
