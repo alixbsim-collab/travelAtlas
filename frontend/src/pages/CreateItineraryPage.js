@@ -974,14 +974,14 @@ function CreateItineraryPage() {
         <ProgressBar />
 
         <div className="bg-white/80 backdrop-blur rounded-3xl shadow-lg p-8 md:p-12 min-h-[500px] flex flex-col border border-platinum-200">
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
               >
                 {renderStepContent()}
               </motion.div>

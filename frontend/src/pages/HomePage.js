@@ -4,20 +4,28 @@ import { motion } from 'framer-motion';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import ScrollReveal from '../components/ui/ScrollReveal';
-import { ArrowRight, Plane, BookOpen, Map, Sparkles, Calendar, GripVertical, Check } from 'lucide-react';
+import { ArrowRight, Plane, BookOpen, Map, Sparkles, Calendar, GripVertical, Check, MessageSquare, Compass, Zap } from 'lucide-react';
 
 const GlobeSection = React.lazy(() => import('../components/home/GlobeSection'));
 
-// Stagger animation for itinerary steps
-const containerVariants = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.3, delayChildren: 0.8 },
-  },
+// Photo collage animation variants
+const imageVariants = {
+  hidden: { opacity: 0, scale: 0.92 },
+  show: (i) => ({
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.6, delay: 0.3 + i * 0.15, ease: 'easeOut' },
+  }),
 };
-const stepVariants = {
-  hidden: { opacity: 0, x: -20 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+
+// Stagger animation for designer steps
+const designerStepVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.2, delayChildren: 0.3 } },
+};
+const stepItemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 };
 
 function HomePage() {
@@ -73,72 +81,59 @@ function HomePage() {
               </div>
             </motion.div>
 
-            {/* Right: Animated Itinerary Demo */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="relative hidden md:block"
-            >
-              <div className="bg-white rounded-2xl shadow-xl p-6 border border-platinum-200">
-                {/* Mock header */}
-                <div className="flex items-center gap-3 mb-5 pb-4 border-b border-platinum-200">
-                  <div className="w-10 h-10 rounded-full bg-naples-100 flex items-center justify-center">
-                    <Sparkles size={20} className="text-naples-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-charcoal-500 text-sm">AI Travel Designer</h4>
-                    <p className="text-xs text-platinum-600">Drag & drop to customize</p>
-                  </div>
-                </div>
-
-                {/* Animated activity cards */}
+            {/* Right: Travel Photo Collage */}
+            <div className="relative hidden md:block">
+              <div className="grid grid-cols-5 grid-rows-4 gap-3 h-[460px]">
+                {/* Main large image — spans 3 cols, 4 rows */}
                 <motion.div
-                  variants={containerVariants}
+                  custom={0}
+                  variants={imageVariants}
                   initial="hidden"
                   animate="show"
-                  className="space-y-3"
+                  className="col-span-3 row-span-4 rounded-2xl overflow-hidden shadow-lg"
                 >
-                  <motion.div variants={stepVariants} className="flex items-center gap-3 p-3 bg-columbia-50 rounded-xl border-l-4 border-columbia-400">
-                    <GripVertical size={16} className="text-platinum-500" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm text-charcoal-500">Morning: Visit Eiffel Tower</p>
-                      <p className="text-xs text-platinum-600">9:00 AM - 12:00 PM</p>
-                    </div>
-                    <Check size={16} className="text-columbia-500" />
-                  </motion.div>
-                  <motion.div variants={stepVariants} className="flex items-center gap-3 p-3 bg-naples-50 rounded-xl border-l-4 border-naples-400">
-                    <GripVertical size={16} className="text-platinum-500" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm text-charcoal-500">Lunch: Le Petit Cler</p>
-                      <p className="text-xs text-platinum-600">12:30 PM - 2:00 PM</p>
-                    </div>
-                    <Check size={16} className="text-naples-500" />
-                  </motion.div>
-                  <motion.div variants={stepVariants} className="flex items-center gap-3 p-3 bg-coral-50 rounded-xl border-l-4 border-coral-400">
-                    <GripVertical size={16} className="text-platinum-500" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm text-charcoal-500">Afternoon: Louvre Museum</p>
-                      <p className="text-xs text-platinum-600">2:30 PM - 6:00 PM</p>
-                    </div>
-                    <Check size={16} className="text-coral-400" />
-                  </motion.div>
+                  <img
+                    src="https://images.unsplash.com/photo-1502680390548-bdbac40a5296?w=600&q=80"
+                    alt="Cliff diving adventure"
+                    className="w-full h-full object-cover"
+                  />
                 </motion.div>
 
-                {/* Mock footer */}
-                <div className="mt-4 pt-4 border-t border-platinum-200 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-platinum-600">
-                    <Calendar size={14} />
-                    <span>Day 1 of 5 — Paris, France</span>
-                  </div>
-                  <span className="text-xs font-medium text-coral-500">+ Add Activity</span>
-                </div>
+                {/* Top-right image — spans 2 cols, 2 rows */}
+                <motion.div
+                  custom={1}
+                  variants={imageVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="col-span-2 row-span-2 rounded-2xl overflow-hidden shadow-lg"
+                >
+                  <img
+                    src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&q=80"
+                    alt="Mountain hiking"
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
+
+                {/* Bottom-right image — spans 2 cols, 2 rows */}
+                <motion.div
+                  custom={2}
+                  variants={imageVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="col-span-2 row-span-2 rounded-2xl overflow-hidden shadow-lg"
+                >
+                  <img
+                    src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80"
+                    alt="Tropical beach sunset"
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
               </div>
 
-              {/* Decorative circles */}
+              {/* Decorative blurs */}
               <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-naples-300/30 blur-md" />
               <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-columbia-300/30 blur-md" />
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -154,16 +149,189 @@ function HomePage() {
         <GlobeSection />
       </Suspense>
 
-      {/* ── FEATURES / HOW IT WORKS ── */}
-      <section className="py-20 bg-platinum-50">
+      {/* ── TRAVEL DESIGNER SHOWCASE ── */}
+      <section className="py-20 bg-naples-50 overflow-hidden">
+        <div className="container mx-auto px-4">
+          <ScrollReveal>
+            <div className="text-center mb-14">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-naples-100 text-naples-800 text-sm font-medium mb-4">
+                <Compass size={14} /> How It Works
+              </span>
+              <h2 className="text-3xl md:text-4xl font-heading font-bold text-charcoal-500 mb-4">
+                Your Trip, Designed in Minutes
+              </h2>
+              <p className="text-platinum-700 text-lg max-w-2xl mx-auto">
+                Our AI Travel Designer builds personalized day-by-day itineraries you can customize, share, and explore.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          {/* 3-Step Visual Walkthrough */}
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <ScrollReveal delay={0}>
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-naples-400 text-charcoal-500 flex items-center justify-center shadow-md">
+                  <span className="text-2xl font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>1</span>
+                </div>
+                <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Tell Us Your Dream Trip</h3>
+                <p className="text-platinum-700 max-w-xs mx-auto">
+                  Choose your destination, dates, pace, and travel style. Or let us surprise you.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.1}>
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-coral-400 text-white flex items-center justify-center shadow-md">
+                  <span className="text-2xl font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>2</span>
+                </div>
+                <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">AI Builds Your Itinerary</h3>
+                <p className="text-platinum-700 max-w-xs mx-auto">
+                  Our AI generates a full day-by-day plan with activities, restaurants, and real coordinates.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.2}>
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-columbia-700 text-white flex items-center justify-center shadow-md">
+                  <span className="text-2xl font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>3</span>
+                </div>
+                <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Customize & Explore</h3>
+                <p className="text-platinum-700 max-w-xs mx-auto">
+                  Drag, drop, and chat with your AI assistant. View everything on an interactive map.
+                </p>
+              </div>
+            </ScrollReveal>
+          </div>
+
+          {/* Animated Designer Preview */}
+          <ScrollReveal>
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-3xl shadow-xl border border-platinum-200 overflow-hidden">
+                {/* Mock toolbar */}
+                <div className="bg-charcoal-500 px-6 py-3 flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-coral-400" />
+                    <div className="w-3 h-3 rounded-full bg-naples-400" />
+                    <div className="w-3 h-3 rounded-full bg-green-400" />
+                  </div>
+                  <div className="flex-1 text-center">
+                    <span className="text-white/60 text-xs">thetravelatlas.com/designer/planner</span>
+                  </div>
+                </div>
+
+                {/* Mock planner layout */}
+                <div className="grid md:grid-cols-5 min-h-[320px]">
+                  {/* Left: AI Chat */}
+                  <div className="md:col-span-2 border-r border-platinum-200 p-5">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-platinum-200">
+                      <div className="w-8 h-8 rounded-full bg-naples-100 flex items-center justify-center">
+                        <MessageSquare size={16} className="text-naples-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-charcoal-500">AI Assistant</p>
+                        <p className="text-xs text-platinum-600">Ask me anything</p>
+                      </div>
+                    </div>
+
+                    <motion.div
+                      variants={designerStepVariants}
+                      initial="hidden"
+                      whileInView="show"
+                      viewport={{ once: true, margin: '-50px' }}
+                      className="space-y-3"
+                    >
+                      <motion.div variants={stepItemVariants} className="bg-columbia-50 rounded-xl p-3 text-sm text-charcoal-500 max-w-[90%]">
+                        I've found 3 amazing restaurants near the Colosseum for your evening!
+                      </motion.div>
+                      <motion.div variants={stepItemVariants} className="bg-platinum-100 rounded-xl p-3 text-sm text-charcoal-500 ml-auto max-w-[80%]">
+                        Add the rooftop one to Day 2
+                      </motion.div>
+                      <motion.div variants={stepItemVariants} className="bg-columbia-50 rounded-xl p-3 text-sm text-charcoal-500 max-w-[90%]">
+                        Done! I've added "Terrazza Borromini" to your evening on Day 2.
+                      </motion.div>
+                    </motion.div>
+                  </div>
+
+                  {/* Right: Itinerary */}
+                  <div className="md:col-span-3 p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-heading font-bold text-charcoal-500">Rome, Italy — Day 2</h4>
+                      <div className="flex gap-1">
+                        <span className="px-2 py-1 bg-coral-100 text-coral-700 rounded text-xs font-medium">Overview</span>
+                        <span className="px-2 py-1 bg-platinum-100 text-platinum-600 rounded text-xs font-medium">Map</span>
+                      </div>
+                    </div>
+
+                    <motion.div
+                      variants={designerStepVariants}
+                      initial="hidden"
+                      whileInView="show"
+                      viewport={{ once: true, margin: '-50px' }}
+                      className="space-y-2.5"
+                    >
+                      <motion.div variants={stepItemVariants} className="flex items-center gap-3 p-3 bg-columbia-50 rounded-xl border-l-4 border-columbia-400">
+                        <GripVertical size={14} className="text-platinum-400" />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-charcoal-500">Morning: Colosseum Tour</p>
+                          <p className="text-xs text-platinum-600">9:00 AM — Via del Colosseo</p>
+                        </div>
+                        <Check size={14} className="text-columbia-500" />
+                      </motion.div>
+                      <motion.div variants={stepItemVariants} className="flex items-center gap-3 p-3 bg-naples-50 rounded-xl border-l-4 border-naples-400">
+                        <GripVertical size={14} className="text-platinum-400" />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-charcoal-500">Lunch: Trastevere Food Walk</p>
+                          <p className="text-xs text-platinum-600">12:30 PM — Piazza Trilussa</p>
+                        </div>
+                        <Check size={14} className="text-naples-500" />
+                      </motion.div>
+                      <motion.div variants={stepItemVariants} className="flex items-center gap-3 p-3 bg-coral-50 rounded-xl border-l-4 border-coral-400">
+                        <GripVertical size={14} className="text-platinum-400" />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-charcoal-500">Evening: Terrazza Borromini</p>
+                          <p className="text-xs text-platinum-600">7:30 PM — Piazza Navona</p>
+                        </div>
+                        <Sparkles size={14} className="text-coral-400" />
+                      </motion.div>
+                    </motion.div>
+
+                    <div className="mt-4 pt-3 border-t border-platinum-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-platinum-600">
+                        <Calendar size={12} />
+                        <span>Day 2 of 5 — Rome, Italy</span>
+                      </div>
+                      <span className="text-xs font-medium text-coral-500 cursor-pointer">+ Add Activity</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* CTA under showcase */}
+          <div className="text-center mt-10">
+            <Link to="/designer/create">
+              <Button size="lg" className="gap-2 shadow-md">
+                <Zap size={18} />
+                Try the Travel Designer
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <ScrollReveal>
             <div className="text-center mb-14">
               <h2 className="text-3xl md:text-4xl font-heading font-bold text-charcoal-500 mb-4">
-                How It Works
+                Everything You Need
               </h2>
               <p className="text-platinum-700 text-lg max-w-xl mx-auto">
-                Three simple steps to your dream itinerary
+                Tools and inspiration for every kind of traveler
               </p>
             </div>
           </ScrollReveal>
@@ -224,21 +392,18 @@ function HomePage() {
       </section>
 
       {/* ── CTA SECTION ── */}
-      <section className="py-20">
+      <section className="py-20 bg-platinum-50">
         <div className="container mx-auto px-4">
           <ScrollReveal>
-            <div
-              className="rounded-3xl p-12 md:p-16 text-center text-white"
-              style={{ background: 'linear-gradient(135deg, #EF8557 0%, #C85A2E 35%, #4A7B91 70%, #2C4251 100%)' }}
-            >
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">
+            <div className="rounded-3xl p-12 md:p-16 text-center bg-naples-400">
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4 text-charcoal-500">
                 Ready to Start Your Adventure?
               </h2>
-              <p className="text-lg mb-8 text-white/85 max-w-lg mx-auto">
+              <p className="text-lg mb-8 text-charcoal-400 max-w-lg mx-auto">
                 Join thousands of travelers creating amazing journeys
               </p>
               <Link to="/register">
-                <Button variant="accent" size="lg" className="shadow-lg">
+                <Button variant="secondary" size="lg" className="shadow-lg bg-charcoal-500 text-white hover:bg-charcoal-400">
                   Sign Up Free
                 </Button>
               </Link>

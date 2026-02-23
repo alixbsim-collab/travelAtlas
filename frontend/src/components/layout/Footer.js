@@ -14,22 +14,19 @@ const TikTokIcon = () => (
 
 function Footer() {
   return (
-    <footer
-      className="mt-auto"
-      style={{ background: 'linear-gradient(135deg, #EF8557 0%, #C85A2E 30%, #4A7B91 70%, #2C4251 100%)' }}
-    >
+    <footer className="mt-auto bg-charcoal-500">
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">
             <p className="text-white/90 text-sm md:text-base">
-              <span className="font-bold">The Travel Atlas</span> — an AI travel planning tool designed by travellers for travellers.
+              <span className="font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>The Travel Atlas</span> — an AI travel planning tool designed by travellers for travellers.
             </p>
           </div>
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4 text-sm">
-              <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
-              <Link to="/contact" className="text-white/80 hover:text-white transition-colors">Contact</Link>
+              <Link to="/" className="text-white/80 hover:text-naples-400 transition-colors">Home</Link>
+              <Link to="/contact" className="text-white/80 hover:text-naples-400 transition-colors">Contact</Link>
             </div>
 
             <div className="w-px h-5 bg-white/30 hidden md:block" />
@@ -39,7 +36,7 @@ function Footer() {
                 href="https://instagram.com/thetravelatlas"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-naples-400/20 flex items-center justify-center text-white hover:text-naples-400 transition-colors"
                 aria-label="Instagram"
               >
                 <InstagramIcon />
@@ -48,7 +45,7 @@ function Footer() {
                 href="https://tiktok.com/@thetravelatlas"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-naples-400/20 flex items-center justify-center text-white hover:text-naples-400 transition-colors"
                 aria-label="TikTok"
               >
                 <TikTokIcon />

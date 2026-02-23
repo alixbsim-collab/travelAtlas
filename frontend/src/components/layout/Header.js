@@ -26,10 +26,13 @@ function Header() {
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <span className="text-3xl group-hover:scale-110 transition-transform">🌍</span>
-            <span className="text-2xl font-heading font-bold text-charcoal-500">
-              The Travel Atlas
+          <Link to="/" className="flex items-center group">
+            <span
+              className="text-charcoal-500 group-hover:text-charcoal-400 transition-colors"
+              style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: '1.4rem', lineHeight: 1.1, letterSpacing: '-0.01em' }}
+            >
+              <span style={{ fontSize: '0.75em', display: 'block', fontWeight: 500 }}>The</span>
+              <span style={{ fontSize: '1em' }}>Travel Atlas</span>
             </span>
           </Link>
 
