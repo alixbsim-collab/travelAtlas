@@ -71,6 +71,12 @@ function CreateItineraryPage() {
     travelerProfiles: []
   });
 
+  // Pre-warm the Render backend on mount so it's awake by the time user finishes the wizard
+  useEffect(() => {
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
+    fetch(`${apiUrl}/health`).catch(() => {});
+  }, []);
+
   // If destination is prefilled, skip to step 2
   useEffect(() => {
     if (prefillDestination && currentStep === 1) {

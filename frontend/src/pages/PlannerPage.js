@@ -28,6 +28,14 @@ import {
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// Helper to check if itinerary was created within the last 5 minutes
+const isRecentlyCreated = (createdAt) => {
+  if (!createdAt) return false;
+  const created = new Date(createdAt);
+  const now = new Date();
+  return (now - created) < 5 * 60 * 1000;
+};
+
 // Helper to format date
 const formatDate = (date) => {
   if (!date) return null;
@@ -486,6 +494,7 @@ function PlannerPage() {
   const [addActivityDay, setAddActivityDay] = useState(null); // For add activity modal
   const [showAssistant, setShowAssistant] = useState(true); // Toggle AI panel
   const [progressMessage, setProgressMessage] = useState('');
+  const [generationTimedOut, setGenerationTimedOut] = useState(false);
 
   const isGenerating = location.state?.generating;
 
@@ -496,74 +505,117 @@ function PlannerPage() {
     })
   );
 
+  // Shared polling logic — used by initial generation AND re-check
+  const startPolling = (timeoutMs = 180000) => {
+    setGeneratingActivities(true);
+    setGenerationTimedOut(false);
+    let msgIndex = 0;
+
+    const progressMessages = [
+      'Waking up the server...',
+      'Server is warming up...',
+      'Connecting to AI...',
+      `Designing your ${itinerary?.trip_length || ''}-day adventure...`,
+      'Generating activities for your trip...',
+      'Adding local recommendations...',
+      'Finalizing your personalized itinerary...',
+      'Almost there, adding the finishing touches...',
+    ];
+
+    setProgressMessage(progressMessages[0]);
+    const messageInterval = setInterval(() => {
+      msgIndex++;
+      const idx = Math.min(msgIndex, progressMessages.length - 1);
+      setProgressMessage(progressMessages[idx]);
+    }, 5000);
+
+    const pollInterval = setInterval(async () => {
+      const { data: activitiesData } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('itinerary_id', id)
+        .order('day_number', { ascending: true })
+        .order('position', { ascending: true });
+
+      if (activitiesData && activitiesData.length > 0) {
+        setActivities(activitiesData);
+        setGeneratingActivities(false);
+        setGenerationTimedOut(false);
+        setProgressMessage('');
+        clearInterval(pollInterval);
+        clearInterval(messageInterval);
+
+        const { data: updatedItinerary } = await supabase
+          .from('itineraries')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (updatedItinerary) {
+          setItinerary(updatedItinerary);
+        }
+      }
+    }, 3000);
+
+    const timeout = setTimeout(() => {
+      clearInterval(pollInterval);
+      clearInterval(messageInterval);
+      setGeneratingActivities(false);
+      setProgressMessage('');
+      setGenerationTimedOut(true);
+    }, timeoutMs);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearInterval(messageInterval);
+      clearTimeout(timeout);
+    };
+  };
+
+  // Retry: re-trigger the backend API call AND restart polling
+  const handleRetryGeneration = async () => {
+    if (!itinerary) return;
+    setGenerationTimedOut(false);
+
+    // Re-fire the backend API call
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
+    fetch(`${apiUrl}/api/ai/generate-itinerary`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itineraryId: id,
+        destination: itinerary.destination,
+        tripLength: itinerary.trip_length,
+        travelPace: itinerary.travel_pace,
+        budget: itinerary.budget,
+        travelerProfiles: itinerary.traveler_profiles || [],
+        region: null,
+        tripOrigin: itinerary.trip_origin || null,
+        travelMode: itinerary.travel_mode || null,
+      }),
+    }).catch((err) => console.error('Retry generation error:', err));
+
+    startPolling(180000);
+  };
+
   useEffect(() => {
     fetchItineraryData();
   }, [id]);
 
+  // Start polling when navigated with generating=true OR when itinerary loads with 0 activities
+  // and was created recently (within 5 min) — covers page refresh / re-visit scenarios
   useEffect(() => {
-    if (isGenerating && activities.length === 0) {
-      setGeneratingActivities(true);
-      let msgIndex = 0;
+    if (loading) return; // Wait for initial fetch
 
-      const progressMessages = [
-        'Waking up the server...',
-        'Server is warming up...',
-        'Connecting to AI...',
-        `Designing your ${itinerary?.trip_length || ''}-day adventure...`,
-        'Generating activities for your trip...',
-        'Adding local recommendations...',
-        'Finalizing your personalized itinerary...',
-        'Almost there, adding the finishing touches...',
-      ];
+    const shouldPoll =
+      (isGenerating && activities.length === 0) ||
+      (!isGenerating && activities.length === 0 && itinerary && isRecentlyCreated(itinerary.created_at));
 
-      setProgressMessage(progressMessages[0]);
-      const messageInterval = setInterval(() => {
-        msgIndex++;
-        const idx = Math.min(msgIndex, progressMessages.length - 1);
-        setProgressMessage(progressMessages[idx]);
-      }, 5000);
-
-      const pollInterval = setInterval(async () => {
-        const { data: activitiesData } = await supabase
-          .from('activities')
-          .select('*')
-          .eq('itinerary_id', id)
-          .order('day_number', { ascending: true })
-          .order('position', { ascending: true });
-
-        if (activitiesData && activitiesData.length > 0) {
-          setActivities(activitiesData);
-          setGeneratingActivities(false);
-          setProgressMessage('');
-          clearInterval(pollInterval);
-          clearInterval(messageInterval);
-
-          const { data: updatedItinerary } = await supabase
-            .from('itineraries')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-          if (updatedItinerary) {
-            setItinerary(updatedItinerary);
-          }
-        }
-      }, 3000);
-
-      const timeout = setTimeout(() => {
-        clearInterval(pollInterval);
-        clearInterval(messageInterval);
-        setGeneratingActivities(false);
-        setProgressMessage('');
-      }, 120000);
-
-      return () => {
-        clearInterval(pollInterval);
-        clearInterval(messageInterval);
-        clearTimeout(timeout);
-      };
+    if (shouldPoll) {
+      const cleanup = startPolling(180000);
+      return cleanup;
     }
-  }, [id, isGenerating, activities.length]);
+  }, [id, isGenerating, activities.length, loading]);
 
   const fetchItineraryData = async () => {
     try {
@@ -919,7 +971,7 @@ function PlannerPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-platinum-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-400 mx-auto mb-4"></div>
           <p className="text-platinum-600">Loading your itinerary...</p>
@@ -929,6 +981,128 @@ function PlannerPage() {
   }
 
   if (!itinerary) return null;
+
+  // Full-screen generating page — shown when activities are being generated
+  if (generatingActivities && activities.length === 0) {
+    return (
+      <div className="min-h-screen bg-naples-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center">
+          {/* Animated icon */}
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            <div className="absolute inset-0 rounded-full bg-naples-200 animate-ping opacity-30" />
+            <div className="relative w-24 h-24 rounded-full bg-naples-100 flex items-center justify-center">
+              <span className="text-4xl animate-bounce">✈️</span>
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            Crafting Your Adventure
+          </h1>
+          <p className="text-lg text-charcoal-400 mb-2">
+            {itinerary.destination} — {itinerary.trip_length} days
+          </p>
+          <p className="text-coral-600 font-medium mb-8">
+            {progressMessage || 'Getting everything ready...'}
+          </p>
+
+          {/* Progress bar */}
+          <div className="w-full bg-platinum-200 rounded-full h-2 mb-8 overflow-hidden">
+            <div
+              className="h-full bg-coral-400 rounded-full transition-all duration-1000 ease-out"
+              style={{
+                width: progressMessage.includes('Waking') ? '10%'
+                  : progressMessage.includes('warming') ? '20%'
+                  : progressMessage.includes('Connecting') ? '35%'
+                  : progressMessage.includes('Designing') ? '50%'
+                  : progressMessage.includes('Generating') ? '65%'
+                  : progressMessage.includes('recommendations') ? '80%'
+                  : progressMessage.includes('Finalizing') ? '90%'
+                  : progressMessage.includes('finishing') ? '95%'
+                  : '15%'
+              }}
+            />
+          </div>
+
+          <div className="bg-white rounded-2xl border border-platinum-200 p-5 text-left">
+            <p className="text-sm text-platinum-600 mb-3 font-medium">What's happening:</p>
+            <ul className="space-y-2 text-sm text-platinum-600">
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs">✓</span>
+                Itinerary created
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-naples-100 text-naples-600 flex items-center justify-center text-xs animate-pulse">⟳</span>
+                AI is generating {itinerary.trip_length} days of activities
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-platinum-100 text-platinum-400 flex items-center justify-center text-xs">○</span>
+                Adding coordinates and local tips
+              </li>
+            </ul>
+          </div>
+
+          <p className="text-xs text-platinum-500 mt-6">
+            This usually takes 30–90 seconds. The first request after inactivity takes a bit longer while the server wakes up.
+          </p>
+
+          <button
+            onClick={() => navigate('/designer')}
+            className="mt-6 text-sm text-platinum-500 hover:text-charcoal-500 underline"
+          >
+            Go back to dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Timed-out generating page — shown when polling expired without activities
+  if (generationTimedOut && activities.length === 0) {
+    return (
+      <div className="min-h-screen bg-platinum-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 flex items-center justify-center">
+            <span className="text-3xl">⏳</span>
+          </div>
+
+          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            Taking Longer Than Usual
+          </h1>
+          <p className="text-platinum-700 mb-6 max-w-sm mx-auto">
+            The server is still working on your {itinerary.destination} itinerary. This sometimes happens on the first request.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleRetryGeneration}
+              className="px-8 py-3 bg-coral-400 text-white rounded-xl font-bold hover:bg-coral-500 transition-colors"
+            >
+              Retry Generation
+            </button>
+            <button
+              onClick={() => {
+                const cleanup = startPolling(120000);
+                return cleanup;
+              }}
+              className="px-8 py-3 bg-white border border-platinum-200 text-charcoal-500 rounded-xl font-medium hover:bg-platinum-50 transition-colors"
+            >
+              Keep Waiting
+            </button>
+            <button
+              onClick={() => navigate('/designer')}
+              className="text-sm text-platinum-500 hover:text-charcoal-500 underline mt-2"
+            >
+              Go back to dashboard
+            </button>
+          </div>
+
+          <p className="text-xs text-platinum-500 mt-6">
+            Tip: If you come back to this trip later, your activities will be here once the server finishes.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Render notes modal if active
   const renderNotesModal = notesActivity && (
@@ -1083,51 +1257,7 @@ function PlannerPage() {
                   </div>
                 </div>
 
-                {/* Generating indicator */}
-                {generatingActivities && (
-                  <div className="bg-coral-50 border border-coral-200 rounded-lg p-4 flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-coral-400"></div>
-                    <div>
-                      <p className="text-sm font-medium text-coral-700">
-                        {progressMessage || 'Generating your personalized itinerary...'}
-                      </p>
-                      <p className="text-xs text-coral-500 mt-1">
-                        This may take up to 2 minutes on first request.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {/* Retry button when generation timed out */}
-                {!generatingActivities && activities.length === 0 && !loading && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-                    <p className="text-sm text-amber-800 mb-3">No activities found. The server may still be generating your itinerary.</p>
-                    <button
-                      onClick={() => {
-                        setGeneratingActivities(true);
-                        const pollRetry = setInterval(async () => {
-                          const { data } = await supabase
-                            .from('activities')
-                            .select('*')
-                            .eq('itinerary_id', id)
-                            .order('day_number', { ascending: true })
-                            .order('position', { ascending: true });
-                          if (data && data.length > 0) {
-                            setActivities(data);
-                            setGeneratingActivities(false);
-                            clearInterval(pollRetry);
-                            // Refetch itinerary for updated destination
-                            const { data: updated } = await supabase.from('itineraries').select('*').eq('id', id).single();
-                            if (updated) setItinerary(updated);
-                          }
-                        }, 3000);
-                        setTimeout(() => { clearInterval(pollRetry); setGeneratingActivities(false); }, 120000);
-                      }}
-                      className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
-                    >
-                      Check Again
-                    </button>
-                  </div>
-                )}
+                {/* Note: Full-screen generating / timed-out pages handle the generating state above this render */}
               </div>
 
               {/* Content based on active view */}
