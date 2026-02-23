@@ -53,8 +53,8 @@ L.Icon.Default.mergeOptions({
 
 // Day colors for map markers and route lines
 const DAY_COLORS = [
-  '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
-  '#EC4899', '#06B6D4', '#F97316', '#6366F1', '#14B8A6'
+  '#EF8557', '#4A7B91', '#FFDB70', '#2C4251', '#BBD3DD',
+  '#C85A2E', '#7DADC1', '#F0C84D', '#386074', '#DEE3E1'
 ];
 
 // Create colored marker icon
@@ -123,7 +123,7 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
           {...listeners}
           className="cursor-grab active:cursor-grabbing mt-1"
         >
-          <GripVertical size={20} className="text-neutral-400" />
+          <GripVertical size={20} className="text-platinum-500" />
         </div>
 
         <div className="flex-1">
@@ -149,9 +149,9 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
             <div className="flex gap-1">
               <button
                 onClick={() => onEdit(activity)}
-                className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                className="p-1 hover:bg-platinum-200 rounded transition-colors"
               >
-                <Edit size={16} className="text-neutral-500" />
+                <Edit size={16} className="text-platinum-600" />
               </button>
               <button
                 onClick={() => onDelete(activity.id)}
@@ -163,7 +163,7 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
           </div>
 
           {activity.description && (
-            <p className="text-sm text-neutral-warm-gray mb-2">{activity.description}</p>
+            <p className="text-sm text-platinum-600 mb-2">{activity.description}</p>
           )}
 
           {editingNotes ? (
@@ -191,7 +191,7 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
             </div>
           ) : null}
 
-          <div className="flex flex-wrap gap-3 text-xs text-neutral-warm-gray">
+          <div className="flex flex-wrap gap-3 text-xs text-platinum-600">
             {activity.location && (
               <a
                 href={activity.latitude && activity.longitude
@@ -212,7 +212,7 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
               </span>
             )}
             {activity.time_of_day && (
-              <span className="px-2 py-0.5 bg-neutral-100 rounded">
+              <span className="px-2 py-0.5 bg-platinum-200 rounded">
                 {activity.time_of_day}
               </span>
             )}
@@ -240,12 +240,12 @@ function NotesModal({ activity, onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-4 border-b border-neutral-200">
-          <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
+        <div className="flex items-center justify-between p-4 border-b border-platinum-200">
+          <h3 className="text-lg font-heading font-bold text-charcoal-500">
             Notes for {activity.title}
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded">
-            <X size={20} className="text-neutral-500" />
+          <button onClick={onClose} className="p-1 hover:bg-platinum-200 rounded">
+            <X size={20} className="text-platinum-600" />
           </button>
         </div>
         <div className="p-4">
@@ -253,11 +253,11 @@ function NotesModal({ activity, onClose, onSave }) {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add your personal notes here... (e.g., reservation codes, tips, reminders)"
-            className="w-full h-32 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+            className="w-full h-32 px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             autoFocus
           />
         </div>
-        <div className="flex justify-end gap-2 p-4 border-t border-neutral-200">
+        <div className="flex justify-end gap-2 p-4 border-t border-platinum-200">
           <Button variant="outline" size="sm" onClick={onClose}>
             Cancel
           </Button>
@@ -313,18 +313,18 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-4 border-b border-neutral-200 sticky top-0 bg-white">
-          <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
+        <div className="flex items-center justify-between p-4 border-b border-platinum-200 sticky top-0 bg-white">
+          <h3 className="text-lg font-heading font-bold text-charcoal-500">
             Add Activity to {dayLabel}
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded">
-            <X size={20} className="text-neutral-500" />
+          <button onClick={onClose} className="p-1 hover:bg-platinum-200 rounded">
+            <X size={20} className="text-platinum-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">
               Activity Title *
             </label>
             <input
@@ -332,27 +332,27 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
               placeholder="e.g., Visit the Eiffel Tower"
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               autoFocus
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">
               Description
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
               placeholder="Brief description of the activity..."
-              className="w-full h-20 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              className="w-full h-20 px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             />
           </div>
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">
               Location
             </label>
             <input
@@ -360,19 +360,19 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
               value={formData.location}
               onChange={(e) => handleChange('location', e.target.value)}
               placeholder="e.g., Champ de Mars, Paris"
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">
               Category
             </label>
             <select
               value={formData.category}
               onChange={(e) => handleChange('category', e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {ACTIVITY_CATEGORIES.map(cat => (
                 <option key={cat.value} value={cat.value}>
@@ -384,13 +384,13 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
 
           {/* Time of Day */}
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">
               Time of Day
             </label>
             <select
               value={formData.time_of_day}
               onChange={(e) => handleChange('time_of_day', e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="morning">Morning</option>
               <option value="afternoon">Afternoon</option>
@@ -402,7 +402,7 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
 
           {/* Duration */}
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">
               Duration
             </label>
             <div className="flex gap-2">
@@ -410,7 +410,7 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
                 <select
                   value={formData.duration_hours}
                   onChange={(e) => handleChange('duration_hours', e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   {[0,1,2,3,4,5,6,7,8].map(h => (
                     <option key={h} value={h}>{h} hour{h !== 1 ? 's' : ''}</option>
@@ -421,7 +421,7 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
                 <select
                   value={formData.duration_minutes}
                   onChange={(e) => handleChange('duration_minutes', e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   {[0, 15, 30, 45].map(m => (
                     <option key={m} value={m}>{m} min</option>
@@ -433,30 +433,30 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
 
           {/* Estimated Cost */}
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">
               Estimated Cost (optional)
             </label>
             <div className="flex gap-2 items-center">
-              <span className="text-neutral-500">$</span>
+              <span className="text-platinum-600">$</span>
               <input
                 type="number"
                 value={formData.estimated_cost_min}
                 onChange={(e) => handleChange('estimated_cost_min', e.target.value)}
                 placeholder="Min"
-                className="flex-1 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
-              <span className="text-neutral-500">to $</span>
+              <span className="text-platinum-600">to $</span>
               <input
                 type="number"
                 value={formData.estimated_cost_max}
                 onChange={(e) => handleChange('estimated_cost_max', e.target.value)}
                 placeholder="Max"
-                className="flex-1 px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 px-3 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
         </div>
-        <div className="flex justify-end gap-2 p-4 border-t border-neutral-200 sticky bottom-0 bg-white">
+        <div className="flex justify-end gap-2 p-4 border-t border-platinum-200 sticky bottom-0 bg-white">
           <Button variant="outline" size="sm" onClick={onClose}>
             Cancel
           </Button>
@@ -921,8 +921,8 @@ function PlannerPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-neutral-warm-gray">Loading your itinerary...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-400 mx-auto mb-4"></div>
+          <p className="text-platinum-600">Loading your itinerary...</p>
         </div>
       </div>
     );
@@ -962,26 +962,26 @@ function PlannerPage() {
     : activitiesWithCoords.filter(a => a.day_number === parseInt(selectedDay));
 
   return (
-    <div className="h-screen flex flex-col bg-neutral-50">
+    <div className="h-screen flex flex-col bg-platinum-50">
       {renderNotesModal}
       {renderAddActivityModal}
       {/* Top Navigation */}
-      <div className="bg-white border-b border-neutral-200 px-6 py-4">
+      <div className="bg-white border-b border-platinum-200 px-6 py-4">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/designer')}
-              className="flex items-center gap-2 text-neutral-warm-gray hover:text-neutral-charcoal transition-colors"
+              className="flex items-center gap-2 text-platinum-600 hover:text-charcoal-500 transition-colors"
             >
               <ArrowLeft size={20} />
               Back
             </button>
 
             <div>
-              <h1 className="text-xl font-heading font-bold text-neutral-charcoal">
+              <h1 className="text-xl font-heading font-bold text-charcoal-500">
                 {itinerary.title}
               </h1>
-              <p className="text-sm text-neutral-warm-gray">
+              <p className="text-sm text-platinum-600">
                 {itinerary.destination} • {itinerary.trip_length} days
               </p>
             </div>
@@ -1041,13 +1041,13 @@ function PlannerPage() {
           <div className="h-full flex flex-col min-w-0">
             <div className="flex flex-col h-full bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Header with view buttons */}
-              <div className="p-4 border-b border-neutral-200">
+              <div className="p-4 border-b border-platinum-200">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h2 className="text-xl font-heading font-bold text-neutral-charcoal">
+                    <h2 className="text-xl font-heading font-bold text-charcoal-500">
                       Your Itinerary
                     </h2>
-                    <p className="text-sm text-neutral-warm-gray">
+                    <p className="text-sm text-platinum-600">
                       {itinerary.destination} • {itinerary.trip_length} days
                     </p>
                   </div>
@@ -1086,12 +1086,12 @@ function PlannerPage() {
                 {/* Generating indicator */}
                 {generatingActivities && (
                   <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-coral-400"></div>
                     <div>
                       <p className="text-sm font-medium text-primary-700">
                         {progressMessage || 'Generating your personalized itinerary...'}
                       </p>
-                      <p className="text-xs text-primary-500 mt-1">
+                      <p className="text-xs text-coral-500 mt-1">
                         This may take up to 2 minutes on first request.
                       </p>
                     </div>
@@ -1156,19 +1156,19 @@ function PlannerPage() {
                             className={`rounded-lg p-4 min-h-[150px] transition-all ${
                               isDragOver
                                 ? 'bg-primary-50 border-2 border-dashed border-primary-400 shadow-lg'
-                                : 'bg-neutral-50 border-2 border-transparent'
+                                : 'bg-platinum-50 border-2 border-transparent'
                             }`}
                             onDrop={(e) => handleDrop(e, day)}
                             onDragOver={(e) => handleDragOver(e, day)}
                             onDragLeave={handleDragLeave}
                           >
                             <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
+                              <h3 className="text-lg font-heading font-bold text-charcoal-500">
                                 {dayHeader}
                               </h3>
                               <button
                                 onClick={() => handleAddActivity(day)}
-                                className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                                className="text-sm text-coral-500 hover:text-primary-600 flex items-center gap-1"
                               >
                                 <Plus size={16} />
                                 Add Activity
@@ -1189,7 +1189,7 @@ function PlannerPage() {
                                   ))}
                                 </div>
                               ) : (
-                                <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center text-neutral-400">
+                                <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center text-platinum-500">
                                   <p className="text-sm">Drop activities here or click "Add Activity"</p>
                                 </div>
                               )
@@ -1216,7 +1216,7 @@ function PlannerPage() {
 
                     <DragOverlay>
                       {activeId ? (
-                        <div className="bg-white p-4 rounded-lg shadow-lg border-2 border-primary-500">
+                        <div className="bg-white p-4 rounded-lg shadow-lg border-2 border-coral-400">
                           <p className="font-bold">
                             {activities.find(a => a.id === activeId)?.title}
                           </p>
@@ -1232,8 +1232,8 @@ function PlannerPage() {
                     {/* Day selector */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <Navigation className="text-primary-500" size={18} />
-                        <h3 className="font-heading font-bold text-neutral-charcoal text-sm">
+                        <Navigation className="text-coral-500" size={18} />
+                        <h3 className="font-heading font-bold text-charcoal-500 text-sm">
                           Journey Overview
                         </h3>
                       </div>
@@ -1252,7 +1252,7 @@ function PlannerPage() {
                         className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
                           selectedDay === 'all'
                             ? 'bg-primary-500 text-white'
-                            : 'bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
+                            : 'bg-white text-charcoal-400 hover:bg-platinum-200 border border-platinum-200'
                         }`}
                       >
                         All ({activitiesWithCoords.length})
@@ -1271,7 +1271,7 @@ function PlannerPage() {
                             className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
                               selectedDay === day.toString()
                                 ? 'bg-primary-500 text-white'
-                                : 'bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
+                                : 'bg-white text-charcoal-400 hover:bg-platinum-200 border border-platinum-200'
                             }`}
                           >
                             {buttonLabel} ({count})
@@ -1284,12 +1284,12 @@ function PlannerPage() {
                     {filteredActivities.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
                         <div className="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center mb-3">
-                          <Globe size={24} className="text-primary-500" />
+                          <Globe size={24} className="text-coral-500" />
                         </div>
-                        <h3 className="text-base font-heading font-bold text-neutral-charcoal mb-1">
+                        <h3 className="text-base font-heading font-bold text-charcoal-500 mb-1">
                           No locations yet
                         </h3>
-                        <p className="text-sm text-neutral-warm-gray">
+                        <p className="text-sm text-platinum-600">
                           Activities will appear here once generated
                         </p>
                       </div>
@@ -1302,7 +1302,7 @@ function PlannerPage() {
                             <div
                               key={activity.id}
                               onClick={() => openInGoogleMaps(activity)}
-                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-50 cursor-pointer transition-colors border border-transparent hover:border-neutral-200"
+                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-platinum-50 cursor-pointer transition-colors border border-transparent hover:border-platinum-200"
                             >
                               <div className="w-auto min-w-[2.5rem] h-6 px-2 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-primary-100 text-primary-700">
                                 {selectedDay === 'all'
@@ -1315,21 +1315,21 @@ function PlannerPage() {
                               <span className="text-lg flex-shrink-0">{categoryInfo.emoji}</span>
 
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-neutral-charcoal truncate">
+                                <p className="text-sm font-medium text-charcoal-500 truncate">
                                   {activity.title}
                                 </p>
-                                <p className="text-xs text-neutral-500 truncate">
+                                <p className="text-xs text-platinum-600 truncate">
                                   {activity.location}
                                 </p>
                               </div>
 
                               {activity.time_of_day && (
-                                <span className="text-xs px-1.5 py-0.5 bg-neutral-100 text-neutral-600 rounded flex-shrink-0">
+                                <span className="text-xs px-1.5 py-0.5 bg-platinum-200 text-charcoal-400 rounded flex-shrink-0">
                                   {activity.time_of_day}
                                 </span>
                               )}
 
-                              <ExternalLink size={14} className="text-neutral-400 flex-shrink-0" />
+                              <ExternalLink size={14} className="text-platinum-500 flex-shrink-0" />
                             </div>
                           );
                         })}
@@ -1337,8 +1337,8 @@ function PlannerPage() {
                     )}
 
                     {/* Legend */}
-                    <div className="pt-3 border-t border-neutral-200 mt-4">
-                      <div className="flex items-center justify-center gap-4 text-xs text-neutral-500">
+                    <div className="pt-3 border-t border-platinum-200 mt-4">
+                      <div className="flex items-center justify-center gap-4 text-xs text-platinum-600">
                         <span className="flex items-center gap-1">
                           <ExternalLink size={10} />
                           Click activity to view in Maps
@@ -1352,13 +1352,13 @@ function PlannerPage() {
                 {activeView === 'map' && (
                   <div className="h-full flex flex-col rounded-lg overflow-hidden">
                     {/* Day filter for map */}
-                    <div className="flex gap-2 p-3 bg-white border-b border-neutral-200 overflow-x-auto">
+                    <div className="flex gap-2 p-3 bg-white border-b border-platinum-200 overflow-x-auto">
                       <button
                         onClick={() => setSelectedDay('all')}
                         className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
                           selectedDay === 'all'
                             ? 'bg-primary-500 text-white'
-                            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                            : 'bg-platinum-200 text-charcoal-400 hover:bg-neutral-200'
                         }`}
                       >
                         All Days
@@ -1372,7 +1372,7 @@ function PlannerPage() {
                             className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
                               selectedDay === day.toString()
                                 ? 'text-white'
-                                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                                : 'bg-platinum-200 text-charcoal-400 hover:bg-neutral-200'
                             }`}
                             style={selectedDay === day.toString() ? { backgroundColor: dayColor } : {}}
                           >
@@ -1413,9 +1413,9 @@ function PlannerPage() {
                               <Popup>
                                 <div className="text-sm">
                                   <p className="font-bold">{activity.title}</p>
-                                  <p className="text-neutral-500">{activity.location}</p>
+                                  <p className="text-platinum-600">{activity.location}</p>
                                   {activity.duration_minutes && (
-                                    <p className="text-xs text-neutral-400 mt-1">
+                                    <p className="text-xs text-platinum-500 mt-1">
                                       {Math.floor(activity.duration_minutes / 60)}h {activity.duration_minutes % 60}m
                                     </p>
                                   )}
@@ -1447,13 +1447,13 @@ function PlannerPage() {
                         </MapContainer>
                       </div>
                     ) : (
-                      <div className="flex-1 flex items-center justify-center bg-neutral-50">
+                      <div className="flex-1 flex items-center justify-center bg-platinum-50">
                         <div className="text-center p-8">
-                          <MapIcon size={48} className="mx-auto mb-4 text-neutral-400" />
-                          <h3 className="text-lg font-heading font-bold text-neutral-charcoal mb-2">
+                          <MapIcon size={48} className="mx-auto mb-4 text-platinum-500" />
+                          <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-2">
                             No locations to show yet
                           </h3>
-                          <p className="text-sm text-neutral-warm-gray">
+                          <p className="text-sm text-platinum-600">
                             Activities with coordinates will appear on the map
                           </p>
                         </div>
@@ -1461,13 +1461,13 @@ function PlannerPage() {
                     )}
 
                     {/* Legend */}
-                    <div className="p-3 bg-white border-t border-neutral-200">
+                    <div className="p-3 bg-white border-t border-platinum-200">
                       <div className="flex flex-wrap gap-3 justify-center">
                         {(selectedDay === 'all' ? days : [parseInt(selectedDay)]).map(day => {
                           const count = filteredActivities.filter(a => a.day_number === day).length;
                           if (count === 0) return null;
                           return (
-                            <span key={day} className="flex items-center gap-1 text-xs text-neutral-600">
+                            <span key={day} className="flex items-center gap-1 text-xs text-charcoal-400">
                               <span
                                 className="w-3 h-3 rounded-full inline-block"
                                 style={{ backgroundColor: DAY_COLORS[(day - 1) % DAY_COLORS.length] }}

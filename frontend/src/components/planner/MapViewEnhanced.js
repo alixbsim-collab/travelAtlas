@@ -49,14 +49,14 @@ function MapViewEnhanced({ activities, itinerary }) {
 
   if (activities.filter(a => a.latitude && a.longitude).length === 0) {
     return (
-      <div className="h-full bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col items-center justify-center p-6 text-center">
+      <div className="h-full bg-white rounded-lg shadow-sm border border-platinum-200 flex flex-col items-center justify-center p-6 text-center">
         <div className="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center mb-3">
           <Globe size={24} className="text-primary-500" />
         </div>
-        <h3 className="text-base font-heading font-bold text-neutral-charcoal mb-1">
+        <h3 className="text-base font-heading font-bold text-charcoal-500 mb-1">
           No locations yet
         </h3>
-        <p className="text-sm text-neutral-warm-gray">
+        <p className="text-sm text-platinum-600">
           Activities will appear here once generated
         </p>
       </div>
@@ -64,13 +64,13 @@ function MapViewEnhanced({ activities, itinerary }) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
+    <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-platinum-200 overflow-hidden">
       {/* Header */}
-      <div className="p-3 border-b border-neutral-200 bg-neutral-50">
+      <div className="p-3 border-b border-platinum-200 bg-neutral-50">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Navigation className="text-primary-500" size={18} />
-            <h3 className="font-heading font-bold text-neutral-charcoal text-sm">
+            <h3 className="font-heading font-bold text-charcoal-500 text-sm">
               Journey Overview
             </h3>
           </div>
@@ -90,7 +90,7 @@ function MapViewEnhanced({ activities, itinerary }) {
             className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
               selectedDay === 'all'
                 ? 'bg-primary-500 text-white'
-                : 'bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
+                : 'bg-white text-neutral-600 hover:bg-platinum-200 border border-platinum-200'
             }`}
           >
             All ({filteredActivities.length})
@@ -102,7 +102,7 @@ function MapViewEnhanced({ activities, itinerary }) {
               className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
                 selectedDay === day
                   ? 'bg-primary-500 text-white'
-                  : 'bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
+                  : 'bg-white text-neutral-600 hover:bg-platinum-200 border border-platinum-200'
               }`}
             >
               Day {day} ({activitiesByDay[day]?.length || 0})
@@ -123,7 +123,7 @@ function MapViewEnhanced({ activities, itinerary }) {
               <div
                 key={activity.id}
                 onClick={() => openInGoogleMaps(activity)}
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-50 cursor-pointer transition-colors border border-transparent hover:border-neutral-200"
+                className="flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-50 cursor-pointer transition-colors border border-transparent hover:border-platinum-200"
               >
                 {/* Position indicator */}
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
@@ -139,22 +139,22 @@ function MapViewEnhanced({ activities, itinerary }) {
 
                 {/* Activity info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-neutral-charcoal truncate">
+                  <p className="text-sm font-medium text-charcoal-500 truncate">
                     {activity.title}
                   </p>
-                  <p className="text-xs text-neutral-500 truncate">
+                  <p className="text-xs text-platinum-600 truncate">
                     {activity.location}
                   </p>
                 </div>
 
                 {/* Time badge */}
                 {activity.time_of_day && (
-                  <span className="text-xs px-1.5 py-0.5 bg-neutral-100 text-neutral-600 rounded flex-shrink-0">
+                  <span className="text-xs px-1.5 py-0.5 bg-platinum-200 text-neutral-600 rounded flex-shrink-0">
                     {activity.time_of_day}
                   </span>
                 )}
 
-                <ExternalLink size={14} className="text-neutral-400 flex-shrink-0" />
+                <ExternalLink size={14} className="text-platinum-500 flex-shrink-0" />
               </div>
             );
           })}
@@ -162,8 +162,8 @@ function MapViewEnhanced({ activities, itinerary }) {
       </div>
 
       {/* Footer with legend */}
-      <div className="p-2 border-t border-neutral-200 bg-neutral-50">
-        <div className="flex items-center justify-center gap-4 text-xs text-neutral-500">
+      <div className="p-2 border-t border-platinum-200 bg-neutral-50">
+        <div className="flex items-center justify-center gap-4 text-xs text-platinum-600">
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-full bg-green-500"></div>
             Start

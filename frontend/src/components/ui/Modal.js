@@ -44,7 +44,7 @@ function Modal({ isOpen, onClose, title, children, size = 'md' }) {
           {title && (
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3
-                className="text-2xl font-heading font-bold text-neutral-charcoal"
+                className="text-2xl font-heading font-bold text-charcoal-500"
                 id="modal-title"
               >
                 {title}

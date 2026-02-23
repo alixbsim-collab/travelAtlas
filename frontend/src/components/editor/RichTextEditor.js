@@ -37,7 +37,7 @@ function MenuBar({ editor }) {
   ];
 
   return (
-    <div className="flex flex-wrap gap-1 p-2 border-b border-neutral-200 bg-neutral-50 rounded-t-lg">
+    <div className="flex flex-wrap gap-1 p-2 border-b border-platinum-200 bg-platinum-50 rounded-t-lg">
       {buttons.map((btn, i) => (
         <button
           key={i}
@@ -45,8 +45,8 @@ function MenuBar({ editor }) {
           onClick={btn.action}
           className={`p-2 rounded transition-colors ${
             btn.active
-              ? 'bg-primary-100 text-primary-700'
-              : 'hover:bg-neutral-200 text-neutral-600'
+              ? 'bg-coral-100 text-coral-700'
+              : 'hover:bg-platinum-200 text-platinum-700'
           }`}
           title={btn.title}
         >
@@ -72,7 +72,7 @@ function RichTextEditor({ content, onChange, placeholder = 'Start writing...' })
   });
 
   return (
-    <div className="border border-neutral-200 rounded-lg overflow-hidden">
+    <div className="border border-platinum-200 rounded-lg overflow-hidden">
       <MenuBar editor={editor} />
       <EditorContent
         editor={editor}

@@ -73,10 +73,10 @@ function ResetPasswordPage() {
           <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#D1FAE5' }}>
             <CheckCircle size={32} style={{ color: '#10B981' }} />
           </div>
-          <h1 className="text-2xl font-heading font-bold text-neutral-charcoal mb-3">
+          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-3">
             Password Updated!
           </h1>
-          <p className="text-neutral-warm-gray mb-4">
+          <p className="text-platinum-600 mb-4">
             Your password has been successfully reset. Redirecting you to sign in...
           </p>
         </Card>
@@ -89,12 +89,12 @@ function ResetPasswordPage() {
       <Card className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
-            <Lock size={28} style={{ color: '#F5C846' }} />
+            <Lock size={28} style={{ color: '#FFDB70' }} />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-neutral-charcoal mb-2">
+          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-2">
             Set New Password
           </h1>
-          <p className="text-neutral-warm-gray">
+          <p className="text-platinum-600">
             Enter your new password below.
           </p>
         </div>

@@ -40,14 +40,14 @@ function ForgotPasswordPage() {
           <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#D1FAE5' }}>
             <CheckCircle size={32} style={{ color: '#10B981' }} />
           </div>
-          <h1 className="text-2xl font-heading font-bold text-neutral-charcoal mb-3">
+          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-3">
             Check Your Email
           </h1>
-          <p className="text-neutral-warm-gray mb-6">
+          <p className="text-platinum-600 mb-6">
             We've sent a password reset link to <strong>{email}</strong>.
             Click the link in the email to reset your password.
           </p>
-          <p className="text-sm text-neutral-400 mb-6">
+          <p className="text-sm text-platinum-500 mb-6">
             Didn't receive the email? Check your spam folder or try again.
           </p>
           <div className="space-y-3">
@@ -68,19 +68,19 @@ function ForgotPasswordPage() {
   return (
     <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
       <Card className="w-full max-w-md">
-        <Link to="/login" className="inline-flex items-center gap-2 text-neutral-warm-gray hover:text-primary-500 mb-6 text-sm">
+        <Link to="/login" className="inline-flex items-center gap-2 text-platinum-600 hover:text-coral-500 mb-6 text-sm">
           <ArrowLeft size={16} />
           Back to Sign In
         </Link>
 
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
-            <Mail size={28} style={{ color: '#F5C846' }} />
+            <Mail size={28} style={{ color: '#FFDB70' }} />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-neutral-charcoal mb-2">
+          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-2">
             Forgot Password?
           </h1>
-          <p className="text-neutral-warm-gray">
+          <p className="text-platinum-600">
             No worries! Enter your email and we'll send you a reset link.
           </p>
         </div>
@@ -107,8 +107,8 @@ function ForgotPasswordPage() {
         </form>
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-neutral-warm-gray">Remember your password? </span>
-          <Link to="/login" className="text-primary-500 hover:text-primary-600 font-medium">
+          <span className="text-platinum-600">Remember your password? </span>
+          <Link to="/login" className="text-coral-500 hover:text-coral-500 font-medium">
             Sign in
           </Link>
         </div>

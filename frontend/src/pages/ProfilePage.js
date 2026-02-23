@@ -7,7 +7,7 @@ function ProfilePage() {
   return (
     <PageContainer>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-heading font-bold text-neutral-charcoal mb-8">
+        <h1 className="text-4xl font-heading font-bold text-charcoal-500 mb-8">
           My Profile
         </h1>
 
@@ -15,13 +15,13 @@ function ProfilePage() {
           {/* Profile Card */}
           <Card className="md:col-span-1">
             <div className="text-center">
-              <div className="w-24 h-24 bg-primary-500 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl text-white">
+              <div className="w-24 h-24 bg-coral-400 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl text-white">
                 👤
               </div>
               <h2 className="text-xl font-heading font-bold mb-2">
                 Travel Enthusiast
               </h2>
-              <p className="text-neutral-warm-gray text-sm">
+              <p className="text-platinum-600 text-sm">
                 Member since 2024
               </p>
               <Button variant="outline" size="sm" className="mt-4 w-full">
@@ -38,16 +38,16 @@ function ProfilePage() {
               </h3>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-3xl font-bold text-primary-500">0</div>
-                  <div className="text-sm text-neutral-warm-gray">Itineraries</div>
+                  <div className="text-3xl font-bold text-coral-500">0</div>
+                  <div className="text-sm text-platinum-600">Itineraries</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-secondary-600">0</div>
-                  <div className="text-sm text-neutral-warm-gray">Places Visited</div>
+                  <div className="text-sm text-platinum-600">Places Visited</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-accent-400">0</div>
-                  <div className="text-sm text-neutral-warm-gray">Countries</div>
+                  <div className="text-sm text-platinum-600">Countries</div>
                 </div>
               </div>
             </Card>
@@ -58,7 +58,7 @@ function ProfilePage() {
               </h3>
               <div className="text-center py-8">
                 <div className="text-4xl mb-3">✈️</div>
-                <p className="text-neutral-warm-gray mb-4">
+                <p className="text-platinum-600 mb-4">
                   You haven't created any itineraries yet
                 </p>
                 <Button>Create Your First Itinerary</Button>

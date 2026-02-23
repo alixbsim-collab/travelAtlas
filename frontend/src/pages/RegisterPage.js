@@ -83,10 +83,10 @@ function RegisterPage() {
     <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
       <Card className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-heading font-bold text-neutral-charcoal mb-2">
+          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-2">
             Join The Travel Atlas
           </h1>
-          <p className="text-neutral-warm-gray">
+          <p className="text-platinum-600">
             Start planning your perfect adventure
           </p>
         </div>
@@ -139,16 +139,16 @@ function RegisterPage() {
             required
           />
 
-          <div className="text-sm text-neutral-warm-gray">
+          <div className="text-sm text-platinum-600">
             <label className="flex items-start">
               <input type="checkbox" className="mr-2 mt-1" required />
               <span>
                 I agree to the{' '}
-                <Link to="/terms" className="text-primary-500 hover:text-primary-600">
+                <Link to="/terms" className="text-coral-500 hover:text-coral-500">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link to="/privacy" className="text-primary-500 hover:text-primary-600">
+                <Link to="/privacy" className="text-coral-500 hover:text-coral-500">
                   Privacy Policy
                 </Link>
               </span>
@@ -161,8 +161,8 @@ function RegisterPage() {
         </form>
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-neutral-warm-gray">Already have an account? </span>
-          <Link to="/login" className="text-primary-500 hover:text-primary-600 font-medium">
+          <span className="text-platinum-600">Already have an account? </span>
+          <Link to="/login" className="text-coral-500 hover:text-coral-500 font-medium">
             Sign in
           </Link>
         </div>

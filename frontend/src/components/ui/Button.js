@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 function Button({
   children,
@@ -7,15 +8,17 @@ function Button({
   onClick,
   disabled = false,
   className = '',
-  type = 'button'
+  type = 'button',
+  ...rest
 }) {
-  const baseStyles = 'font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
-    primary: 'bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500',
-    secondary: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
-    outline: 'border-2 border-primary-500 text-primary-500 hover:bg-primary-50 focus:ring-primary-500',
-    accent: 'bg-accent-400 text-neutral-charcoal hover:bg-accent-500 focus:ring-accent-400',
+    primary: 'bg-coral-400 text-white hover:bg-coral-500 focus:ring-coral-400',
+    secondary: 'bg-columbia-700 text-white hover:bg-columbia-800 focus:ring-columbia-600',
+    outline: 'border-2 border-coral-400 text-coral-500 hover:bg-coral-50 focus:ring-coral-400',
+    accent: 'bg-naples-400 text-charcoal-500 hover:bg-naples-500 focus:ring-naples-400',
+    ghost: 'text-charcoal-400 hover:bg-platinum-100 focus:ring-platinum-300',
   };
 
   const sizes = {
@@ -25,14 +28,17 @@ function Button({
   };
 
   return (
-    <button
+    <motion.button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      whileHover={disabled ? {} : { scale: 1.02 }}
+      whileTap={disabled ? {} : { scale: 0.97 }}
+      className={`${baseStyles} ${variants[variant] || variants.primary} ${sizes[size]} ${className}`}
+      {...rest}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }
 

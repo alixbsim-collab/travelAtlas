@@ -55,7 +55,7 @@ function SortableActivity({ activity, onEdit, onDelete }) {
           {...listeners}
           className="cursor-grab active:cursor-grabbing mt-1"
         >
-          <GripVertical size={20} className="text-neutral-400" />
+          <GripVertical size={20} className="text-platinum-500" />
         </div>
 
         <div className="flex-1">
@@ -67,9 +67,9 @@ function SortableActivity({ activity, onEdit, onDelete }) {
             <div className="flex gap-1">
               <button
                 onClick={() => onEdit(activity)}
-                className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                className="p-1 hover:bg-platinum-200 rounded transition-colors"
               >
-                <Edit size={16} className="text-neutral-500" />
+                <Edit size={16} className="text-platinum-600" />
               </button>
               <button
                 onClick={() => onDelete(activity.id)}
@@ -81,10 +81,10 @@ function SortableActivity({ activity, onEdit, onDelete }) {
           </div>
 
           {activity.description && (
-            <p className="text-sm text-neutral-warm-gray mb-2">{activity.description}</p>
+            <p className="text-sm text-platinum-600 mb-2">{activity.description}</p>
           )}
 
-          <div className="flex flex-wrap gap-3 text-xs text-neutral-warm-gray">
+          <div className="flex flex-wrap gap-3 text-xs text-platinum-600">
             {activity.location && (
               <span className="flex items-center gap-1">
                 <MapPin size={14} />
@@ -140,7 +140,7 @@ function DayBlock({ day, activities, onAddActivity, onEditActivity, onDeleteActi
       onDragOver={handleDragOver}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-heading font-bold text-neutral-charcoal">
+        <h3 className="text-lg font-heading font-bold text-charcoal-500">
           Day {day}
         </h3>
         <button
@@ -153,7 +153,7 @@ function DayBlock({ day, activities, onAddActivity, onEditActivity, onDeleteActi
       </div>
 
       {dayActivities.length === 0 ? (
-        <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center text-neutral-400">
+        <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center text-platinum-500">
           <p className="text-sm">Drop activities here or click "Add Activity"</p>
         </div>
       ) : (
@@ -288,9 +288,9 @@ function DragDropPlanner({ itinerary, activities, setActivities }) {
   return (
     <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
       {/* Header */}
-      <div className="p-4 border-b border-neutral-200">
+      <div className="p-4 border-b border-platinum-200">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-heading font-bold text-neutral-charcoal">
+          <h2 className="text-xl font-heading font-bold text-charcoal-500">
             Your Itinerary
           </h2>
 
@@ -314,7 +314,7 @@ function DragDropPlanner({ itinerary, activities, setActivities }) {
           </div>
         </div>
 
-        <p className="text-sm text-neutral-warm-gray">
+        <p className="text-sm text-platinum-600">
           {itinerary.destination} • {itinerary.trip_length} days
         </p>
       </div>
@@ -354,9 +354,9 @@ function DragDropPlanner({ itinerary, activities, setActivities }) {
         ) : (
           <div className="h-full flex items-center justify-center bg-neutral-50 rounded-lg">
             <div className="text-center">
-              <MapIcon size={48} className="mx-auto mb-4 text-neutral-400" />
-              <p className="text-neutral-warm-gray">Map view coming soon</p>
-              <p className="text-sm text-neutral-400 mt-2">
+              <MapIcon size={48} className="mx-auto mb-4 text-platinum-500" />
+              <p className="text-platinum-600">Map view coming soon</p>
+              <p className="text-sm text-platinum-500 mt-2">
                 Visualize your activities on an interactive map
               </p>
             </div>

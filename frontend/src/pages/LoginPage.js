@@ -50,10 +50,10 @@ function LoginPage() {
     <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
       <Card className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-heading font-bold text-neutral-charcoal mb-2">
+          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-2">
             Welcome Back
           </h1>
-          <p className="text-neutral-warm-gray">
+          <p className="text-platinum-600">
             Sign in to continue your journey
           </p>
         </div>
@@ -88,9 +88,9 @@ function LoginPage() {
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center">
               <input type="checkbox" className="mr-2" />
-              <span className="text-neutral-warm-gray">Remember me</span>
+              <span className="text-platinum-600">Remember me</span>
             </label>
-            <Link to="/forgot-password" className="text-primary-500 hover:text-primary-600">
+            <Link to="/forgot-password" className="text-coral-500 hover:text-coral-500">
               Forgot password?
             </Link>
           </div>
@@ -101,8 +101,8 @@ function LoginPage() {
         </form>
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-neutral-warm-gray">Don't have an account? </span>
-          <Link to="/register" className="text-primary-500 hover:text-primary-600 font-medium">
+          <span className="text-platinum-600">Don't have an account? </span>
+          <Link to="/register" className="text-coral-500 hover:text-coral-500 font-medium">
             Sign up
           </Link>
         </div>

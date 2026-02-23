@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { TRAVELER_PROFILES, TRAVEL_PACE_OPTIONS, BUDGET_OPTIONS } from '../constants/travelerProfiles';
@@ -338,25 +339,24 @@ function CreateItineraryPage() {
                     isCompleted
                       ? 'bg-green-500 text-white'
                       : isCurrent
-                      ? 'text-white'
-                      : 'bg-neutral-100 text-neutral-400'
+                      ? 'bg-naples-400 text-charcoal-500'
+                      : 'bg-platinum-200 text-platinum-500'
                   }`}
-                  style={isCurrent ? { backgroundColor: '#F5C846', color: '#1E4D73' } : {}}
                 >
                   {isCompleted ? <Check size={18} /> : <StepIcon size={18} />}
                 </div>
-                <span className={`text-xs mt-2 hidden md:block ${isCurrent ? 'font-bold text-neutral-charcoal' : 'text-neutral-400'}`}>
+                <span className={`text-xs mt-2 hidden md:block ${isCurrent ? 'font-bold text-charcoal-500' : 'text-platinum-500'}`}>
                   {step.title}
                 </span>
               </div>
               {index < STEPS.length - 1 && (
-                <div className={`flex-1 h-1 mx-1 md:mx-2 rounded ${isCompleted ? 'bg-green-500' : 'bg-neutral-200'}`} />
+                <div className={`flex-1 h-1 mx-1 md:mx-2 rounded ${isCompleted ? 'bg-green-500' : 'bg-platinum-300'}`} />
               )}
             </React.Fragment>
           );
         })}
       </div>
-      <p className="text-center text-sm text-neutral-warm-gray">
+      <p className="text-center text-sm text-platinum-600">
         Step {currentStep} of {STEPS.length}
       </p>
     </div>
@@ -368,19 +368,19 @@ function CreateItineraryPage() {
       case 1:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
-              <MapPin size={40} style={{ color: '#F5C846' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFFAEC' }}>
+              <MapPin size={40} style={{ color: '#FFDB70' }} />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-neutral-charcoal mb-3">
+            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               Where do you want to go?
             </h2>
-            <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
+            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
               Enter a city, country, or multiple destinations. Select "Undecided" to let us inspire you.
             </p>
 
             {/* Multi-destination toggle */}
             <div className="max-w-lg mx-auto mb-4">
-              <label className="flex items-center justify-center gap-3 cursor-pointer p-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors">
+              <label className="flex items-center justify-center gap-3 cursor-pointer p-3 rounded-xl border border-platinum-200 bg-white hover:bg-platinum-100 transition-colors">
                 <input
                   type="checkbox"
                   checked={isMultiDestination}
@@ -400,10 +400,10 @@ function CreateItineraryPage() {
                       }
                     }
                   }}
-                  className="w-5 h-5 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
+                  className="w-5 h-5 text-coral-500 rounded focus:ring-2 focus:ring-coral-400"
                 />
-                <Globe size={18} className="text-neutral-500" />
-                <span className="text-neutral-charcoal font-medium">Multi-destination trip</span>
+                <Globe size={18} className="text-platinum-600" />
+                <span className="text-charcoal-500 font-medium">Multi-destination trip</span>
               </label>
             </div>
 
@@ -414,7 +414,7 @@ function CreateItineraryPage() {
                   <span
                     key={dest}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
-                    style={{ backgroundColor: '#DBEAFE', color: '#1E4D73' }}
+                    style={{ backgroundColor: '#E8F0F4', color: '#2C4251' }}
                   >
                     <MapPin size={14} />
                     {dest}
@@ -431,7 +431,7 @@ function CreateItineraryPage() {
 
             <div className="max-w-lg mx-auto relative" ref={destinationRef}>
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-platinum-500" size={20} />
                 <input
                   type="text"
                   value={isMultiDestination ? destinationInput : formData.destination}
@@ -454,22 +454,22 @@ function CreateItineraryPage() {
                     }
                   }}
                   placeholder={isMultiDestination ? 'Add another destination...' : 'Search destination...'}
-                  className="w-full pl-12 pr-4 py-4 text-lg border-2 border-neutral-200 rounded-xl focus:outline-none focus:border-primary-500 transition-colors"
+                  className="w-full pl-12 pr-4 py-4 text-lg border-2 border-platinum-200 rounded-xl focus:outline-none focus:border-coral-400 transition-colors"
                   autoFocus
                 />
               </div>
 
               {showSuggestions && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-neutral-100 overflow-hidden z-50 max-h-[300px] overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-platinum-200 overflow-hidden z-50 max-h-[300px] overflow-y-auto">
                   {!isMultiDestination && (
                     <button
                       onClick={() => handleDestinationSelect({ name: 'Undecided' })}
-                      className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors border-b border-neutral-100 flex items-center gap-3"
+                      className="w-full px-4 py-3 text-left hover:bg-coral-50 transition-colors border-b border-platinum-200 flex items-center gap-3"
                     >
-                      <Sparkles size={18} className="text-primary-500" />
+                      <Sparkles size={18} className="text-coral-500" />
                       <div>
                         <span className="font-medium">Undecided</span>
-                        <span className="text-sm text-neutral-400 ml-2">- Let us inspire you</span>
+                        <span className="text-sm text-platinum-500 ml-2">- Let us inspire you</span>
                       </div>
                     </button>
                   )}
@@ -477,16 +477,16 @@ function CreateItineraryPage() {
                     <button
                       key={index}
                       onClick={() => handleDestinationSelect(dest)}
-                      className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors flex items-center gap-3"
+                      className="w-full px-4 py-3 text-left hover:bg-coral-50 transition-colors flex items-center gap-3"
                     >
                       {dest.type === 'country' ? (
-                        <Globe size={18} className="text-neutral-400" />
+                        <Globe size={18} className="text-platinum-500" />
                       ) : (
-                        <MapPin size={18} className="text-neutral-400" />
+                        <MapPin size={18} className="text-platinum-500" />
                       )}
                       <span>{dest.name}</span>
                       {dest.type === 'country' && (
-                        <span className="text-xs text-neutral-400 ml-auto">Country</span>
+                        <span className="text-xs text-platinum-500 ml-auto">Country</span>
                       )}
                     </button>
                   ))}
@@ -497,7 +497,7 @@ function CreateItineraryPage() {
                         <Check size={14} />
                         <span className="font-medium">"{(isMultiDestination ? destinationInput : formData.destination).trim()}"</span> — custom destination accepted!
                       </p>
-                      <p className="text-neutral-400 text-xs mt-1">
+                      <p className="text-platinum-500 text-xs mt-1">
                         {isMultiDestination ? 'Press Enter to add it' : 'Click Continue to proceed'}
                       </p>
                     </div>
@@ -521,11 +521,11 @@ function CreateItineraryPage() {
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowUndecidedModal(false)}>
                 <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 p-8" onClick={(e) => e.stopPropagation()}>
                   <div className="text-center mb-6">
-                    <Sparkles size={32} className="mx-auto mb-3 text-primary-500" />
-                    <h3 className="text-2xl font-heading font-bold text-neutral-charcoal mb-2">
+                    <Sparkles size={32} className="mx-auto mb-3 text-coral-500" />
+                    <h3 className="text-2xl font-heading font-bold text-charcoal-500 mb-2">
                       Let us inspire you!
                     </h3>
-                    <p className="text-neutral-warm-gray">
+                    <p className="text-platinum-600">
                       Pick a region and we'll suggest the perfect destination based on your preferences.
                     </p>
                   </div>
@@ -535,18 +535,18 @@ function CreateItineraryPage() {
                       <button
                         key={region.id}
                         onClick={() => handleSelectUndecided(region.id)}
-                        className="p-4 rounded-xl border-2 border-neutral-200 hover:border-primary-500 hover:bg-primary-50 transition-all text-center"
+                        className="p-4 rounded-xl border-2 border-platinum-200 hover:border-primary-500 hover:bg-coral-50 transition-all text-center"
                       >
                         <div className="text-3xl mb-2">{region.emoji}</div>
-                        <div className="font-bold text-sm text-neutral-charcoal">{region.name}</div>
-                        <div className="text-xs text-neutral-400 mt-1">{region.description}</div>
+                        <div className="font-bold text-sm text-charcoal-500">{region.name}</div>
+                        <div className="text-xs text-platinum-500 mt-1">{region.description}</div>
                       </button>
                     ))}
                   </div>
 
-                  <div className="text-center border-t border-neutral-200 pt-4">
-                    <p className="text-sm text-neutral-warm-gray mb-3">Or browse curated itineraries for inspiration</p>
-                    <Link to="/atlas" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-charcoal font-medium text-sm transition-colors">
+                  <div className="text-center border-t border-platinum-200 pt-4">
+                    <p className="text-sm text-platinum-600 mb-3">Or browse curated itineraries for inspiration</p>
+                    <Link to="/atlas" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-platinum-200 hover:bg-platinum-300 text-charcoal-500 font-medium text-sm transition-colors">
                       <BookOpen size={16} />
                       Browse Atlas Files
                     </Link>
@@ -560,20 +560,20 @@ function CreateItineraryPage() {
       case 2:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DBEAFE' }}>
-              <Plane size={40} style={{ color: '#2D6A9F' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E8F0F4' }}>
+              <Plane size={40} style={{ color: '#4A7B91' }} />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-neutral-charcoal mb-3">
+            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               Where are you traveling from?
             </h2>
-            <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
+            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
               This helps us plan transport, arrival logistics, and your first-day schedule.
             </p>
 
             {/* Origin input with autocomplete */}
             <div className="max-w-lg mx-auto relative mb-8" ref={originRef}>
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-platinum-500" size={20} />
                 <input
                   type="text"
                   value={formData.tripOrigin}
@@ -586,13 +586,13 @@ function CreateItineraryPage() {
                     }
                   }}
                   placeholder="Your home city..."
-                  className="w-full pl-12 pr-4 py-4 text-lg border-2 border-neutral-200 rounded-xl focus:outline-none focus:border-primary-500 transition-colors"
+                  className="w-full pl-12 pr-4 py-4 text-lg border-2 border-platinum-200 rounded-xl focus:outline-none focus:border-coral-400 transition-colors"
                   autoFocus
                 />
               </div>
 
               {showOriginSuggestions && filteredOrigins.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-neutral-100 overflow-hidden z-50 max-h-[250px] overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-platinum-200 overflow-hidden z-50 max-h-[250px] overflow-y-auto">
                   {filteredOrigins.map((dest, index) => (
                     <button
                       key={index}
@@ -600,12 +600,12 @@ function CreateItineraryPage() {
                         handleInputChange('tripOrigin', dest.name);
                         setShowOriginSuggestions(false);
                       }}
-                      className="w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors flex items-center gap-3"
+                      className="w-full px-4 py-3 text-left hover:bg-coral-50 transition-colors flex items-center gap-3"
                     >
                       {dest.type === 'country' ? (
-                        <Globe size={18} className="text-neutral-400" />
+                        <Globe size={18} className="text-platinum-500" />
                       ) : (
-                        <MapPin size={18} className="text-neutral-400" />
+                        <MapPin size={18} className="text-platinum-500" />
                       )}
                       <span>{dest.name}</span>
                     </button>
@@ -624,10 +624,10 @@ function CreateItineraryPage() {
             </div>
 
             {/* Travel mode selection */}
-            <h3 className="text-lg font-heading font-bold text-neutral-charcoal mb-4">
+            <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-4">
               How do you want to get there?
             </h3>
-            <p className="text-neutral-warm-gray mb-6 text-sm">Optional — helps us plan transport segments</p>
+            <p className="text-platinum-600 mb-6 text-sm">Optional — helps us plan transport segments</p>
 
             <div className="max-w-2xl mx-auto grid grid-cols-4 gap-3">
               {TRAVEL_MODE_OPTIONS.map((option) => {
@@ -639,8 +639,8 @@ function CreateItineraryPage() {
                     onClick={() => handleInputChange('travelMode', formData.travelMode === option.value ? '' : option.value)}
                     className={`p-4 rounded-xl border-2 transition-all text-center ${
                       formData.travelMode === option.value
-                        ? 'border-primary-500 bg-primary-50 scale-105'
-                        : 'border-neutral-200 hover:border-primary-300 bg-white'
+                        ? 'border-coral-400 bg-coral-50 scale-105'
+                        : 'border-platinum-200 hover:border-coral-300 bg-white'
                     }`}
                   >
                     <div className="text-3xl mb-2">{option.emoji}</div>
@@ -655,75 +655,75 @@ function CreateItineraryPage() {
       case 3:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DBEAFE' }}>
-              <Calendar size={40} style={{ color: '#2D6A9F' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E8F0F4' }}>
+              <Calendar size={40} style={{ color: '#4A7B91' }} />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-neutral-charcoal mb-3">
+            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               When are you traveling?
             </h2>
-            <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
+            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
               Set your trip length and dates. Flexible dates give us more room to optimize.
             </p>
 
             <div className="max-w-lg mx-auto space-y-6">
-              <div className="bg-white rounded-xl p-6 border border-neutral-200">
-                <label className="block text-sm font-medium text-neutral-charcoal mb-3">
+              <div className="bg-white rounded-xl p-6 border border-platinum-200">
+                <label className="block text-sm font-medium text-charcoal-500 mb-3">
                   How many days?
                 </label>
                 <div className="flex items-center justify-center gap-4">
                   <button
                     type="button"
                     onClick={() => handleInputChange('tripLength', Math.max(1, formData.tripLength - 1))}
-                    className="w-12 h-12 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-2xl transition-colors"
+                    className="w-12 h-12 rounded-full bg-platinum-200 hover:bg-platinum-300 flex items-center justify-center text-2xl transition-colors"
                   >
                     -
                   </button>
-                  <div className="text-5xl font-bold" style={{ color: '#2D6A9F' }}>
+                  <div className="text-5xl font-bold" style={{ color: '#4A7B91' }}>
                     {formData.tripLength}
                   </div>
                   <button
                     type="button"
                     onClick={() => handleInputChange('tripLength', Math.min(30, formData.tripLength + 1))}
-                    className="w-12 h-12 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-2xl transition-colors"
+                    className="w-12 h-12 rounded-full bg-platinum-200 hover:bg-platinum-300 flex items-center justify-center text-2xl transition-colors"
                   >
                     +
                   </button>
                 </div>
-                <p className="text-sm text-neutral-400 mt-2">days</p>
+                <p className="text-sm text-platinum-500 mt-2">days</p>
               </div>
 
-              <label className="flex items-center justify-center gap-3 cursor-pointer p-4 bg-white rounded-xl border border-neutral-200">
+              <label className="flex items-center justify-center gap-3 cursor-pointer p-4 bg-white rounded-xl border border-platinum-200">
                 <input
                   type="checkbox"
                   checked={formData.flexibleDates}
                   onChange={(e) => handleInputChange('flexibleDates', e.target.checked)}
-                  className="w-5 h-5 text-primary-500 rounded focus:ring-2 focus:ring-primary-500"
+                  className="w-5 h-5 text-coral-500 rounded focus:ring-2 focus:ring-coral-400"
                 />
-                <span className="text-neutral-charcoal">My dates are flexible</span>
+                <span className="text-charcoal-500">My dates are flexible</span>
               </label>
 
               {!formData.flexibleDates && (
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-white rounded-xl p-4 border border-neutral-200">
-                    <label className="block text-sm font-medium text-neutral-charcoal mb-2">
+                  <div className="bg-white rounded-xl p-4 border border-platinum-200">
+                    <label className="block text-sm font-medium text-charcoal-500 mb-2">
                       Start Date
                     </label>
                     <DatePicker
                       selected={formData.startDate}
                       onChange={(date) => handleInputChange('startDate', date)}
-                      className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400"
                       placeholderText="Select date"
                       minDate={new Date()}
                     />
                   </div>
-                  <div className="bg-white rounded-xl p-4 border border-neutral-200">
-                    <label className="block text-sm font-medium text-neutral-charcoal mb-2">
+                  <div className="bg-white rounded-xl p-4 border border-platinum-200">
+                    <label className="block text-sm font-medium text-charcoal-500 mb-2">
                       End Date
                     </label>
                     <DatePicker
                       selected={formData.endDate}
                       onChange={(date) => handleInputChange('endDate', date)}
-                      className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400"
                       placeholderText="Select date"
                       minDate={formData.startDate || new Date()}
                     />
@@ -737,13 +737,13 @@ function CreateItineraryPage() {
       case 4:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
-              <Gauge size={40} style={{ color: '#F5C846' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFFAEC' }}>
+              <Gauge size={40} style={{ color: '#FFDB70' }} />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-neutral-charcoal mb-3">
+            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               What's your travel pace?
             </h2>
-            <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
+            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
               This helps us balance activities with downtime.
             </p>
 
@@ -755,8 +755,8 @@ function CreateItineraryPage() {
                   onClick={() => handleInputChange('travelPace', option.value)}
                   className={`p-4 rounded-xl border-2 transition-all text-center ${
                     formData.travelPace === option.value
-                      ? 'border-primary-500 bg-primary-50 scale-105'
-                      : 'border-neutral-200 hover:border-primary-300 bg-white'
+                      ? 'border-coral-400 bg-coral-50 scale-105'
+                      : 'border-platinum-200 hover:border-coral-300 bg-white'
                   }`}
                 >
                   <div className="text-4xl mb-2">{option.emoji}</div>
@@ -767,7 +767,7 @@ function CreateItineraryPage() {
 
             {formData.travelPace && (
               <div className="mt-6 p-4 bg-primary-50 rounded-xl max-w-lg mx-auto">
-                <p className="text-sm text-primary-900">
+                <p className="text-sm text-coral-900">
                   <strong>{TRAVEL_PACE_OPTIONS.find(o => o.value === formData.travelPace)?.label}:</strong>{' '}
                   {TRAVEL_PACE_OPTIONS.find(o => o.value === formData.travelPace)?.description}
                 </p>
@@ -779,13 +779,13 @@ function CreateItineraryPage() {
       case 5:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DBEAFE' }}>
-              <Users size={40} style={{ color: '#2D6A9F' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E8F0F4' }}>
+              <Users size={40} style={{ color: '#4A7B91' }} />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-neutral-charcoal mb-3">
+            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               What kind of traveler are you?
             </h2>
-            <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
+            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
               Select 1-4 profiles that match your travel style.
             </p>
 
@@ -797,18 +797,18 @@ function CreateItineraryPage() {
                   onClick={() => handleProfileToggle(profile.id)}
                   className={`p-4 rounded-xl border-2 transition-all text-left ${
                     formData.travelerProfiles.includes(profile.id)
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-neutral-200 hover:border-primary-300 bg-white'
+                      ? 'border-coral-400 bg-coral-50'
+                      : 'border-platinum-200 hover:border-coral-300 bg-white'
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">{profile.emoji}</div>
                     <div className="flex-1">
                       <div className="font-heading font-bold mb-1">{profile.title}</div>
-                      <div className="text-sm text-neutral-warm-gray">{profile.description}</div>
+                      <div className="text-sm text-platinum-600">{profile.description}</div>
                     </div>
                     {formData.travelerProfiles.includes(profile.id) && (
-                      <div className="w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-full bg-coral-400 text-white flex items-center justify-center">
                         <Check size={14} />
                       </div>
                     )}
@@ -819,7 +819,7 @@ function CreateItineraryPage() {
 
             {formData.travelerProfiles.length > 0 && (
               <div className="mt-6 p-4 bg-primary-50 rounded-xl max-w-lg mx-auto">
-                <p className="text-sm text-primary-900">
+                <p className="text-sm text-coral-900">
                   <strong>Selected:</strong> {formData.travelerProfiles.length} profile{formData.travelerProfiles.length > 1 ? 's' : ''}
                   {formData.travelerProfiles.length > 4 && (
                     <span className="text-red-600 ml-2">(Maximum 4 profiles)</span>
@@ -833,13 +833,13 @@ function CreateItineraryPage() {
       case 6:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
-              <DollarSign size={40} style={{ color: '#F5C846' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFFAEC' }}>
+              <DollarSign size={40} style={{ color: '#FFDB70' }} />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-neutral-charcoal mb-3">
+            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               What's your budget?
             </h2>
-            <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
+            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
               This helps us suggest appropriate accommodations and activities.
             </p>
 
@@ -851,8 +851,8 @@ function CreateItineraryPage() {
                   onClick={() => handleInputChange('budget', option.value)}
                   className={`p-6 rounded-xl border-2 transition-all text-center ${
                     formData.budget === option.value
-                      ? 'border-primary-500 bg-primary-50 scale-105'
-                      : 'border-neutral-200 hover:border-primary-300 bg-white'
+                      ? 'border-coral-400 bg-coral-50 scale-105'
+                      : 'border-platinum-200 hover:border-coral-300 bg-white'
                   }`}
                 >
                   <div className="text-4xl mb-2">{option.emoji}</div>
@@ -864,7 +864,7 @@ function CreateItineraryPage() {
 
             {formData.budget && (
               <div className="mt-6 p-4 bg-primary-50 rounded-xl max-w-lg mx-auto">
-                <p className="text-sm text-primary-900">
+                <p className="text-sm text-coral-900">
                   <strong>{BUDGET_OPTIONS.find(o => o.value === formData.budget)?.label}:</strong>{' '}
                   {BUDGET_OPTIONS.find(o => o.value === formData.budget)?.description}
                 </p>
@@ -876,27 +876,27 @@ function CreateItineraryPage() {
       case 7:
         return (
           <div className="text-center">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
-              <Sparkles size={48} style={{ color: '#F5C846' }} />
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFFAEC' }}>
+              <Sparkles size={48} style={{ color: '#FFDB70' }} />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-neutral-charcoal mb-3">
+            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               Ready to create your trip?
             </h2>
-            <p className="text-neutral-warm-gray mb-8 max-w-md mx-auto">
+            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
               Review your preferences and let our AI design your perfect itinerary.
             </p>
 
             {/* Summary */}
-            <div className="max-w-lg mx-auto bg-white rounded-2xl border border-neutral-200 p-6 text-left mb-8">
-              <h3 className="font-heading font-bold text-lg mb-4 text-neutral-charcoal">Trip Summary</h3>
+            <div className="max-w-lg mx-auto bg-white rounded-2xl border border-platinum-200 p-6 text-left mb-8">
+              <h3 className="font-heading font-bold text-lg mb-4 text-charcoal-500">Trip Summary</h3>
 
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <MapPin size={18} className="text-neutral-400" />
-                  <span className="text-neutral-charcoal font-medium">
+                  <MapPin size={18} className="text-platinum-500" />
+                  <span className="text-charcoal-500 font-medium">
                     {formData.destination}
                     {formData.destination === 'Undecided' && formData.region && (
-                      <span className="text-sm text-neutral-400 ml-2">
+                      <span className="text-sm text-platinum-500 ml-2">
                         ({REGIONS.find(r => r.id === formData.region)?.name || formData.region})
                       </span>
                     )}
@@ -904,34 +904,34 @@ function CreateItineraryPage() {
                 </div>
                 {formData.tripOrigin && (
                   <div className="flex items-center gap-3">
-                    <Plane size={18} className="text-neutral-400" />
-                    <span className="text-neutral-charcoal">From: {formData.tripOrigin}</span>
+                    <Plane size={18} className="text-platinum-500" />
+                    <span className="text-charcoal-500">From: {formData.tripOrigin}</span>
                     {formData.travelMode && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-neutral-100 text-neutral-600 capitalize">
+                      <span className="text-xs px-2 py-1 rounded-full bg-platinum-200 text-charcoal-400 capitalize">
                         {TRAVEL_MODE_OPTIONS.find(o => o.value === formData.travelMode)?.emoji} {formData.travelMode}
                       </span>
                     )}
                   </div>
                 )}
                 <div className="flex items-center gap-3">
-                  <Calendar size={18} className="text-neutral-400" />
-                  <span className="text-neutral-charcoal">{formData.tripLength} days {formData.flexibleDates ? '(flexible)' : ''}</span>
+                  <Calendar size={18} className="text-platinum-500" />
+                  <span className="text-charcoal-500">{formData.tripLength} days {formData.flexibleDates ? '(flexible)' : ''}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Gauge size={18} className="text-neutral-400" />
-                  <span className="text-neutral-charcoal capitalize">{formData.travelPace} pace</span>
+                  <Gauge size={18} className="text-platinum-500" />
+                  <span className="text-charcoal-500 capitalize">{formData.travelPace} pace</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <DollarSign size={18} className="text-neutral-400" />
-                  <span className="text-neutral-charcoal capitalize">{formData.budget} budget</span>
+                  <DollarSign size={18} className="text-platinum-500" />
+                  <span className="text-charcoal-500 capitalize">{formData.budget} budget</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Users size={18} className="text-neutral-400 mt-1" />
+                  <Users size={18} className="text-platinum-500 mt-1" />
                   <div className="flex flex-wrap gap-2">
                     {formData.travelerProfiles.map(profileId => {
                       const profile = TRAVELER_PROFILES.find(p => p.id === profileId);
                       return (
-                        <span key={profileId} className="text-xs px-3 py-1 rounded-full" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+                        <span key={profileId} className="text-xs px-3 py-1 rounded-full" style={{ backgroundColor: '#FFFAEC', color: '#6B5310' }}>
                           {profile?.emoji} {profile?.title}
                         </span>
                       );
@@ -941,15 +941,12 @@ function CreateItineraryPage() {
               </div>
             </div>
 
-            <button
+            <motion.button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-10 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg flex items-center gap-3 mx-auto disabled:opacity-50 disabled:hover:scale-100"
-              style={{
-                backgroundColor: '#F5C846',
-                color: '#1E4D73',
-                boxShadow: '0 4px 14px rgba(245, 200, 70, 0.4)'
-              }}
+              whileHover={loading ? {} : { scale: 1.04 }}
+              whileTap={loading ? {} : { scale: 0.97 }}
+              className="px-10 py-4 rounded-xl font-bold text-lg flex items-center gap-3 mx-auto disabled:opacity-50 bg-naples-400 text-charcoal-500 shadow-lg"
             >
               {loading ? (
                 <>
@@ -962,7 +959,7 @@ function CreateItineraryPage() {
                   Generate My Itinerary
                 </>
               )}
-            </button>
+            </motion.button>
           </div>
         );
 
@@ -972,25 +969,34 @@ function CreateItineraryPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FFFBEB' }}>
-      {/* Main Content */}
+    <div className="min-h-screen bg-naples-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <ProgressBar />
 
-        <div className="bg-white/80 backdrop-blur rounded-3xl shadow-lg p-8 md:p-12 min-h-[500px] flex flex-col">
-          <div className="flex-1">
-            {renderStepContent()}
+        <div className="bg-white/80 backdrop-blur rounded-3xl shadow-lg p-8 md:p-12 min-h-[500px] flex flex-col border border-platinum-200">
+          <div className="flex-1 overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.25 }}
+              >
+                {renderStepContent()}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-100">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-platinum-200">
             <button
               onClick={handleBack}
               disabled={currentStep === 1}
               className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
                 currentStep === 1
-                  ? 'text-neutral-300 cursor-not-allowed'
-                  : 'text-neutral-600 hover:bg-neutral-100'
+                  ? 'text-platinum-400 cursor-not-allowed'
+                  : 'text-charcoal-400 hover:bg-platinum-100'
               }`}
             >
               <ArrowLeft size={18} />
@@ -998,18 +1004,20 @@ function CreateItineraryPage() {
             </button>
 
             {currentStep < 7 && (
-              <button
+              <motion.button
                 onClick={handleNext}
                 disabled={!canProceed()}
-                className="flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                style={{
-                  backgroundColor: canProceed() ? '#F5C846' : '#E5E5E5',
-                  color: canProceed() ? '#1E4D73' : '#9CA3AF'
-                }}
+                whileHover={canProceed() ? { scale: 1.03 } : {}}
+                whileTap={canProceed() ? { scale: 0.97 } : {}}
+                className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  canProceed()
+                    ? 'bg-naples-400 text-charcoal-500 hover:bg-naples-500'
+                    : 'bg-platinum-200 text-platinum-500'
+                }`}
               >
                 Continue
                 <ArrowRight size={18} />
-              </button>
+              </motion.button>
             )}
           </div>
         </div>

@@ -34,15 +34,15 @@ function ProfileEditModal({ itinerary, onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-        <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
+        <div className="p-6 border-b border-platinum-200 flex items-center justify-between">
           <h2 className="text-xl font-heading font-bold">Edit Traveler Profiles</h2>
-          <button onClick={onClose} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-platinum-200 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[50vh]">
-          <p className="text-neutral-warm-gray mb-4">Select 1-4 profiles that match your travel style</p>
+          <p className="text-platinum-600 mb-4">Select 1-4 profiles that match your travel style</p>
           <div className="grid md:grid-cols-2 gap-3">
             {TRAVELER_PROFILES.map((profile) => (
               <button
@@ -50,15 +50,15 @@ function ProfileEditModal({ itinerary, onClose, onSave }) {
                 onClick={() => handleToggle(profile.id)}
                 className={`p-4 rounded-xl border-2 transition-all text-left ${
                   selectedProfiles.includes(profile.id)
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-neutral-200 hover:border-primary-300'
+                    ? 'border-coral-400 bg-primary-50'
+                    : 'border-platinum-200 hover:border-primary-300'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">{profile.emoji}</span>
                   <div className="flex-1">
                     <div className="font-bold text-sm">{profile.title}</div>
-                    <div className="text-xs text-neutral-warm-gray">{profile.description}</div>
+                    <div className="text-xs text-platinum-600">{profile.description}</div>
                   </div>
                   {selectedProfiles.includes(profile.id) && (
                     <div className="w-5 h-5 rounded-full bg-primary-500 text-white flex items-center justify-center">
@@ -71,7 +71,7 @@ function ProfileEditModal({ itinerary, onClose, onSave }) {
           </div>
         </div>
 
-        <div className="p-6 border-t border-neutral-100 flex gap-3 justify-end">
+        <div className="p-6 border-t border-platinum-200 flex gap-3 justify-end">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving || selectedProfiles.length === 0}>
             {saving ? 'Saving...' : 'Save Changes'}
@@ -130,19 +130,19 @@ function ImageModal({ itinerary, onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-        <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
+        <div className="p-6 border-b border-platinum-200 flex items-center justify-between">
           <h2 className="text-xl font-heading font-bold">Add Cover Image</h2>
-          <button onClick={onClose} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-platinum-200 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-neutral-100">
+        <div className="flex border-b border-platinum-200">
           <button
             onClick={() => setActiveTab('search')}
             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'search' ? 'border-b-2 border-primary-500 text-primary-600' : 'text-neutral-500'
+              activeTab === 'search' ? 'border-b-2 border-coral-400 text-coral-500' : 'text-platinum-600'
             }`}
           >
             <Search size={16} className="inline mr-2" />
@@ -151,7 +151,7 @@ function ImageModal({ itinerary, onClose, onSave }) {
           <button
             onClick={() => setActiveTab('url')}
             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'url' ? 'border-b-2 border-primary-500 text-primary-600' : 'text-neutral-500'
+              activeTab === 'url' ? 'border-b-2 border-coral-400 text-coral-500' : 'text-platinum-600'
             }`}
           >
             <LinkIcon size={16} className="inline mr-2" />
@@ -163,19 +163,19 @@ function ImageModal({ itinerary, onClose, onSave }) {
           {activeTab === 'search' && (
             <>
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-platinum-500" size={18} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for images..."
-                  className="w-full pl-10 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
               {searching ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-coral-400 mx-auto"></div>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-3">
@@ -184,7 +184,7 @@ function ImageModal({ itinerary, onClose, onSave }) {
                       key={index}
                       onClick={() => setImageUrl(url)}
                       className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all ${
-                        imageUrl === url ? 'border-primary-500 ring-2 ring-primary-200' : 'border-transparent'
+                        imageUrl === url ? 'border-coral-400 ring-2 ring-primary-200' : 'border-transparent'
                       }`}
                     >
                       <img src={url} alt="" className="w-full h-full object-cover" />
@@ -202,7 +202,7 @@ function ImageModal({ itinerary, onClose, onSave }) {
 
           {activeTab === 'url' && (
             <div>
-              <label className="block text-sm font-medium text-neutral-charcoal mb-2">
+              <label className="block text-sm font-medium text-charcoal-500 mb-2">
                 Image URL
               </label>
               <input
@@ -210,10 +210,10 @@ function ImageModal({ itinerary, onClose, onSave }) {
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://example.com/image.jpg"
-                className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               {imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden border border-neutral-200">
+                <div className="mt-4 rounded-lg overflow-hidden border border-platinum-200">
                   <img src={imageUrl} alt="Preview" className="w-full h-40 object-cover" />
                 </div>
               )}
@@ -221,7 +221,7 @@ function ImageModal({ itinerary, onClose, onSave }) {
           )}
         </div>
 
-        <div className="p-6 border-t border-neutral-100 flex gap-3 justify-end">
+        <div className="p-6 border-t border-platinum-200 flex gap-3 justify-end">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving || !imageUrl}>
             {saving ? 'Saving...' : 'Save Image'}
@@ -272,7 +272,7 @@ function EditableTitle({ title, onSave }) {
         onChange={(e) => setValue(e.target.value)}
         onBlur={handleSave}
         onKeyDown={handleKeyDown}
-        className="text-xl font-heading font-bold mb-2 w-full border-b-2 border-primary-500 outline-none bg-transparent"
+        className="text-xl font-heading font-bold mb-2 w-full border-b-2 border-coral-400 outline-none bg-transparent"
       />
     );
   }
@@ -280,7 +280,7 @@ function EditableTitle({ title, onSave }) {
   return (
     <h3
       onClick={() => setIsEditing(true)}
-      className="text-xl font-heading font-bold mb-2 line-clamp-2 cursor-pointer hover:text-primary-600 transition-colors"
+      className="text-xl font-heading font-bold mb-2 line-clamp-2 cursor-pointer hover:text-coral-500 transition-colors"
       title="Click to edit"
     >
       {title}
@@ -433,8 +433,8 @@ function TravelDesignerDashboard() {
       <PageContainer>
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-            <p className="text-neutral-warm-gray">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-400 mx-auto mb-4"></div>
+            <p className="text-platinum-600">Loading...</p>
           </div>
         </div>
       </PageContainer>
@@ -445,7 +445,7 @@ function TravelDesignerDashboard() {
     <PageContainer>
       <div className="max-w-7xl mx-auto">
         {/* Create New Itinerary CTA */}
-        <div className="mb-12 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #E8A87C 0%, #C38D6D 30%, #2D6A9F 70%, #1E4D73 100%)' }}>
+        <div className="mb-12 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #EF8557 0%, #C85A2E 35%, #4A7B91 70%, #2C4251 100%)' }}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-8 md:p-10">
             <div className="flex-1">
               <h2 className="text-3xl md:text-4xl font-heading font-bold mb-3 text-white">
@@ -460,8 +460,8 @@ function TravelDesignerDashboard() {
                 <button
                   className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg"
                   style={{
-                    backgroundColor: '#F5C846',
-                    color: '#1E4D73',
+                    backgroundColor: '#FFDB70',
+                    color: '#2C4251',
                     boxShadow: '0 4px 14px rgba(245, 200, 70, 0.4)'
                   }}
                 >
@@ -484,7 +484,7 @@ function TravelDesignerDashboard() {
         {/* Saved Itineraries Section */}
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-heading font-bold text-neutral-charcoal">
+            <h2 className="text-2xl font-heading font-bold text-charcoal-500">
               Saved Itineraries
             </h2>
           </div>
@@ -494,7 +494,7 @@ function TravelDesignerDashboard() {
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📝</div>
                 <h3 className="text-xl font-heading font-bold mb-2">No itineraries yet</h3>
-                <p className="text-neutral-warm-gray mb-6">
+                <p className="text-platinum-600 mb-6">
                   Create your first itinerary to start planning your dream trip
                 </p>
                 <Link to="/designer/create">
@@ -509,7 +509,7 @@ function TravelDesignerDashboard() {
                   {/* Thumbnail with Add Image button */}
                   <div
                     className="h-40 rounded-t-lg mb-4 flex items-center justify-center relative group cursor-pointer"
-                    style={{ background: itinerary.thumbnail_url ? 'none' : 'linear-gradient(135deg, #E8A87C 0%, #C38D6D 40%, #2D6A9F 100%)' }}
+                    style={{ background: itinerary.thumbnail_url ? 'none' : 'linear-gradient(135deg, #EF8557 0%, #C85A2E 40%, #4A7B91 100%)' }}
                     onClick={() => setEditingImage(itinerary)}
                   >
                     {itinerary.thumbnail_url ? (
@@ -522,7 +522,7 @@ function TravelDesignerDashboard() {
                       <span className="text-6xl">🗺️</span>
                     )}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-t-lg">
-                      <button className="bg-white/90 text-neutral-charcoal px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+                      <button className="bg-white/90 text-charcoal-500 px-4 py-2 rounded-lg font-medium flex items-center gap-2">
                         <Image size={18} />
                         {itinerary.thumbnail_url ? 'Change Image' : 'Add Image'}
                       </button>
@@ -537,7 +537,7 @@ function TravelDesignerDashboard() {
                       onSave={(newTitle) => handleUpdateTitle(itinerary.id, newTitle)}
                     />
 
-                    <div className="space-y-2 mb-4 text-sm text-neutral-warm-gray">
+                    <div className="space-y-2 mb-4 text-sm text-platinum-600">
                       <div className="flex items-center gap-2">
                         <MapPin size={16} />
                         <span>{itinerary.destination}</span>
@@ -557,23 +557,23 @@ function TravelDesignerDashboard() {
                       {itinerary.traveler_profiles?.slice(0, 3).map((profile, idx) => (
                         <span
                           key={idx}
-                          className="text-xs px-2 py-1 bg-primary-100 text-primary-700 rounded-full group-hover:bg-primary-200 transition-colors flex items-center gap-1"
+                          className="text-xs px-2 py-1 bg-coral-100 text-coral-700 rounded-full group-hover:bg-coral-200 transition-colors flex items-center gap-1"
                         >
                           {getProfileEmoji(profile)} {profile.replace('-', ' ')}
                         </span>
                       ))}
                       {itinerary.traveler_profiles?.length > 3 && (
-                        <span className="text-xs px-2 py-1 bg-neutral-100 text-neutral-500 rounded-full">
+                        <span className="text-xs px-2 py-1 bg-platinum-200 text-platinum-600 rounded-full">
                           +{itinerary.traveler_profiles.length - 3}
                         </span>
                       )}
-                      <span className="text-xs px-2 py-1 text-primary-500 hover:text-primary-600">
+                      <span className="text-xs px-2 py-1 text-coral-500 hover:text-coral-500">
                         <Edit size={12} className="inline" />
                       </span>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2 pt-4 border-t border-neutral-100">
+                    <div className="flex gap-2 pt-4 border-t border-platinum-200">
                       <Link to={`/designer/planner/${itinerary.id}`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full gap-2">
                           <Edit size={16} />
@@ -618,10 +618,10 @@ function TravelDesignerDashboard() {
         <section>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-heading font-bold text-neutral-charcoal mb-2">
+              <h2 className="text-2xl font-heading font-bold text-charcoal-500 mb-2">
                 Atlas Files
               </h2>
-              <p className="text-neutral-warm-gray">
+              <p className="text-platinum-600">
                 Curated itineraries and inspiration from expert travelers
               </p>
             </div>
@@ -635,7 +635,7 @@ function TravelDesignerDashboard() {
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📚</div>
                 <h3 className="text-xl font-heading font-bold mb-2">No atlas files available</h3>
-                <p className="text-neutral-warm-gray">
+                <p className="text-platinum-600">
                   Check back soon for curated travel inspiration
                 </p>
               </div>
@@ -668,11 +668,11 @@ function TravelDesignerDashboard() {
                       {file.title}
                     </h3>
 
-                    <p className="text-sm text-neutral-warm-gray mb-3 line-clamp-2">
+                    <p className="text-sm text-platinum-600 mb-3 line-clamp-2">
                       {file.description}
                     </p>
 
-                    <div className="text-sm text-neutral-warm-gray mb-4">
+                    <div className="text-sm text-platinum-600 mb-4">
                       <div className="flex items-center gap-2">
                         <MapPin size={16} />
                         <span>{file.destination}</span>

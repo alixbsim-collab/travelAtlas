@@ -37,7 +37,7 @@ function LoadingSpinner({ size = 'md', text = 'Loading...' }) {
         </div>
       </div>
       {text && (
-        <p className="text-neutral-warm-gray font-medium">{text}</p>
+        <p className="text-platinum-600 font-medium">{text}</p>
       )}
     </div>
   );

@@ -31,14 +31,14 @@ function MapView({ activities, itinerary }) {
 
   if (activitiesWithLocations.length === 0) {
     return (
-      <div className="h-full bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col items-center justify-center p-8 text-center">
+      <div className="h-full bg-white rounded-lg shadow-sm border border-platinum-200 flex flex-col items-center justify-center p-8 text-center">
         <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mb-4">
           <MapPin size={32} className="text-primary-500" />
         </div>
-        <h3 className="text-lg font-heading font-bold text-neutral-charcoal mb-2">
+        <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-2">
           No locations yet
         </h3>
-        <p className="text-neutral-warm-gray max-w-sm">
+        <p className="text-platinum-600 max-w-sm">
           Activities with coordinates will appear on the map. Add locations to your activities to see them here!
         </p>
       </div>
@@ -46,7 +46,7 @@ function MapView({ activities, itinerary }) {
   }
 
   return (
-    <div className="h-full rounded-lg overflow-hidden shadow-sm border border-neutral-200">
+    <div className="h-full rounded-lg overflow-hidden shadow-sm border border-platinum-200">
       <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
         <Map
           defaultCenter={mapCenter}
@@ -97,22 +97,22 @@ function MapView({ activities, itinerary }) {
                 <div className="flex items-start gap-2 mb-2">
                   <span className="text-2xl">{getCategoryInfo(selectedActivity.category).emoji}</span>
                   <div>
-                    <h3 className="font-heading font-bold text-neutral-charcoal mb-1">
+                    <h3 className="font-heading font-bold text-charcoal-500 mb-1">
                       {selectedActivity.title}
                     </h3>
-                    <span className="text-xs text-neutral-500 font-medium">
+                    <span className="text-xs text-platinum-600 font-medium">
                       Day {selectedActivity.day_number}
                     </span>
                   </div>
                 </div>
 
                 {selectedActivity.description && (
-                  <p className="text-sm text-neutral-warm-gray mb-2">
+                  <p className="text-sm text-platinum-600 mb-2">
                     {selectedActivity.description}
                   </p>
                 )}
 
-                <div className="flex flex-wrap gap-2 text-xs text-neutral-warm-gray">
+                <div className="flex flex-wrap gap-2 text-xs text-platinum-600">
                   {selectedActivity.location && (
                     <span className="flex items-center gap-1">
                       <MapPin size={12} />

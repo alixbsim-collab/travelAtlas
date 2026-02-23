@@ -221,7 +221,7 @@ function AtlasFileEditorPage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-400"></div>
         </div>
       </PageContainer>
     );
@@ -234,7 +234,7 @@ function AtlasFileEditorPage() {
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate('/designer')}
-            className="flex items-center gap-2 text-neutral-warm-gray hover:text-neutral-charcoal transition-colors"
+            className="flex items-center gap-2 text-platinum-600 hover:text-charcoal-500 transition-colors"
           >
             <ArrowLeft size={20} />
             Back
@@ -251,75 +251,75 @@ function AtlasFileEditorPage() {
           </div>
         </div>
 
-        <h1 className="text-3xl font-heading font-bold text-neutral-charcoal mb-8">
+        <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-8">
           {id ? 'Edit Atlas File' : 'Create Atlas File'}
         </h1>
 
         {/* Meta Fields */}
         <div className="space-y-6 mb-10">
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">Title *</label>
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">Title *</label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => handleFieldChange('title', e.target.value)}
               placeholder="e.g., 7 Days in Japan"
-              className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-lg"
+              className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300 text-lg"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">Description</label>
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => handleFieldChange('description', e.target.value)}
               placeholder="A short summary of your trip..."
-              className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none h-20"
+              className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300 resize-none h-20"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-charcoal mb-1">Destination</label>
+              <label className="block text-sm font-medium text-charcoal-500 mb-1">Destination</label>
               <input
                 type="text"
                 value={formData.destination}
                 onChange={(e) => handleFieldChange('destination', e.target.value)}
                 placeholder="e.g., Tokyo, Japan"
-                className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-charcoal mb-1">Trip Length (days)</label>
+              <label className="block text-sm font-medium text-charcoal-500 mb-1">Trip Length (days)</label>
               <input
                 type="number"
                 min="1"
                 max="60"
                 value={formData.trip_length}
                 onChange={(e) => handleFieldChange('trip_length', parseInt(e.target.value) || 1)}
-                className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-charcoal mb-1">Cover Image URL</label>
+            <label className="block text-sm font-medium text-charcoal-500 mb-1">Cover Image URL</label>
             <input
               type="url"
               value={formData.cover_image_url}
               onChange={(e) => handleFieldChange('cover_image_url', e.target.value)}
               placeholder="https://example.com/cover.jpg"
-              className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-300"
             />
             {formData.cover_image_url && (
-              <img src={formData.cover_image_url} alt="Cover preview" className="mt-2 h-40 w-full object-cover rounded-lg border border-neutral-200" />
+              <img src={formData.cover_image_url} alt="Cover preview" className="mt-2 h-40 w-full object-cover rounded-lg border border-platinum-200" />
             )}
           </div>
         </div>
 
         {/* Introduction */}
         <div className="mb-10">
-          <h2 className="text-xl font-heading font-bold text-neutral-charcoal mb-3">Introduction</h2>
+          <h2 className="text-xl font-heading font-bold text-charcoal-500 mb-3">Introduction</h2>
           <RichTextEditor
             content={intro}
             onChange={setIntro}
@@ -330,7 +330,7 @@ function AtlasFileEditorPage() {
         {/* Day-by-Day Sections */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-heading font-bold text-neutral-charcoal">Day-by-Day</h2>
+            <h2 className="text-xl font-heading font-bold text-charcoal-500">Day-by-Day</h2>
             <Button variant="outline" size="sm" onClick={addDay} className="gap-2">
               <Plus size={16} />
               Add Day
@@ -339,13 +339,13 @@ function AtlasFileEditorPage() {
 
           <div className="space-y-8">
             {days.map((day, index) => (
-              <div key={index} className="border border-neutral-200 rounded-xl p-6 bg-neutral-50">
+              <div key={index} className="border border-platinum-200 rounded-xl p-6 bg-platinum-50">
                 <div className="flex items-center justify-between mb-4">
                   <input
                     type="text"
                     value={day.title}
                     onChange={(e) => handleDayChange(index, 'title', e.target.value)}
-                    className="text-lg font-heading font-bold bg-transparent border-b border-transparent hover:border-neutral-300 focus:border-primary-500 focus:outline-none px-1 py-0.5 flex-1"
+                    className="text-lg font-heading font-bold bg-transparent border-b border-transparent hover:border-platinum-300 focus:border-coral-400 focus:outline-none px-1 py-0.5 flex-1"
                   />
                   {days.length > 1 && (
                     <button
@@ -367,12 +367,12 @@ function AtlasFileEditorPage() {
                 {/* Day Images */}
                 <div className="mt-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Image size={16} className="text-neutral-500" />
-                    <span className="text-sm font-medium text-neutral-600">Photos</span>
+                    <Image size={16} className="text-platinum-600" />
+                    <span className="text-sm font-medium text-platinum-700">Photos</span>
                     <button
                       type="button"
                       onClick={() => addDayImage(index)}
-                      className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                      className="text-xs text-coral-500 hover:text-coral-600 font-medium"
                     >
                       + Add image URL
                     </button>
@@ -381,7 +381,7 @@ function AtlasFileEditorPage() {
                     <div className="flex gap-3 overflow-x-auto pb-2">
                       {day.images.map((img, imgIdx) => (
                         <div key={imgIdx} className="relative flex-shrink-0 group">
-                          <img src={img} alt="" className="h-24 w-36 object-cover rounded-lg border border-neutral-200" />
+                          <img src={img} alt="" className="h-24 w-36 object-cover rounded-lg border border-platinum-200" />
                           <button
                             onClick={() => removeDayImage(index, imgIdx)}
                             className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -400,7 +400,7 @@ function AtlasFileEditorPage() {
 
         {/* Tips Section */}
         <div className="mb-10">
-          <h2 className="text-xl font-heading font-bold text-neutral-charcoal mb-3">Travel Tips</h2>
+          <h2 className="text-xl font-heading font-bold text-charcoal-500 mb-3">Travel Tips</h2>
           <RichTextEditor
             content={tips}
             onChange={setTips}
@@ -409,7 +409,7 @@ function AtlasFileEditorPage() {
         </div>
 
         {/* Bottom Actions */}
-        <div className="flex justify-end gap-3 pb-12 border-t border-neutral-200 pt-6">
+        <div className="flex justify-end gap-3 pb-12 border-t border-platinum-200 pt-6">
           <Button variant="outline" onClick={() => handleSave(false)} disabled={saving} className="gap-2">
             <Save size={16} />
             Save Draft

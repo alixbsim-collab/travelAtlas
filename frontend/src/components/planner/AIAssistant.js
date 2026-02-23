@@ -198,7 +198,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
           href={match[2]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary-600 hover:text-primary-700 underline font-medium inline-flex items-center gap-0.5"
+          className="text-coral-500 hover:text-coral-600 underline font-medium inline-flex items-center gap-0.5"
           title="AI-suggested link - may not be available"
         >
           {match[1]}
@@ -219,7 +219,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
   return (
     <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
       {/* Header */}
-      <div className="p-4 border-b border-neutral-200 bg-gradient-to-r from-primary-500 to-secondary-600">
+      <div className="p-4 border-b border-platinum-200 bg-gradient-to-r from-coral-400 to-columbia-700">
         <div className="flex items-center gap-2 text-white">
           <Sparkles size={24} />
           <h2 className="text-xl font-heading font-bold">AI Travel Assistant</h2>
@@ -239,8 +239,8 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
             <div
               className={`max-w-[80%] rounded-lg p-4 ${
                 message.role === 'user'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-neutral-100 text-neutral-charcoal'
+                  ? 'bg-coral-400 text-white'
+                  : 'bg-platinum-100 text-charcoal-500'
               }`}
             >
               <div className="whitespace-pre-wrap">{renderMessageContent(message.content)}</div>
@@ -255,15 +255,15 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
                       draggable
                       onDragStart={(e) => handleDragStart(e, activity, `${idx}-${actIdx}`)}
                       onDragEnd={handleDragEnd}
-                      className={`bg-white text-neutral-charcoal p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing transition-all ${
+                      className={`bg-white text-charcoal-500 p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing transition-all ${
                         draggingId === `${idx}-${actIdx}`
-                          ? 'border-primary-500 bg-primary-50 opacity-50'
-                          : 'border-neutral-300 hover:border-primary-400 hover:shadow-md'
+                          ? 'border-coral-400 bg-coral-50 opacity-50'
+                          : 'border-platinum-300 hover:border-coral-300 hover:shadow-md'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
-                          <GripVertical size={16} className="text-neutral-400" />
+                          <GripVertical size={16} className="text-platinum-500" />
                           <span className="text-lg">
                             {ACTIVITY_CATEGORIES.find(c => c.value === activity.category)?.emoji || '📍'}
                           </span>
@@ -277,9 +277,9 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
                         </span>
                       </div>
 
-                      <p className="text-xs text-neutral-warm-gray mb-2">{activity.description}</p>
+                      <p className="text-xs text-platinum-600 mb-2">{activity.description}</p>
 
-                      <div className="flex items-center justify-between text-xs text-neutral-warm-gray">
+                      <div className="flex items-center justify-between text-xs text-platinum-600">
                         <span>📍 {activity.location}</span>
                         <span>⏱️ {activity.duration_minutes} min</span>
                         {activity.estimated_cost_min && (
@@ -290,7 +290,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
                         )}
                       </div>
 
-                      <div className="mt-2 text-xs text-primary-600 font-medium flex items-center gap-1">
+                      <div className="mt-2 text-xs text-coral-500 font-medium flex items-center gap-1">
                         <GripVertical size={12} />
                         Drag to add to your itinerary (right panel)
                       </div>
@@ -308,10 +308,10 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-neutral-100 rounded-lg p-4">
+            <div className="bg-platinum-100 rounded-lg p-4">
               <div className="flex items-center gap-2">
                 <Loader className="animate-spin" size={20} />
-                <span className="text-sm text-neutral-warm-gray">{loadingMessage}</span>
+                <span className="text-sm text-platinum-600">{loadingMessage}</span>
               </div>
             </div>
           </div>
@@ -322,7 +322,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
 
       {/* Preload Button */}
       {suggestedActivities.length > 0 && (
-        <div className="p-3 border-t border-neutral-200 bg-neutral-50">
+        <div className="p-3 border-t border-platinum-200 bg-platinum-50">
           <Button
             onClick={() => onLoadItinerary(suggestedActivities)}
             variant="outline"
@@ -336,14 +336,14 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
       )}
 
       {/* Input */}
-      <form onSubmit={handleSendMessage} className="p-4 border-t border-neutral-200">
+      <form onSubmit={handleSendMessage} className="p-4 border-t border-platinum-200">
         <div className="flex gap-2">
           <input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder="Ask me anything... (e.g., 'Make it more relaxed' or 'Add more beach time')"
-            className="flex-1 px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="flex-1 px-4 py-2 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400"
             disabled={loading}
           />
           <Button type="submit" disabled={loading || !inputMessage.trim()} className="gap-2">
@@ -355,21 +355,21 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
           <button
             type="button"
             onClick={() => setInputMessage('Make it more chill')}
-            className="text-xs px-3 py-1 bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors"
+            className="text-xs px-3 py-1 bg-platinum-100 rounded-full hover:bg-platinum-200 transition-colors"
           >
             Make it more chill
           </button>
           <button
             type="button"
             onClick={() => setInputMessage('Add more cultural spots')}
-            className="text-xs px-3 py-1 bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors"
+            className="text-xs px-3 py-1 bg-platinum-100 rounded-full hover:bg-platinum-200 transition-colors"
           >
             Add more cultural spots
           </button>
           <button
             type="button"
             onClick={() => setInputMessage('Replace day 3 with a beach day')}
-            className="text-xs px-3 py-1 bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors"
+            className="text-xs px-3 py-1 bg-platinum-100 rounded-full hover:bg-platinum-200 transition-colors"
           >
             Replace with beach day
           </button>
