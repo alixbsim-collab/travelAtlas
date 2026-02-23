@@ -135,7 +135,7 @@ function DayBlock({ day, activities, onAddActivity, onEditActivity, onDeleteActi
 
   return (
     <div
-      className="bg-neutral-50 rounded-lg p-4 min-h-[200px]"
+      className="bg-platinum-50 rounded-lg p-4 min-h-[200px]"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
@@ -145,7 +145,7 @@ function DayBlock({ day, activities, onAddActivity, onEditActivity, onDeleteActi
         </h3>
         <button
           onClick={() => onAddActivity({ day_number: day })}
-          className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+          className="text-sm text-coral-500 hover:text-coral-500 flex items-center gap-1"
         >
           <Plus size={16} />
           Add Activity
@@ -153,7 +153,7 @@ function DayBlock({ day, activities, onAddActivity, onEditActivity, onDeleteActi
       </div>
 
       {dayActivities.length === 0 ? (
-        <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center text-platinum-500">
+        <div className="border-2 border-dashed border-platinum-300 rounded-lg p-8 text-center text-platinum-500">
           <p className="text-sm">Drop activities here or click "Add Activity"</p>
         </div>
       ) : (
@@ -343,7 +343,7 @@ function DragDropPlanner({ itinerary, activities, setActivities }) {
 
             <DragOverlay>
               {activeId ? (
-                <div className="bg-white p-4 rounded-lg shadow-lg border-2 border-primary-500">
+                <div className="bg-white p-4 rounded-lg shadow-lg border-2 border-coral-400">
                   <p className="font-bold">
                     {activities.find(a => a.id === activeId)?.title}
                   </p>
@@ -352,7 +352,7 @@ function DragDropPlanner({ itinerary, activities, setActivities }) {
             </DragOverlay>
           </DndContext>
         ) : (
-          <div className="h-full flex items-center justify-center bg-neutral-50 rounded-lg">
+          <div className="h-full flex items-center justify-center bg-platinum-50 rounded-lg">
             <div className="text-center">
               <MapIcon size={48} className="mx-auto mb-4 text-platinum-500" />
               <p className="text-platinum-600">Map view coming soon</p>

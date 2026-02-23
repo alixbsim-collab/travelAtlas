@@ -535,7 +535,7 @@ function CreateItineraryPage() {
                       <button
                         key={region.id}
                         onClick={() => handleSelectUndecided(region.id)}
-                        className="p-4 rounded-xl border-2 border-platinum-200 hover:border-primary-500 hover:bg-coral-50 transition-all text-center"
+                        className="p-4 rounded-xl border-2 border-platinum-200 hover:border-coral-400 hover:bg-coral-50 transition-all text-center"
                       >
                         <div className="text-3xl mb-2">{region.emoji}</div>
                         <div className="font-bold text-sm text-charcoal-500">{region.name}</div>
@@ -766,7 +766,7 @@ function CreateItineraryPage() {
             </div>
 
             {formData.travelPace && (
-              <div className="mt-6 p-4 bg-primary-50 rounded-xl max-w-lg mx-auto">
+              <div className="mt-6 p-4 bg-coral-50 rounded-xl max-w-lg mx-auto">
                 <p className="text-sm text-coral-900">
                   <strong>{TRAVEL_PACE_OPTIONS.find(o => o.value === formData.travelPace)?.label}:</strong>{' '}
                   {TRAVEL_PACE_OPTIONS.find(o => o.value === formData.travelPace)?.description}
@@ -818,7 +818,7 @@ function CreateItineraryPage() {
             </div>
 
             {formData.travelerProfiles.length > 0 && (
-              <div className="mt-6 p-4 bg-primary-50 rounded-xl max-w-lg mx-auto">
+              <div className="mt-6 p-4 bg-coral-50 rounded-xl max-w-lg mx-auto">
                 <p className="text-sm text-coral-900">
                   <strong>Selected:</strong> {formData.travelerProfiles.length} profile{formData.travelerProfiles.length > 1 ? 's' : ''}
                   {formData.travelerProfiles.length > 4 && (
@@ -863,7 +863,7 @@ function CreateItineraryPage() {
             </div>
 
             {formData.budget && (
-              <div className="mt-6 p-4 bg-primary-50 rounded-xl max-w-lg mx-auto">
+              <div className="mt-6 p-4 bg-coral-50 rounded-xl max-w-lg mx-auto">
                 <p className="text-sm text-coral-900">
                   <strong>{BUDGET_OPTIONS.find(o => o.value === formData.budget)?.label}:</strong>{' '}
                   {BUDGET_OPTIONS.find(o => o.value === formData.budget)?.description}

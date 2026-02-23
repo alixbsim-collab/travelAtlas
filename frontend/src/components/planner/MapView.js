@@ -32,8 +32,8 @@ function MapView({ activities, itinerary }) {
   if (activitiesWithLocations.length === 0) {
     return (
       <div className="h-full bg-white rounded-lg shadow-sm border border-platinum-200 flex flex-col items-center justify-center p-8 text-center">
-        <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mb-4">
-          <MapPin size={32} className="text-primary-500" />
+        <div className="w-16 h-16 bg-coral-50 rounded-full flex items-center justify-center mb-4">
+          <MapPin size={32} className="text-coral-500" />
         </div>
         <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-2">
           No locations yet
@@ -67,7 +67,7 @@ function MapView({ activities, itinerary }) {
               >
                 <div className="relative">
                   {/* Day number badge */}
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md border-2 border-primary-500 z-10">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md border-2 border-coral-400 z-10">
                     {activity.day_number}
                   </div>
 

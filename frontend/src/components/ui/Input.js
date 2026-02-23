@@ -23,7 +23,7 @@ function Input({
           className="block text-sm font-medium text-charcoal-500 mb-2"
         >
           {label}
-          {required && <span className="text-primary-500 ml-1">*</span>}
+          {required && <span className="text-coral-500 ml-1">*</span>}
         </label>
       )}
       <input
@@ -37,9 +37,9 @@ function Input({
         required={required}
         className={`
           w-full px-4 py-2.5 rounded-lg border-2
-          ${error ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'}
+          ${error ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-coral-400'}
           focus:outline-none focus:ring-2
-          ${error ? 'focus:ring-red-200' : 'focus:ring-primary-200'}
+          ${error ? 'focus:ring-red-200' : 'focus:ring-coral-200'}
           disabled:bg-gray-100 disabled:cursor-not-allowed
           transition-colors duration-200
         `}

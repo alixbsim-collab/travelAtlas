@@ -13,7 +13,7 @@ function LoadingSpinner({ size = 'md', text = 'Loading...' }) {
         {/* Spinning globe icon */}
         <div className={`${sizes[size]} animate-spin`}>
           <svg
-            className="w-full h-full text-primary-500"
+            className="w-full h-full text-coral-500"
             fill="none"
             viewBox="0 0 24 24"
           >

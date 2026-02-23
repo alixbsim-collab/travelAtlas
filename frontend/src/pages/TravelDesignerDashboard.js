@@ -50,8 +50,8 @@ function ProfileEditModal({ itinerary, onClose, onSave }) {
                 onClick={() => handleToggle(profile.id)}
                 className={`p-4 rounded-xl border-2 transition-all text-left ${
                   selectedProfiles.includes(profile.id)
-                    ? 'border-coral-400 bg-primary-50'
-                    : 'border-platinum-200 hover:border-primary-300'
+                    ? 'border-coral-400 bg-coral-50'
+                    : 'border-platinum-200 hover:border-coral-300'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -61,7 +61,7 @@ function ProfileEditModal({ itinerary, onClose, onSave }) {
                     <div className="text-xs text-platinum-600">{profile.description}</div>
                   </div>
                   {selectedProfiles.includes(profile.id) && (
-                    <div className="w-5 h-5 rounded-full bg-primary-500 text-white flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full bg-coral-400 text-white flex items-center justify-center">
                       <Check size={12} />
                     </div>
                   )}
@@ -169,7 +169,7 @@ function ImageModal({ itinerary, onClose, onSave }) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for images..."
-                  className="w-full pl-10 pr-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400"
                 />
               </div>
 
@@ -184,12 +184,12 @@ function ImageModal({ itinerary, onClose, onSave }) {
                       key={index}
                       onClick={() => setImageUrl(url)}
                       className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all ${
-                        imageUrl === url ? 'border-coral-400 ring-2 ring-primary-200' : 'border-transparent'
+                        imageUrl === url ? 'border-coral-400 ring-2 ring-coral-200' : 'border-transparent'
                       }`}
                     >
                       <img src={url} alt="" className="w-full h-full object-cover" />
                       {imageUrl === url && (
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center">
+                        <div className="absolute top-2 right-2 w-6 h-6 bg-coral-400 rounded-full flex items-center justify-center">
                           <Check size={14} className="text-white" />
                         </div>
                       )}
@@ -210,7 +210,7 @@ function ImageModal({ itinerary, onClose, onSave }) {
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://example.com/image.jpg"
-                className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400"
               />
               {imageUrl && (
                 <div className="mt-4 rounded-lg overflow-hidden border border-platinum-200">
@@ -645,7 +645,7 @@ function TravelDesignerDashboard() {
               {atlasFiles.map((file) => (
                 <Card key={file.id} hover className="flex flex-col">
                   {/* Thumbnail */}
-                  <div className="h-40 bg-gradient-to-br from-secondary-400 to-primary-500 rounded-t-lg mb-4 flex items-center justify-center relative">
+                  <div className="h-40 bg-gradient-to-br from-secondary-400 to-coral-400 rounded-t-lg mb-4 flex items-center justify-center relative">
                     {file.thumbnail_url ? (
                       <img
                         src={file.thumbnail_url}
