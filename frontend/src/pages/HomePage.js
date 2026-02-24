@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import ScrollReveal from '../components/ui/ScrollReveal';
-import { ArrowRight, Plane, BookOpen, Map, Sparkles, Calendar, GripVertical, Check, MessageSquare, Compass, Zap } from 'lucide-react';
+import { ArrowRight, Plane, BookOpen, Map, Sparkles, Calendar, GripVertical, Check, MessageSquare, Compass } from 'lucide-react';
 
 const GlobeSection = React.lazy(() => import('../components/home/GlobeSection'));
 
@@ -49,22 +49,22 @@ function HomePage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-naples-100 text-naples-800 text-sm font-medium mb-6"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-naples-400/30 text-charcoal-500 text-sm font-medium mb-6"
               >
-                <Sparkles size={14} /> AI-Powered Travel Planning
+                <Compass size={14} /> Your journey starts here
               </motion.span>
 
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-heading text-charcoal-500 mb-6 leading-[1.1]">
-                Plan Your{' '}
-                <span className="bg-gradient-to-r from-coral-400 to-coral-600 bg-clip-text text-transparent">
-                  Perfect
+                Shape Your{' '}
+                <span className="text-coral-400">
+                  Dream
                 </span>{' '}
                 Journey
               </h1>
 
-              <p className="text-lg text-platinum-700 mb-10 max-w-lg leading-relaxed">
-                Create personalized travel itineraries with our intelligent planner.
-                Discover curated experiences and make every trip unforgettable.
+              <p className="text-lg text-charcoal-400 mb-10 max-w-lg leading-relaxed">
+                Turn your travel ideas into structured, day-by-day itineraries.
+                Explore destinations, build plans, and share your adventures.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -154,14 +154,14 @@ function HomePage() {
         <div className="container mx-auto px-4">
           <ScrollReveal>
             <div className="text-center mb-14">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-naples-100 text-naples-800 text-sm font-medium mb-4">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-naples-400/30 text-charcoal-500 text-sm font-medium mb-4">
                 <Compass size={14} /> How It Works
               </span>
               <h2 className="text-3xl md:text-4xl font-heading font-bold text-charcoal-500 mb-4">
                 Your Trip, Designed in Minutes
               </h2>
-              <p className="text-platinum-700 text-lg max-w-2xl mx-auto">
-                Our AI Travel Designer builds personalized day-by-day itineraries you can customize, share, and explore.
+              <p className="text-charcoal-400 text-lg max-w-2xl mx-auto">
+                Tell us where you want to go, and we'll help you structure a complete day-by-day itinerary you can customize and share.
               </p>
             </div>
           </ScrollReveal>
@@ -173,8 +173,8 @@ function HomePage() {
                 <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-naples-400 text-charcoal-500 flex items-center justify-center shadow-md">
                   <span className="text-2xl font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>1</span>
                 </div>
-                <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Tell Us Your Dream Trip</h3>
-                <p className="text-platinum-700 max-w-xs mx-auto">
+                <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Describe Your Vision</h3>
+                <p className="text-charcoal-400 max-w-xs mx-auto">
                   Choose your destination, dates, pace, and travel style. Or let us surprise you.
                 </p>
               </div>
@@ -185,9 +185,9 @@ function HomePage() {
                 <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-coral-400 text-white flex items-center justify-center shadow-md">
                   <span className="text-2xl font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>2</span>
                 </div>
-                <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">AI Builds Your Itinerary</h3>
-                <p className="text-platinum-700 max-w-xs mx-auto">
-                  Our AI generates a full day-by-day plan with activities, restaurants, and real coordinates.
+                <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Get a Structured Plan</h3>
+                <p className="text-charcoal-400 max-w-xs mx-auto">
+                  Receive a complete day-by-day itinerary with activities, restaurants, and real locations.
                 </p>
               </div>
             </ScrollReveal>
@@ -198,8 +198,8 @@ function HomePage() {
                   <span className="text-2xl font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>3</span>
                 </div>
                 <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Customize & Explore</h3>
-                <p className="text-platinum-700 max-w-xs mx-auto">
-                  Drag, drop, and chat with your AI assistant. View everything on an interactive map.
+                <p className="text-charcoal-400 max-w-xs mx-auto">
+                  Drag, drop, and refine your plan. View everything on an interactive map.
                 </p>
               </div>
             </ScrollReveal>
@@ -226,12 +226,12 @@ function HomePage() {
                   {/* Left: AI Chat */}
                   <div className="md:col-span-2 border-r border-platinum-200 p-5">
                     <div className="flex items-center gap-2 mb-4 pb-3 border-b border-platinum-200">
-                      <div className="w-8 h-8 rounded-full bg-naples-100 flex items-center justify-center">
-                        <MessageSquare size={16} className="text-naples-600" />
+                      <div className="w-8 h-8 rounded-full bg-naples-400/30 flex items-center justify-center">
+                        <MessageSquare size={16} className="text-charcoal-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-charcoal-500">AI Assistant</p>
-                        <p className="text-xs text-platinum-600">Ask me anything</p>
+                        <p className="text-sm font-bold text-charcoal-500">Travel Assistant</p>
+                        <p className="text-xs text-charcoal-300">Refine your plan</p>
                       </div>
                     </div>
 
@@ -314,8 +314,8 @@ function HomePage() {
           <div className="text-center mt-10">
             <Link to="/designer/create">
               <Button size="lg" className="gap-2 shadow-md">
-                <Zap size={18} />
-                Try the Travel Designer
+                <Compass size={18} />
+                Start Planning
               </Button>
             </Link>
           </div>
@@ -330,7 +330,7 @@ function HomePage() {
               <h2 className="text-3xl md:text-4xl font-heading font-bold text-charcoal-500 mb-4">
                 Everything You Need
               </h2>
-              <p className="text-platinum-700 text-lg max-w-xl mx-auto">
+              <p className="text-charcoal-400 text-lg max-w-xl mx-auto">
                 Tools and inspiration for every kind of traveler
               </p>
             </div>
@@ -344,7 +344,7 @@ function HomePage() {
                     <Plane size={28} className="text-naples-600" />
                   </div>
                   <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Smart Itinerary Builder</h3>
-                  <p className="text-platinum-700 mb-4">
+                  <p className="text-charcoal-400 mb-4">
                     Design day-by-day plans with our intuitive drag-and-drop interface.
                   </p>
                   <span className="text-coral-500 font-medium flex items-center gap-1 text-sm">
@@ -361,7 +361,7 @@ function HomePage() {
                     <BookOpen size={28} className="text-columbia-700" />
                   </div>
                   <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Curated Collections</h3>
-                  <p className="text-platinum-700 mb-4">
+                  <p className="text-charcoal-400 mb-4">
                     Browse expertly crafted itineraries from fellow travelers.
                   </p>
                   <span className="text-coral-500 font-medium flex items-center gap-1 text-sm">
@@ -378,7 +378,7 @@ function HomePage() {
                     <Map size={28} className="text-coral-500" />
                   </div>
                   <h3 className="text-xl font-heading font-bold mb-3 text-charcoal-500">Personalized Maps</h3>
-                  <p className="text-platinum-700 mb-4">
+                  <p className="text-charcoal-400 mb-4">
                     Visualize your journey with interactive maps and location pins.
                   </p>
                   <span className="text-coral-500 font-medium flex items-center gap-1 text-sm">

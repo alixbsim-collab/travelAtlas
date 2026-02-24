@@ -107,7 +107,7 @@ function SortableActivity({ activity, onEdit, onDelete }) {
           </div>
 
           {activity.custom_notes && (
-            <div className="mt-2 p-2 bg-yellow-50 rounded text-xs">
+            <div className="mt-2 p-2 bg-naples-50 rounded text-xs">
               📝 {activity.custom_notes}
             </div>
           )}

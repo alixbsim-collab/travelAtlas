@@ -19,7 +19,7 @@ function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">
             <p className="text-white/90 text-sm md:text-base">
-              <span className="font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>The Travel Atlas</span> — an AI travel planning tool designed by travellers for travellers.
+              <span className="font-bold" style={{ fontFamily: "'Fredoka', sans-serif" }}>The Travel Atlas</span> — a travel planning tool designed by travellers for travellers.
             </p>
           </div>
 

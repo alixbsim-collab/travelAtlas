@@ -143,7 +143,7 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
                   e.preventDefault();
                   setEditingNotes(true);
                 }}
-                className="text-xl hover:scale-125 transition-transform cursor-pointer p-1 hover:bg-yellow-100 rounded"
+                className="text-xl hover:scale-125 transition-transform cursor-pointer p-1 hover:bg-naples-100 rounded"
                 title="Click to add/edit notes"
                 type="button"
               >
@@ -151,7 +151,7 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
               </button>
               <h4 className="font-heading font-bold">{activity.title}</h4>
               {activity.custom_notes && (
-                <MessageSquare size={14} className="text-yellow-500" title="Has notes" />
+                <MessageSquare size={14} className="text-naples-600" title="Has notes" />
               )}
             </div>
             <div className="flex gap-1">
@@ -186,13 +186,13 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
                   }
                 }}
                 placeholder="Add your notes here..."
-                className="w-full h-20 px-2 py-1.5 text-xs border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none bg-yellow-50"
+                className="w-full h-20 px-2 py-1.5 text-xs border border-naples-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-naples-400 resize-none bg-naples-50"
                 autoFocus
               />
             </div>
           ) : activity.custom_notes ? (
             <div
-              className="mb-2 p-2 bg-yellow-50 rounded text-xs text-yellow-800 border border-yellow-200 cursor-pointer hover:bg-yellow-100"
+              className="mb-2 p-2 bg-naples-50 rounded text-xs text-naples-800 border border-naples-200 cursor-pointer hover:bg-naples-100"
               onClick={(e) => { e.stopPropagation(); setEditingNotes(true); }}
             >
               📝 {activity.custom_notes}
@@ -1068,7 +1068,7 @@ function PlannerPage() {
           <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
             Taking Longer Than Usual
           </h1>
-          <p className="text-platinum-700 mb-6 max-w-sm mx-auto">
+          <p className="text-charcoal-400 mb-6 max-w-sm mx-auto">
             The server is still working on your {itinerary.destination} itinerary. This sometimes happens on the first request.
           </p>
 
@@ -1167,10 +1167,10 @@ function PlannerPage() {
               size="sm"
               onClick={() => setShowAssistant(!showAssistant)}
               className="gap-2"
-              title={showAssistant ? 'Hide AI Assistant' : 'Show AI Assistant'}
+              title={showAssistant ? 'Hide Assistant' : 'Show Assistant'}
             >
               {showAssistant ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
-              {showAssistant ? 'Hide AI' : 'Show AI'}
+              {showAssistant ? 'Hide Assistant' : 'Assistant'}
             </Button>
             <Button variant="outline" size="sm" onClick={handleSave} disabled={saving} className="gap-2">
               <Save size={16} />
@@ -1204,8 +1204,8 @@ function PlannerPage() {
                   />
                 </div>
               </Panel>
-              <PanelResizeHandle className="w-3 flex items-center justify-center hover:bg-coral-50 rounded transition-colors">
-                <div className="w-1 h-8 bg-platinum-400 hover:bg-coral-300 rounded-full transition-colors" />
+              <PanelResizeHandle className="w-3 flex items-center justify-center hover:bg-platinum-100 rounded transition-colors">
+                <div className="w-1 h-8 bg-platinum-300 hover:bg-charcoal-300 rounded-full transition-colors" />
               </PanelResizeHandle>
             </>
           )}
@@ -1217,7 +1217,7 @@ function PlannerPage() {
               {/* View toggle buttons */}
               <div className="px-4 py-3 flex items-center justify-end gap-1">
                 <Button
-                  variant={activeView === 'overview' ? 'primary' : 'outline'}
+                  variant={activeView === 'overview' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveView('overview')}
                   className="gap-1"
@@ -1226,7 +1226,7 @@ function PlannerPage() {
                   Overview
                 </Button>
                 <Button
-                  variant={activeView === 'timeline' ? 'primary' : 'outline'}
+                  variant={activeView === 'timeline' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveView('timeline')}
                   className="gap-1"
@@ -1235,7 +1235,7 @@ function PlannerPage() {
                   Timeline
                 </Button>
                 <Button
-                  variant={activeView === 'map' ? 'primary' : 'outline'}
+                  variant={activeView === 'map' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveView('map')}
                   className="gap-1"

@@ -374,13 +374,13 @@ function CreateItineraryPage() {
       case 1:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFFAEC' }}>
-              <MapPin size={40} style={{ color: '#FFDB70' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-naples-50">
+              <MapPin size={40} className="text-naples-400" />
             </div>
             <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               Where do you want to go?
             </h2>
-            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
+            <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
               Enter a city, country, or multiple destinations. Select "Undecided" to let us inspire you.
             </p>
 
@@ -419,8 +419,7 @@ function CreateItineraryPage() {
                 {destinations.map((dest) => (
                   <span
                     key={dest}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
-                    style={{ backgroundColor: '#E8F0F4', color: '#2C4251' }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-columbia-100 text-charcoal-500"
                   >
                     <MapPin size={14} />
                     {dest}
@@ -566,13 +565,13 @@ function CreateItineraryPage() {
       case 2:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E8F0F4' }}>
-              <Plane size={40} style={{ color: '#4A7B91' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-columbia-100">
+              <Plane size={40} className="text-columbia-700" />
             </div>
             <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               Where are you traveling from?
             </h2>
-            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
+            <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
               This helps us plan transport, arrival logistics, and your first-day schedule.
             </p>
 
@@ -661,13 +660,13 @@ function CreateItineraryPage() {
       case 3:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E8F0F4' }}>
-              <Calendar size={40} style={{ color: '#4A7B91' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-columbia-100">
+              <Calendar size={40} className="text-columbia-700" />
             </div>
             <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               When are you traveling?
             </h2>
-            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
+            <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
               Set your trip length and dates. Flexible dates give us more room to optimize.
             </p>
 
@@ -684,7 +683,7 @@ function CreateItineraryPage() {
                   >
                     -
                   </button>
-                  <div className="text-5xl font-bold" style={{ color: '#4A7B91' }}>
+                  <div className="text-5xl font-bold text-columbia-700">
                     {formData.tripLength}
                   </div>
                   <button
@@ -743,13 +742,13 @@ function CreateItineraryPage() {
       case 4:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFFAEC' }}>
-              <Gauge size={40} style={{ color: '#FFDB70' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-naples-50">
+              <Gauge size={40} className="text-naples-400" />
             </div>
             <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               What's your travel pace?
             </h2>
-            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
+            <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
               This helps us balance activities with downtime.
             </p>
 
@@ -785,13 +784,13 @@ function CreateItineraryPage() {
       case 5:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E8F0F4' }}>
-              <Users size={40} style={{ color: '#4A7B91' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-columbia-100">
+              <Users size={40} className="text-columbia-700" />
             </div>
             <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               What kind of traveler are you?
             </h2>
-            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
+            <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
               Select 1-4 profiles that match your travel style.
             </p>
 
@@ -839,13 +838,13 @@ function CreateItineraryPage() {
       case 6:
         return (
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFFAEC' }}>
-              <DollarSign size={40} style={{ color: '#FFDB70' }} />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-naples-50">
+              <DollarSign size={40} className="text-naples-400" />
             </div>
             <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               What's your budget?
             </h2>
-            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
+            <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
               This helps us suggest appropriate accommodations and activities.
             </p>
 
@@ -882,14 +881,14 @@ function CreateItineraryPage() {
       case 7:
         return (
           <div className="text-center">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFFAEC' }}>
-              <Sparkles size={48} style={{ color: '#FFDB70' }} />
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center bg-naples-50">
+              <Sparkles size={48} className="text-naples-400" />
             </div>
             <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
               Ready to create your trip?
             </h2>
-            <p className="text-platinum-600 mb-8 max-w-md mx-auto">
-              Review your preferences and let our AI design your perfect itinerary.
+            <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
+              Review your preferences and we'll build your itinerary.
             </p>
 
             {/* Summary */}
@@ -937,7 +936,7 @@ function CreateItineraryPage() {
                     {formData.travelerProfiles.map(profileId => {
                       const profile = TRAVELER_PROFILES.find(p => p.id === profileId);
                       return (
-                        <span key={profileId} className="text-xs px-3 py-1 rounded-full" style={{ backgroundColor: '#FFFAEC', color: '#6B5310' }}>
+                        <span key={profileId} className="text-xs px-3 py-1 rounded-full bg-naples-50 text-naples-900">
                           {profile?.emoji} {profile?.title}
                         </span>
                       );
@@ -962,7 +961,7 @@ function CreateItineraryPage() {
               ) : (
                 <>
                   <Sparkles size={22} />
-                  Generate My Itinerary
+                  Build My Itinerary
                 </>
               )}
             </motion.button>

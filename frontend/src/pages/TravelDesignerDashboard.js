@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import PageContainer from '../components/layout/PageContainer';
@@ -389,7 +389,7 @@ function TravelDesignerDashboard() {
                 Design Your Journey
               </h2>
               <p className="text-lg text-white/70">
-                Create a personalized itinerary with our AI-powered travel designer
+                Turn your travel ideas into a structured, day-by-day plan
               </p>
             </div>
             <div className="flex gap-3">
@@ -594,7 +594,7 @@ function TravelDesignerDashboard() {
                       <span className="text-6xl">📖</span>
                     )}
                     {file.is_premium && (
-                      <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs px-2 py-1 rounded-full font-bold">
+                      <span className="absolute top-2 right-2 bg-naples-400 text-charcoal-500 text-xs px-2 py-1 rounded-full font-bold">
                         Premium
                       </span>
                     )}

@@ -7,7 +7,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('AI is thinking...');
+  const [loadingMessage, setLoadingMessage] = useState('Working on it...');
   const [suggestedActivities, setSuggestedActivities] = useState([]);
   const [draggingId, setDraggingId] = useState(null);
   const messagesEndRef = useRef(null);
@@ -16,7 +16,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
     // Initial greeting only - itinerary is generated on the create page
     const initialMessage = {
       role: 'assistant',
-      content: `Welcome! I'm your AI travel assistant. I'm here to help you customize your ${itinerary.trip_length}-day trip to ${itinerary.destination}. You can ask me to adjust activities, add specific experiences, or change the pace of your trip.`,
+      content: `Welcome! I'm here to help you customize your ${itinerary.trip_length}-day trip to ${itinerary.destination}. You can ask me to adjust activities, add specific experiences, or change the pace of your trip.`,
       timestamp: new Date()
     };
 
@@ -93,11 +93,11 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setLoading(true);
-    setLoadingMessage('Connecting to AI...');
+    setLoadingMessage('Working on it...');
 
     // Show progressive loading messages
     const loadingTimer = setTimeout(() => {
-      setLoadingMessage('AI is thinking... (this may take a moment on first request)');
+      setLoadingMessage('Still working... (this may take a moment on first request)');
     }, 3000);
 
     try {
@@ -149,7 +149,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
     } finally {
       clearTimeout(loadingTimer);
       setLoading(false);
-      setLoadingMessage('AI is thinking...');
+      setLoadingMessage('Working on it...');
     }
   };
 
@@ -219,12 +219,12 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
   return (
     <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
       {/* Header */}
-      <div className="p-4 border-b border-platinum-200 bg-gradient-to-r from-coral-400 to-columbia-700">
+      <div className="p-4 border-b border-platinum-200 bg-charcoal-500">
         <div className="flex items-center gap-2 text-white">
-          <Sparkles size={24} />
-          <h2 className="text-xl font-heading font-bold">AI Travel Assistant</h2>
+          <Sparkles size={24} className="text-naples-400" />
+          <h2 className="text-xl font-heading font-bold">Travel Assistant</h2>
         </div>
-        <p className="text-sm text-white opacity-90 mt-1">
+        <p className="text-sm text-white/70 mt-1">
           Ask me to adjust your itinerary or add specific activities
         </p>
       </div>
@@ -239,7 +239,7 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
             <div
               className={`max-w-[80%] rounded-lg p-4 ${
                 message.role === 'user'
-                  ? 'bg-coral-400 text-white'
+                  ? 'bg-charcoal-500 text-white'
                   : 'bg-platinum-100 text-charcoal-500'
               }`}
             >
