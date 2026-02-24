@@ -971,7 +971,7 @@ function PlannerPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-naples-50">
+      <div className="flex items-center justify-center min-h-screen bg-naples-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-400 mx-auto mb-4"></div>
           <p className="text-platinum-600">Loading your itinerary...</p>
@@ -985,7 +985,7 @@ function PlannerPage() {
   // Full-screen generating page — shown when activities are being generated
   if (generatingActivities && activities.length === 0) {
     return (
-      <div className="min-h-screen bg-naples-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-naples-100 flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           {/* Animated icon */}
           <div className="relative w-24 h-24 mx-auto mb-8">
@@ -1059,7 +1059,7 @@ function PlannerPage() {
   // Timed-out generating page — shown when polling expired without activities
   if (generationTimedOut && activities.length === 0) {
     return (
-      <div className="min-h-screen bg-naples-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-naples-100 flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 flex items-center justify-center">
             <span className="text-3xl">⏳</span>
@@ -1136,7 +1136,7 @@ function PlannerPage() {
     : activitiesWithCoords.filter(a => a.day_number === parseInt(selectedDay));
 
   return (
-    <div className="h-screen flex flex-col bg-naples-50">
+    <div className="h-screen flex flex-col bg-naples-100">
       {renderNotesModal}
       {renderAddActivityModal}
       {/* Top Navigation */}

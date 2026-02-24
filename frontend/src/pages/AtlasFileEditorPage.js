@@ -187,7 +187,8 @@ function AtlasFileEditorPage() {
         trip_length: formData.trip_length,
         cover_image_url: formData.cover_image_url || null,
         content,
-        user_id: user.id,
+        author_id: user.id,
+        author: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Anonymous',
         published_at: publish ? new Date().toISOString() : null,
       };
 

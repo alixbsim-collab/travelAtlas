@@ -5,7 +5,7 @@ import AnimatedLayout from './AnimatedLayout';
 
 function MainLayout({ children }) {
   return (
-    <div className="flex flex-col min-h-screen bg-naples-50">
+    <div className="flex flex-col min-h-screen bg-naples-100">
       <Header />
       <main className="flex-grow">
         <AnimatedLayout>

@@ -91,22 +91,29 @@ function ImageModal({ itinerary, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('search'); // search, url
 
-  // Search Unsplash for images (using their free API)
+  // Curated travel photos from Unsplash (images.unsplash.com direct links)
+  const TRAVEL_PHOTOS = [
+    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80', // lake + mountains
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80', // tropical beach
+    'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80', // mountain hiking
+    'https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=800&q=80', // travel road
+    'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800&q=80', // boats harbor
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80', // valley landscape
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80', // lake panorama
+    'https://images.unsplash.com/photo-1528127269322-539801943592?w=800&q=80', // Vietnam boats
+    'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=800&q=80', // Venice canal
+    'https://images.unsplash.com/photo-1504598318550-17eba1008a68?w=800&q=80', // desert camels
+    'https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=800&q=80', // pool party
+    'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=800&q=80', // ocean relaxation
+  ];
+
   const searchUnsplash = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
     try {
-      // Using Unsplash Source API for demo (no auth needed)
-      // In production, use their API with proper key
-      const results = [
-        `https://source.unsplash.com/800x600/?${encodeURIComponent(searchQuery)},travel,1`,
-        `https://source.unsplash.com/800x600/?${encodeURIComponent(searchQuery)},landmark,2`,
-        `https://source.unsplash.com/800x600/?${encodeURIComponent(searchQuery)},city,3`,
-        `https://source.unsplash.com/800x600/?${encodeURIComponent(searchQuery)},nature,4`,
-        `https://source.unsplash.com/800x600/?${encodeURIComponent(searchQuery)},architecture,5`,
-        `https://source.unsplash.com/800x600/?${encodeURIComponent(searchQuery)},destination,6`,
-      ];
-      setUnsplashResults(results);
+      // Shuffle and pick 6 photos from the curated set
+      const shuffled = [...TRAVEL_PHOTOS].sort(() => Math.random() - 0.5);
+      setUnsplashResults(shuffled.slice(0, 6));
     } catch (error) {
       console.error('Error searching images:', error);
     }

@@ -22,7 +22,7 @@ function Header() {
   const navLinkClass = "text-charcoal-500 hover:text-coral-500 font-medium transition-colors";
 
   return (
-    <header className="bg-white/80 backdrop-blur-lg border-b border-platinum-200 sticky top-0 z-50">
+    <header className="bg-naples-100/90 backdrop-blur-lg border-b border-naples-300/40 sticky top-0 z-50">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
