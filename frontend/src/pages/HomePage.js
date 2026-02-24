@@ -32,7 +32,7 @@ function HomePage() {
   return (
     <div>
       {/* ── HERO SECTION ── */}
-      <section className="relative overflow-hidden bg-platinum-50">
+      <section className="relative overflow-hidden bg-naples-50">
         {/* Decorative blobs */}
         <div className="absolute top-[-120px] right-[-80px] w-[400px] h-[400px] rounded-full bg-naples-200/40 blur-3xl pointer-events-none" />
         <div className="absolute bottom-[-80px] left-[-60px] w-[300px] h-[300px] rounded-full bg-coral-200/30 blur-3xl pointer-events-none" />
@@ -323,7 +323,7 @@ function HomePage() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-columbia-50">
         <div className="container mx-auto px-4">
           <ScrollReveal>
             <div className="text-center mb-14">
@@ -392,7 +392,7 @@ function HomePage() {
       </section>
 
       {/* ── CTA SECTION ── */}
-      <section className="py-20 bg-platinum-50">
+      <section className="py-20 bg-naples-50">
         <div className="container mx-auto px-4">
           <ScrollReveal>
             <div className="rounded-3xl p-12 md:p-16 text-center bg-naples-400">

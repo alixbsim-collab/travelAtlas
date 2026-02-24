@@ -445,25 +445,20 @@ function TravelDesignerDashboard() {
     <PageContainer>
       <div className="max-w-7xl mx-auto">
         {/* Create New Itinerary CTA */}
-        <div className="mb-12 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #EF8557 0%, #C85A2E 35%, #4A7B91 70%, #2C4251 100%)' }}>
+        <div className="mb-12 rounded-2xl overflow-hidden bg-naples-400">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-8 md:p-10">
             <div className="flex-1">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-3 text-white">
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-3 text-charcoal-500">
                 Design Your Journey
               </h2>
-              <p className="text-lg text-white/90">
+              <p className="text-lg text-charcoal-400">
                 Create a personalized itinerary with our AI-powered travel designer
               </p>
             </div>
             <div className="flex gap-3">
               <Link to="/designer/create">
                 <button
-                  className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg"
-                  style={{
-                    backgroundColor: '#FFDB70',
-                    color: '#2C4251',
-                    boxShadow: '0 4px 14px rgba(245, 200, 70, 0.4)'
-                  }}
+                  className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-charcoal-500 text-white"
                 >
                   <PlusCircle size={22} />
                   Plan
@@ -471,7 +466,7 @@ function TravelDesignerDashboard() {
               </Link>
               <Link to="/atlas/new">
                 <button
-                  className="flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-white/20 text-white border-2 border-white/40 hover:bg-white/30"
+                  className="flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-white text-charcoal-500 border-2 border-charcoal-200 hover:bg-platinum-50"
                 >
                   <FileText size={22} />
                   Atlas File
@@ -508,8 +503,7 @@ function TravelDesignerDashboard() {
                 <Card key={itinerary.id} hover className="flex flex-col">
                   {/* Thumbnail with Add Image button */}
                   <div
-                    className="h-40 rounded-t-lg mb-4 flex items-center justify-center relative group cursor-pointer"
-                    style={{ background: itinerary.thumbnail_url ? 'none' : 'linear-gradient(135deg, #EF8557 0%, #C85A2E 40%, #4A7B91 100%)' }}
+                    className={`h-40 rounded-t-lg mb-4 flex items-center justify-center relative group cursor-pointer ${!itinerary.thumbnail_url ? 'bg-columbia-200' : ''}`}
                     onClick={() => setEditingImage(itinerary)}
                   >
                     {itinerary.thumbnail_url ? (
@@ -645,7 +639,7 @@ function TravelDesignerDashboard() {
               {atlasFiles.map((file) => (
                 <Card key={file.id} hover className="flex flex-col">
                   {/* Thumbnail */}
-                  <div className="h-40 bg-gradient-to-br from-secondary-400 to-coral-400 rounded-t-lg mb-4 flex items-center justify-center relative">
+                  <div className="h-40 bg-coral-100 rounded-t-lg mb-4 flex items-center justify-center relative">
                     {file.thumbnail_url ? (
                       <img
                         src={file.thumbnail_url}

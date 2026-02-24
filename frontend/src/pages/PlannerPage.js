@@ -971,7 +971,7 @@ function PlannerPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-platinum-50">
+      <div className="flex items-center justify-center min-h-screen bg-naples-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-400 mx-auto mb-4"></div>
           <p className="text-platinum-600">Loading your itinerary...</p>
@@ -1059,7 +1059,7 @@ function PlannerPage() {
   // Timed-out generating page — shown when polling expired without activities
   if (generationTimedOut && activities.length === 0) {
     return (
-      <div className="min-h-screen bg-platinum-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-naples-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 flex items-center justify-center">
             <span className="text-3xl">⏳</span>
@@ -1136,11 +1136,11 @@ function PlannerPage() {
     : activitiesWithCoords.filter(a => a.day_number === parseInt(selectedDay));
 
   return (
-    <div className="h-screen flex flex-col bg-platinum-50">
+    <div className="h-screen flex flex-col bg-naples-50">
       {renderNotesModal}
       {renderAddActivityModal}
       {/* Top Navigation */}
-      <div className="bg-white border-b border-platinum-200 px-6 py-4">
+      <div className="bg-white/80 backdrop-blur-lg px-6 py-4">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -1214,50 +1214,35 @@ function PlannerPage() {
           <Panel defaultSize={showAssistant ? "60%" : "100%"} minSize="35%" id="itinerary-panel">
           <div className="h-full flex flex-col min-w-0">
             <div className="flex flex-col h-full bg-white rounded-lg shadow-lg overflow-hidden">
-              {/* Header with view buttons */}
-              <div className="p-4 border-b border-platinum-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h2 className="text-xl font-heading font-bold text-charcoal-500">
-                      Your Itinerary
-                    </h2>
-                    <p className="text-sm text-platinum-600">
-                      {itinerary.destination} • {itinerary.trip_length} days
-                    </p>
-                  </div>
-
-                  <div className="flex gap-1">
-                    <Button
-                      variant={activeView === 'overview' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setActiveView('overview')}
-                      className="gap-1"
-                    >
-                      <LayoutGrid size={16} />
-                      Overview
-                    </Button>
-                    <Button
-                      variant={activeView === 'timeline' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setActiveView('timeline')}
-                      className="gap-1"
-                    >
-                      <List size={16} />
-                      Timeline
-                    </Button>
-                    <Button
-                      variant={activeView === 'map' ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setActiveView('map')}
-                      className="gap-1"
-                    >
-                      <MapIcon size={16} />
-                      Map
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Note: Full-screen generating / timed-out pages handle the generating state above this render */}
+              {/* View toggle buttons */}
+              <div className="px-4 py-3 flex items-center justify-end gap-1">
+                <Button
+                  variant={activeView === 'overview' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveView('overview')}
+                  className="gap-1"
+                >
+                  <LayoutGrid size={16} />
+                  Overview
+                </Button>
+                <Button
+                  variant={activeView === 'timeline' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveView('timeline')}
+                  className="gap-1"
+                >
+                  <List size={16} />
+                  Timeline
+                </Button>
+                <Button
+                  variant={activeView === 'map' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveView('map')}
+                  className="gap-1"
+                >
+                  <MapIcon size={16} />
+                  Map
+                </Button>
               </div>
 
               {/* Content based on active view */}
