@@ -395,15 +395,15 @@ function HomePage() {
       <section className="py-20 bg-naples-100">
         <div className="container mx-auto px-4">
           <ScrollReveal>
-            <div className="rounded-3xl p-12 md:p-16 text-center bg-naples-400">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4 text-charcoal-500">
+            <div className="rounded-3xl p-12 md:p-16 text-center bg-charcoal-500">
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4 text-white">
                 Ready to Start Your Adventure?
               </h2>
-              <p className="text-lg mb-8 text-charcoal-400 max-w-lg mx-auto">
+              <p className="text-lg mb-8 text-white/70 max-w-lg mx-auto">
                 Join thousands of travelers creating amazing journeys
               </p>
               <Link to="/register">
-                <Button variant="secondary" size="lg" className="shadow-lg bg-charcoal-500 text-white hover:bg-charcoal-400">
+                <Button variant="secondary" size="lg" className="shadow-lg bg-naples-400 text-charcoal-500 hover:bg-naples-300">
                   Sign Up Free
                 </Button>
               </Link>

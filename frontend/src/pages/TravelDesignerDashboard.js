@@ -5,7 +5,7 @@ import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { TRAVELER_PROFILES } from '../constants/travelerProfiles';
-import { PlusCircle, Calendar, MapPin, Copy, Trash2, Edit, X, Check, Image, Upload, Link as LinkIcon, Search, FileText } from 'lucide-react';
+import { PlusCircle, MapPin, Copy, Trash2, Edit, X, Check, Image, Link as LinkIcon, Search, FileText } from 'lucide-react';
 
 // Profile Edit Modal Component
 function ProfileEditModal({ itinerary, onClose, onSave }) {
@@ -240,61 +240,6 @@ function ImageModal({ itinerary, onClose, onSave }) {
 }
 
 // Inline Editable Title Component
-function EditableTitle({ title, onSave }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(title);
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
-
-  const handleSave = () => {
-    if (value.trim()) {
-      onSave(value.trim());
-    } else {
-      setValue(title);
-    }
-    setIsEditing(false);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSave();
-    } else if (e.key === 'Escape') {
-      setValue(title);
-      setIsEditing(false);
-    }
-  };
-
-  if (isEditing) {
-    return (
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={handleSave}
-        onKeyDown={handleKeyDown}
-        className="text-xl font-heading font-bold mb-2 w-full border-b-2 border-coral-400 outline-none bg-transparent"
-      />
-    );
-  }
-
-  return (
-    <h3
-      onClick={() => setIsEditing(true)}
-      className="text-xl font-heading font-bold mb-2 line-clamp-2 cursor-pointer hover:text-coral-500 transition-colors"
-      title="Click to edit"
-    >
-      {title}
-    </h3>
-  );
-}
-
 function TravelDesignerDashboard() {
   const [savedItineraries, setSavedItineraries] = useState([]);
   const [atlasFiles, setAtlasFiles] = useState([]);
@@ -385,21 +330,6 @@ function TravelDesignerDashboard() {
     }
   };
 
-  const handleUpdateTitle = async (itineraryId, newTitle) => {
-    const { error } = await supabase
-      .from('itineraries')
-      .update({ title: newTitle })
-      .eq('id', itineraryId);
-
-    if (error) {
-      console.error('Error updating title:', error);
-    } else {
-      setSavedItineraries(prev =>
-        prev.map(it => it.id === itineraryId ? { ...it, title: newTitle } : it)
-      );
-    }
-  };
-
   const handleUpdateProfiles = async (itineraryId, profiles) => {
     const { error } = await supabase
       .from('itineraries')
@@ -452,20 +382,20 @@ function TravelDesignerDashboard() {
     <PageContainer>
       <div className="max-w-7xl mx-auto">
         {/* Create New Itinerary CTA */}
-        <div className="mb-12 rounded-2xl overflow-hidden bg-naples-400">
+        <div className="mb-12 rounded-2xl overflow-hidden bg-charcoal-500">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-8 md:p-10">
             <div className="flex-1">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-3 text-charcoal-500">
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-3 text-white">
                 Design Your Journey
               </h2>
-              <p className="text-lg text-charcoal-400">
+              <p className="text-lg text-white/70">
                 Create a personalized itinerary with our AI-powered travel designer
               </p>
             </div>
             <div className="flex gap-3">
               <Link to="/designer/create">
                 <button
-                  className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-charcoal-500 text-white"
+                  className="flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-naples-400 text-charcoal-500"
                 >
                   <PlusCircle size={22} />
                   Plan
@@ -473,7 +403,7 @@ function TravelDesignerDashboard() {
               </Link>
               <Link to="/atlas/new">
                 <button
-                  className="flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-white text-charcoal-500 border-2 border-charcoal-200 hover:bg-platinum-50"
+                  className="flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-white/10 text-white border-2 border-white/20 hover:bg-white/20"
                 >
                   <FileText size={22} />
                   Atlas File
@@ -506,111 +436,118 @@ function TravelDesignerDashboard() {
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {savedItineraries.map((itinerary) => (
-                <Card key={itinerary.id} hover className="flex flex-col">
-                  {/* Thumbnail with Add Image button */}
-                  <div
-                    className={`h-40 rounded-t-lg mb-4 flex items-center justify-center relative group cursor-pointer ${!itinerary.thumbnail_url ? 'bg-columbia-200' : ''}`}
-                    onClick={() => setEditingImage(itinerary)}
-                  >
-                    {itinerary.thumbnail_url ? (
-                      <img
-                        src={itinerary.thumbnail_url}
-                        alt={itinerary.title}
-                        className="w-full h-full object-cover rounded-t-lg"
-                      />
-                    ) : (
-                      <span className="text-6xl">🗺️</span>
-                    )}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-t-lg">
-                      <button className="bg-white/90 text-charcoal-500 px-4 py-2 rounded-lg font-medium flex items-center gap-2">
-                        <Image size={18} />
-                        {itinerary.thumbnail_url ? 'Change Image' : 'Add Image'}
-                      </button>
-                    </div>
-                  </div>
+              {savedItineraries.map((itinerary) => {
+                const CARD_COLORS = ['bg-coral-400', 'bg-columbia-400', 'bg-naples-400', 'bg-charcoal-500', 'bg-coral-300', 'bg-columbia-300'];
+                const colorClass = CARD_COLORS[savedItineraries.indexOf(itinerary) % CARD_COLORS.length];
+                const isDark = colorClass.includes('charcoal');
 
-                  {/* Content */}
-                  <div className="flex-1 px-6 pb-6">
-                    {/* Editable Title */}
-                    <EditableTitle
-                      title={itinerary.title}
-                      onSave={(newTitle) => handleUpdateTitle(itinerary.id, newTitle)}
-                    />
-
-                    <div className="space-y-2 mb-4 text-sm text-platinum-600">
-                      <div className="flex items-center gap-2">
-                        <MapPin size={16} />
-                        <span>{itinerary.destination}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar size={16} />
-                        <span>{itinerary.trip_length} days</span>
-                      </div>
-                    </div>
-
-                    {/* Clickable Traveler Profiles */}
+                return (
+                  <div key={itinerary.id} className="rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 group flex flex-col bg-white">
+                    {/* Large graphic thumbnail */}
                     <div
-                      className="flex flex-wrap gap-2 mb-4 cursor-pointer group"
-                      onClick={() => setEditingProfile(itinerary)}
-                      title="Click to edit profiles"
+                      className={`h-52 relative cursor-pointer overflow-hidden ${!itinerary.thumbnail_url ? colorClass : ''}`}
+                      onClick={() => setEditingImage(itinerary)}
                     >
-                      {itinerary.traveler_profiles?.slice(0, 3).map((profile, idx) => (
-                        <span
-                          key={idx}
-                          className="text-xs px-2 py-1 bg-coral-100 text-coral-700 rounded-full group-hover:bg-coral-200 transition-colors flex items-center gap-1"
-                        >
-                          {getProfileEmoji(profile)} {profile.replace('-', ' ')}
-                        </span>
-                      ))}
-                      {itinerary.traveler_profiles?.length > 3 && (
-                        <span className="text-xs px-2 py-1 bg-platinum-200 text-platinum-600 rounded-full">
-                          +{itinerary.traveler_profiles.length - 3}
-                        </span>
+                      {itinerary.thumbnail_url ? (
+                        <img
+                          src={itinerary.thumbnail_url}
+                          alt={itinerary.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center">
+                          <span className="text-5xl mb-2">{itinerary.destination?.includes('Japan') ? '🏯' : itinerary.destination?.includes('Italy') || itinerary.destination?.includes('Paris') || itinerary.destination?.includes('France') ? '🏛️' : itinerary.destination?.includes('Beach') || itinerary.destination?.includes('Bali') || itinerary.destination?.includes('Thailand') ? '🏝️' : '✈️'}</span>
+                          <span className={`text-sm font-medium ${isDark ? 'text-white/60' : 'text-charcoal-500/50'}`}>Click to add cover</span>
+                        </div>
                       )}
-                      <span className="text-xs px-2 py-1 text-coral-500 hover:text-coral-500">
-                        <Edit size={12} className="inline" />
-                      </span>
+
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                      {/* Destination badge */}
+                      <div className="absolute top-3 left-3">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-charcoal-500 text-sm font-semibold shadow-sm">
+                          <MapPin size={14} className="text-coral-500" />
+                          {itinerary.destination}
+                        </span>
+                      </div>
+
+                      {/* Days badge */}
+                      <div className="absolute top-3 right-3">
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-naples-400 text-charcoal-500 text-sm font-bold shadow-sm" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                          {itinerary.trip_length}d
+                        </span>
+                      </div>
+
+                      {/* Hover overlay for image change */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button className="bg-white/90 text-charcoal-500 px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-lg">
+                          <Image size={18} />
+                          {itinerary.thumbnail_url ? 'Change' : 'Add Image'}
+                        </button>
+                      </div>
+
+                      {/* Title overlaid at bottom */}
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <h3 className="text-white font-heading font-bold text-lg leading-tight drop-shadow-lg">
+                          {itinerary.title || 'Untitled Trip'}
+                        </h3>
+                      </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-4 border-t border-platinum-200">
-                      <Link to={`/designer/planner/${itinerary.id}`} className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full gap-2">
-                          <Edit size={16} />
-                          Edit
-                        </Button>
-                      </Link>
-                      <Link to={`/atlas/new?fromItinerary=${itinerary.id}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          title="Convert to Atlas File"
+                    {/* Compact content strip */}
+                    <div className="p-4 flex-1 flex flex-col">
+                      {/* Traveler Profiles */}
+                      <div
+                        className="flex flex-wrap gap-1.5 mb-3 cursor-pointer group/profiles"
+                        onClick={() => setEditingProfile(itinerary)}
+                        title="Click to edit profiles"
+                      >
+                        {itinerary.traveler_profiles?.slice(0, 3).map((profile, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs px-2 py-1 bg-coral-50 text-coral-600 rounded-full group-hover/profiles:bg-coral-100 transition-colors"
+                          >
+                            {getProfileEmoji(profile)} {profile.replace('-', ' ')}
+                          </span>
+                        ))}
+                        {itinerary.traveler_profiles?.length > 3 && (
+                          <span className="text-xs px-2 py-1 bg-platinum-100 text-platinum-600 rounded-full">
+                            +{itinerary.traveler_profiles.length - 3}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Actions row */}
+                      <div className="flex gap-2 mt-auto pt-3 border-t border-platinum-100">
+                        <Link to={`/designer/planner/${itinerary.id}`} className="flex-1">
+                          <button className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold bg-charcoal-500 text-white hover:bg-charcoal-400 transition-colors">
+                            <Edit size={15} />
+                            Edit Trip
+                          </button>
+                        </Link>
+                        <Link to={`/atlas/new?fromItinerary=${itinerary.id}`}>
+                          <button className="px-3 py-2.5 rounded-xl text-sm bg-columbia-100 text-columbia-700 hover:bg-columbia-200 transition-colors" title="Convert to Atlas File">
+                            <FileText size={15} />
+                          </button>
+                        </Link>
+                        <button
+                          className="px-3 py-2.5 rounded-xl text-sm bg-platinum-100 text-platinum-600 hover:bg-platinum-200 transition-colors"
+                          onClick={() => handleDuplicateItinerary(itinerary)}
                         >
-                          <FileText size={16} />
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDuplicateItinerary(itinerary)}
-                        className="gap-2"
-                      >
-                        <Copy size={16} />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteItinerary(itinerary.id)}
-                        className="gap-2 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
+                          <Copy size={15} />
+                        </button>
+                        <button
+                          className="px-3 py-2.5 rounded-xl text-sm bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                          onClick={() => handleDeleteItinerary(itinerary.id)}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

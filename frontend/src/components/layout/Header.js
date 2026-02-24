@@ -19,16 +19,16 @@ function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navLinkClass = "text-charcoal-500 hover:text-coral-500 font-medium transition-colors";
+  const navLinkClass = "text-white/90 hover:text-naples-400 font-medium transition-colors";
 
   return (
-    <header className="bg-naples-100/90 backdrop-blur-lg border-b border-naples-300/40 sticky top-0 z-50">
+    <header className="bg-charcoal-500 sticky top-0 z-50">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center group">
             <span
-              className="text-charcoal-500 group-hover:text-charcoal-400 transition-colors"
+              className="text-naples-400 group-hover:text-naples-300 transition-colors"
               style={{ fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: '1.4rem', lineHeight: 1.1, letterSpacing: '-0.01em' }}
             >
               <span style={{ fontSize: '0.75em', display: 'block', fontWeight: 500 }}>The</span>
@@ -123,7 +123,7 @@ function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-charcoal-500 hover:text-coral-500"
+            className="md:hidden text-white hover:text-naples-400"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMenuOpen ? (
@@ -150,8 +150,8 @@ function Header() {
                 <Link to="/designer" className={`block py-2 ${navLinkClass}`} onClick={() => setIsMenuOpen(false)}>Travel Designer</Link>
                 <Link to="/atlas" className={`block py-2 ${navLinkClass}`} onClick={() => setIsMenuOpen(false)}>Atlas Files</Link>
 
-                <div className="border-t border-platinum-200 pt-3 mt-3">
-                  <p className="text-sm text-platinum-600 mb-2 flex items-center gap-2">
+                <div className="border-t border-white/20 pt-3 mt-3">
+                  <p className="text-sm text-white/60 mb-2 flex items-center gap-2">
                     <User size={16} /> My Profile
                   </p>
                   {isAuthenticated ? (
