@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import PageContainer from '../components/layout/PageContainer';
 import ScrollReveal from '../components/ui/ScrollReveal';
 import Button from '../components/ui/Button';
-import { ArrowLeft, Calendar, MapPin, User, Edit } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, User, Edit, Share2, Link2, MessageCircle, Download, Check } from 'lucide-react';
 
 function AtlasFileViewPage() {
   const { id } = useParams();
@@ -13,7 +13,12 @@ function AtlasFileViewPage() {
   const [atlasFile, setAtlasFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const coverRef = useRef(null);
+  const contentRef = useRef(null);
+  const shareRef = useRef(null);
 
   const { scrollYProgress } = useScroll({
     target: coverRef,
@@ -38,7 +43,7 @@ function AtlasFileViewPage() {
       setAtlasFile(data);
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (user && data.user_id === user.id) {
+      if (user && data.author_id === user.id) {
         setIsOwner(true);
       }
     } catch (error) {
@@ -46,6 +51,49 @@ function AtlasFileViewPage() {
       navigate('/atlas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(window.location.href);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = `${atlasFile?.title} — ${window.location.href}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    setShareOpen(false);
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      await navigator.share({ title: atlasFile?.title, url: window.location.href });
+      setShareOpen(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setExporting(true);
+    setShareOpen(false);
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = contentRef.current;
+      await html2pdf()
+        .set({
+          margin: [10, 10, 10, 10],
+          filename: `${atlasFile?.title || 'atlas-file'}.pdf`,
+          image: { type: 'jpeg', quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        })
+        .from(element)
+        .save();
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -95,8 +143,8 @@ function AtlasFileViewPage() {
                 transition={{ delay: 0.4 }}
                 className="flex flex-wrap gap-4 text-sm text-white/80"
               >
-                {atlasFile.author_name && (
-                  <span className="flex items-center gap-1"><User size={16} />{atlasFile.author_name}</span>
+                {atlasFile.author && (
+                  <span className="flex items-center gap-1"><User size={16} />{atlasFile.author}</span>
                 )}
                 {atlasFile.destination && (
                   <span className="flex items-center gap-1"><MapPin size={16} />{atlasFile.destination}</span>
@@ -114,7 +162,7 @@ function AtlasFileViewPage() {
           <div className="container mx-auto max-w-4xl px-4">
             <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4">{atlasFile.title}</h1>
             <div className="flex flex-wrap gap-4 text-sm text-white/70">
-              {atlasFile.author_name && <span className="flex items-center gap-1"><User size={16} />{atlasFile.author_name}</span>}
+              {atlasFile.author && <span className="flex items-center gap-1"><User size={16} />{atlasFile.author}</span>}
               {atlasFile.destination && <span className="flex items-center gap-1"><MapPin size={16} />{atlasFile.destination}</span>}
               {atlasFile.trip_length && <span className="flex items-center gap-1"><Calendar size={16} />{atlasFile.trip_length} days</span>}
             </div>
@@ -124,7 +172,7 @@ function AtlasFileViewPage() {
 
       <PageContainer>
         <div className="max-w-4xl mx-auto">
-          {/* Back + Edit */}
+          {/* Back + Actions */}
           <div className="flex items-center justify-between mb-8">
             <button
               onClick={() => navigate('/atlas')}
@@ -133,15 +181,70 @@ function AtlasFileViewPage() {
               <ArrowLeft size={20} />
               Back to Atlas Files
             </button>
-            {isOwner && (
-              <Link to={`/atlas/edit/${id}`}>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Edit size={16} /> Edit
+            <div className="flex items-center gap-2">
+              {/* Share dropdown */}
+              <div className="relative" ref={shareRef}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShareOpen(!shareOpen)}
+                  className="gap-2"
+                >
+                  <Share2 size={16} /> Share
                 </Button>
-              </Link>
-            )}
+
+                {shareOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShareOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-xl shadow-lg border border-platinum-200 py-1 w-52">
+                      <button
+                        onClick={() => { handleCopyLink(); setShareOpen(false); }}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full"
+                      >
+                        {linkCopied ? <Check size={16} className="text-green-500" /> : <Link2 size={16} />}
+                        {linkCopied ? 'Copied!' : 'Copy Link'}
+                      </button>
+                      <button
+                        onClick={handleShareWhatsApp}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full"
+                      >
+                        <MessageCircle size={16} />
+                        Share on WhatsApp
+                      </button>
+                      {typeof navigator.share === 'function' && (
+                        <button
+                          onClick={handleNativeShare}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full"
+                        >
+                          <Share2 size={16} />
+                          More options...
+                        </button>
+                      )}
+                      <div className="border-t border-platinum-200 my-1" />
+                      <button
+                        onClick={handleExportPDF}
+                        disabled={exporting}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full disabled:opacity-50"
+                      >
+                        <Download size={16} />
+                        {exporting ? 'Exporting...' : 'Export as PDF'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {isOwner && (
+                <Link to={`/atlas/edit/${id}`}>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Edit size={16} /> Edit
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
 
+          <div ref={contentRef}>
           {atlasFile.description && (
             <ScrollReveal>
               <p className="text-lg text-platinum-700 mb-8 leading-relaxed">
@@ -216,6 +319,7 @@ function AtlasFileViewPage() {
               </div>
             </ScrollReveal>
           )}
+          </div>{/* end contentRef */}
         </div>
       </PageContainer>
     </div>

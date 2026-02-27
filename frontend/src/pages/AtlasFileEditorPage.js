@@ -4,7 +4,8 @@ import { supabase } from '../supabaseClient';
 import PageContainer from '../components/layout/PageContainer';
 import RichTextEditor from '../components/editor/RichTextEditor';
 import Button from '../components/ui/Button';
-import { ArrowLeft, Plus, Trash2, Save, Eye, Image } from 'lucide-react';
+import ImageUploader from '../components/ui/ImageUploader';
+import { ArrowLeft, Plus, Trash2, Save, Globe, Lock, Image } from 'lucide-react';
 
 function AtlasFileEditorPage() {
   const { id } = useParams();
@@ -14,6 +15,8 @@ function AtlasFileEditorPage() {
 
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id || !!fromItinerary);
+  const [isPublic, setIsPublic] = useState(false);
+  const [showDayUploader, setShowDayUploader] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -52,6 +55,7 @@ function AtlasFileEditorPage() {
         trip_length: data.trip_length || 1,
         cover_image_url: data.cover_image_url || '',
       });
+      setIsPublic(!!data.published_at);
 
       if (data.content) {
         const content = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
@@ -148,13 +152,11 @@ function AtlasFileEditorPage() {
     setFormData(prev => ({ ...prev, trip_length: updated.length }));
   };
 
-  const addDayImage = (dayIndex) => {
-    const url = window.prompt('Enter image URL:');
-    if (url) {
-      setDays(prev => prev.map((day, i) =>
-        i === dayIndex ? { ...day, images: [...day.images, url] } : day
-      ));
-    }
+  const addDayImage = (dayIndex, url) => {
+    setDays(prev => prev.map((day, i) =>
+      i === dayIndex ? { ...day, images: [...day.images, url] } : day
+    ));
+    setShowDayUploader(null);
   };
 
   const removeDayImage = (dayIndex, imgIndex) => {
@@ -163,7 +165,7 @@ function AtlasFileEditorPage() {
     ));
   };
 
-  const handleSave = async (publish = false) => {
+  const handleSave = async () => {
     if (!formData.title.trim()) {
       alert('Please enter a title');
       return;
@@ -189,7 +191,7 @@ function AtlasFileEditorPage() {
         content,
         author_id: user.id,
         author: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Anonymous',
-        published_at: publish ? new Date().toISOString() : null,
+        published_at: isPublic ? new Date().toISOString() : null,
       };
 
       if (id) {
@@ -208,7 +210,7 @@ function AtlasFileEditorPage() {
         navigate(`/atlas/edit/${data.id}`, { replace: true });
       }
 
-      alert(publish ? 'Atlas File published!' : 'Draft saved!');
+      alert(isPublic ? 'Published!' : 'Draft saved!');
     } catch (error) {
       console.error('Error saving atlas file:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));
@@ -242,42 +244,46 @@ function AtlasFileEditorPage() {
             <ArrowLeft size={20} />
             Back
           </button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving} className="gap-2">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsPublic(!isPublic)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                isPublic
+                  ? 'bg-coral-100 text-coral-700'
+                  : 'bg-platinum-100 text-platinum-600'
+              }`}
+            >
+              {isPublic ? <Globe size={14} /> : <Lock size={14} />}
+              {isPublic ? 'Public' : 'Private'}
+            </button>
+            <Button size="sm" onClick={handleSave} disabled={saving} className="gap-2">
               <Save size={16} />
-              {saving ? 'Saving...' : 'Save Draft'}
-            </Button>
-            <Button size="sm" onClick={() => handleSave(true)} disabled={saving} className="gap-2">
-              <Eye size={16} />
-              Publish
+              {saving ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>
 
         {/* Cover Image Area */}
-        <div className="relative rounded-2xl overflow-hidden mb-8 bg-columbia-100 border-2 border-dashed border-columbia-300">
+        <div className="mb-8">
           {formData.cover_image_url ? (
-            <div className="relative">
+            <div className="relative rounded-2xl overflow-hidden">
               <img src={formData.cover_image_url} alt="Cover" className="w-full h-56 object-cover" />
               <div className="absolute inset-0 bg-charcoal-500/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <div className="bg-white rounded-xl px-4 py-2 text-sm font-medium text-charcoal-500 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleFieldChange('cover_image_url', '')}
+                  className="bg-white rounded-xl px-4 py-2 text-sm font-medium text-charcoal-500 flex items-center gap-2 shadow-lg"
+                >
                   <Image size={16} /> Change Cover
-                </div>
+                </button>
               </div>
             </div>
           ) : (
-            <div className="h-40 flex flex-col items-center justify-center text-columbia-600">
-              <Image size={32} className="mb-2" />
-              <p className="text-sm font-medium">Add a cover image</p>
-            </div>
+            <ImageUploader
+              onUpload={(url) => handleFieldChange('cover_image_url', url)}
+            />
           )}
-          <input
-            type="url"
-            value={formData.cover_image_url}
-            onChange={(e) => handleFieldChange('cover_image_url', e.target.value)}
-            placeholder="Paste cover image URL..."
-            className="w-full px-4 py-2.5 bg-white/80 text-sm focus:outline-none focus:bg-white border-t border-columbia-200"
-          />
         </div>
 
         {/* Title & Meta — Journal Style */}
@@ -386,12 +392,19 @@ function AtlasFileEditorPage() {
                       <span className="text-sm font-medium text-charcoal-400">Photos</span>
                       <button
                         type="button"
-                        onClick={() => addDayImage(index)}
+                        onClick={() => setShowDayUploader(showDayUploader === index ? null : index)}
                         className="text-xs text-coral-500 hover:text-coral-600 font-bold px-2 py-1 bg-coral-50 rounded-lg hover:bg-coral-100 transition-colors"
                       >
                         + Add photo
                       </button>
                     </div>
+                    {showDayUploader === index && (
+                      <div className="mb-3">
+                        <ImageUploader
+                          onUpload={(url) => addDayImage(index, url)}
+                        />
+                      </div>
+                    )}
                     {day.images.length > 0 && (
                       <div className="grid grid-cols-3 gap-3">
                         {day.images.map((img, imgIdx) => (
@@ -429,13 +442,21 @@ function AtlasFileEditorPage() {
 
         {/* Bottom Actions */}
         <div className="flex justify-center gap-3 pb-12 pt-4">
-          <Button variant="outline" onClick={() => handleSave(false)} disabled={saving} className="gap-2">
+          <button
+            type="button"
+            onClick={() => setIsPublic(!isPublic)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              isPublic
+                ? 'bg-coral-100 text-coral-700'
+                : 'bg-platinum-100 text-platinum-600'
+            }`}
+          >
+            {isPublic ? <Globe size={16} /> : <Lock size={16} />}
+            {isPublic ? 'Public' : 'Private'}
+          </button>
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
             <Save size={16} />
-            Save Draft
-          </Button>
-          <Button onClick={() => handleSave(true)} disabled={saving} className="gap-2">
-            <Eye size={16} />
-            Publish
+            {saving ? 'Saving...' : 'Save'}
           </Button>
         </div>
       </div>

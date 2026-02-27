@@ -406,7 +406,7 @@ function TravelDesignerDashboard() {
                   className="flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 hover:shadow-lg bg-white/10 text-white border-2 border-white/20 hover:bg-white/20"
                 >
                   <FileText size={22} />
-                  Atlas File
+                  Write a Story
                 </button>
               </Link>
             </div>
