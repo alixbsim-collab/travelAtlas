@@ -5,6 +5,7 @@ import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import { Mail, CheckCircle } from 'lucide-react';
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -65,11 +67,9 @@ function RegisterPage() {
 
       // Success! Check if email confirmation is needed
       if (data.user && !data.session) {
-        alert('Success! Please check your email to confirm your account.');
-        navigate('/login');
+        setConfirmationSent(true);
       } else {
         // Auto-logged in (no email confirmation required)
-        alert('Account created successfully!');
         navigate('/designer');
       }
     } catch (error) {
@@ -79,6 +79,37 @@ function RegisterPage() {
       setLoading(false);
     }
   };
+
+  if (confirmationSent) {
+    return (
+      <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <Card className="w-full max-w-md text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center bg-coral-100">
+            <Mail size={32} className="text-coral-500" />
+          </div>
+          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-3">
+            Check Your Email
+          </h1>
+          <p className="text-platinum-600 mb-2">
+            We've sent a confirmation link to
+          </p>
+          <p className="font-medium text-charcoal-500 mb-6">{formData.email}</p>
+          <p className="text-sm text-platinum-500 mb-6">
+            Click the link in the email to activate your account. Check your spam folder if you don't see it.
+          </p>
+          <div className="flex items-center gap-2 justify-center text-sm text-platinum-500">
+            <CheckCircle size={14} className="text-green-500" />
+            Account created successfully
+          </div>
+          <div className="mt-6 pt-6 border-t border-platinum-200">
+            <Link to="/login" className="text-coral-500 hover:text-coral-600 font-medium text-sm">
+              Go to Sign In
+            </Link>
+          </div>
+        </Card>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">

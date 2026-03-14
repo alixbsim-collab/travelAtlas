@@ -40,7 +40,11 @@ function LoginPage() {
         navigate('/designer');
       }
     } catch (error) {
-      setError(error.message || 'Failed to sign in. Please check your credentials.');
+      if (error.message === 'Email not confirmed') {
+        setError('Your email has not been confirmed yet. Please check your inbox for the confirmation link.');
+      } else {
+        setError(error.message || 'Failed to sign in. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
