@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, ChevronDown, LogIn, UserPlus, Settings, Heart, LogOut } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
-  const isAuthenticated = false;
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -91,7 +94,7 @@ function Header() {
                         <div className="border-t border-platinum-200 my-2" />
                         <button
                           className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors w-full"
-                          onClick={() => setIsProfileOpen(false)}
+                          onClick={() => { setIsProfileOpen(false); signOut(); navigate('/'); }}
                         >
                           <LogOut size={18} /> Log Out
                         </button>
@@ -158,7 +161,7 @@ function Header() {
                     <>
                       <Link to="/profile" className={`block py-2 pl-6 ${navLinkClass}`} onClick={() => setIsMenuOpen(false)}>Account</Link>
                       <Link to="/designer" className={`block py-2 pl-6 ${navLinkClass}`} onClick={() => setIsMenuOpen(false)}>Saved Trips</Link>
-                      <button className="block text-red-600 hover:text-red-700 font-medium py-2 pl-6 w-full text-left" onClick={() => setIsMenuOpen(false)}>Log Out</button>
+                      <button className="block text-red-600 hover:text-red-700 font-medium py-2 pl-6 w-full text-left" onClick={() => { setIsMenuOpen(false); signOut(); navigate('/'); }}>Log Out</button>
                     </>
                   ) : (
                     <>

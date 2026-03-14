@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import HomePage from './pages/HomePage';
-import TravelDesignerPage from './pages/TravelDesignerPage';
 import TravelDesignerDashboard from './pages/TravelDesignerDashboard';
 import CreateItineraryPage from './pages/CreateItineraryPage';
 import PlannerPage from './pages/PlannerPage';
@@ -14,10 +14,12 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 
 function App() {
   return (
     <Router>
+    <AuthProvider>
       <Routes>
         {/* Pages with MainLayout */}
         <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
@@ -32,12 +34,14 @@ function App() {
         <Route path="/register" element={<MainLayout><RegisterPage /></MainLayout>} />
         <Route path="/forgot-password" element={<MainLayout><ForgotPasswordPage /></MainLayout>} />
         <Route path="/reset-password" element={<MainLayout><ResetPasswordPage /></MainLayout>} />
+        <Route path="/auth/callback" element={<MainLayout><AuthCallbackPage /></MainLayout>} />
         <Route path="/contact" element={<MainLayout><HomePage /></MainLayout>} />
 
         {/* Planner page without MainLayout (full screen) */}
         <Route path="/designer/planner/:id" element={<PlannerPage />} />
         <Route path="/designer/edit/:id" element={<PlannerPage />} />
       </Routes>
+    </AuthProvider>
     </Router>
   );
 }
