@@ -393,11 +393,18 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
     ? destination.split(',').map(d => d.trim()).filter(Boolean)
     : [destination];
 
-  const originLine = tripOrigin
-    ? `From ${tripOrigin}${travelMode ? ` by ${travelMode}` : ''}. Include arrival Day 1, departure last day.`
-    : '';
-
   const cityName = isMultiDest ? destinations[0].split(',')[0].trim() : destination.split(',')[0].trim();
+
+  // Calculate sub-destination count for single-destination long trips
+  const needsSubDestinations = !isMultiDest && tripLength > 7;
+  let subDestCount = 1;
+  if (needsSubDestinations) {
+    if (travelPace === 'packed') subDestCount = Math.max(4, Math.min(8, Math.floor(tripLength / 3)));
+    else if (travelPace === 'active') subDestCount = Math.max(3, Math.min(6, Math.floor(tripLength / 4)));
+    else if (travelPace === 'balanced') subDestCount = Math.max(2, Math.min(5, Math.floor(tripLength / 5)));
+    else subDestCount = Math.max(2, Math.min(4, Math.floor(tripLength / 6)));
+  }
+  const daysPerSubDest = needsSubDestinations ? Math.floor(tripLength / subDestCount) : tripLength;
 
   // Split into chunks of up to 15 days for long trips
   const CHUNK_SIZE = 15;
@@ -409,31 +416,80 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
   // Build activity prompt for a day range
   const buildActivitiesPrompt = (startDay, endDay) => {
     const chunkDays = endDay - startDay + 1;
+    const isFirstChunk = startDay === 1;
+    const isLastChunk = endDay === tripLength;
     const dayRange = startDay === 1 && endDay === tripLength
       ? `every day 1-${tripLength}`
       : `ONLY days ${startDay}-${endDay} (${chunkDays} days)`;
 
     const paceLine = `Pace: ${paceDescription[travelPace] || baseDaily + ' activities/day'}.`;
 
+    // Build chunk-aware origin/departure instructions
+    let travelLogistics = '';
+    if (tripOrigin) {
+      if (isFirstChunk && isLastChunk) {
+        travelLogistics = `Traveler arrives from ${tripOrigin}${travelMode ? ` by ${travelMode}` : ''} on Day 1. Departure home ONLY on Day ${tripLength} (last day).`;
+      } else if (isFirstChunk) {
+        travelLogistics = `Traveler arrives from ${tripOrigin}${travelMode ? ` by ${travelMode}` : ''} on Day 1. Do NOT include any return/departure home — the trip continues after Day ${endDay}.`;
+      } else if (isLastChunk) {
+        travelLogistics = `CRITICAL: Day ${tripLength} is the FINAL day. Include departure/return to ${tripOrigin} ONLY on Day ${tripLength}. Do NOT include return home on any earlier day.`;
+      } else {
+        travelLogistics = `Do NOT include any return/departure home activities. The trip continues after Day ${endDay}.`;
+      }
+    }
+
+    // Build sub-destination routing guidance for single-destination long trips
+    let routeGuidance = '';
+    if (needsSubDestinations) {
+      // Calculate which sub-destinations fall in this chunk's day range
+      const subDestsInChunk = [];
+      for (let i = 0; i < subDestCount; i++) {
+        const subStart = 1 + i * daysPerSubDest;
+        const subEnd = i === subDestCount - 1 ? tripLength : subStart + daysPerSubDest - 1;
+        if (subStart <= endDay && subEnd >= startDay) {
+          subDestsInChunk.push({ index: i + 1, startDay: Math.max(subStart, startDay), endDay: Math.min(subEnd, endDay) });
+        }
+      }
+      const segmentGuide = subDestsInChunk.map(s => `Days ${s.startDay}-${s.endDay}: Region ${s.index}`).join(', ');
+
+      routeGuidance = `\nROUTE PLAN: This ${tripLength}-day trip must visit ${subDestCount} different regions/cities within or near ${destination}. Do NOT stay in one place the entire trip.
+Segment plan: ${segmentGuide}.
+Each region must be a DIFFERENT area (different city, island, or district). Move progressively — never backtrack to a previous region mid-trip.
+Use city_name to indicate which specific region/city the traveler is in each day.`;
+
+      if (travelPace === 'packed') {
+        routeGuidance += `\nPACKED DISCOVERY: Maximize variety. Include diverse regions, cultural highlights, nature, unique local experiences, and different landscapes. Each region should feel completely different from the last. For ${destination}, explore multiple islands, provinces, or nearby countries if possible.`;
+      } else if (travelPace === 'active') {
+        routeGuidance += `\nACTIVE PACE: Include diverse regions with plenty of activities. Balance popular highlights with off-the-beaten-path discoveries.`;
+      }
+    }
+
+    // Multi-destination prompt
     if (isMultiDest) {
       const daysPerDest = Math.floor(tripLength / destinations.length);
-      return `${tripLength}-day trip: ${destinations.join(' → ')}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${paceLine} ${originLine}
-Generate activities for ${dayRange}. Route destinations geographically. ~${daysPerDest} days each.
-Include transport between destinations. ${baseDaily} activities/day. Respect travel time between cities.
+      return `${tripLength}-day trip: ${destinations.join(' → ')}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${paceLine}
+${travelLogistics}
+Generate activities for ${dayRange}. Route: ~${daysPerDest} days per destination, in order.
+Include transport between destinations. ${baseDaily} activities/day. Respect travel time.
+CRITICAL: Return/departure ONLY on Day ${tripLength}. NEVER include "return home" or departure flights before the last day.
 Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening.
 JSON: {"activities":[{"day_number":${startDay},"position":0,"title":"...","description":"short","location":"Place","city_name":"City","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`;
     }
 
-    return `${tripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${paceLine} ${originLine}
+    // Single destination prompt (with sub-destination routing for long trips)
+    return `${tripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${paceLine}
+${travelLogistics}${routeGuidance}
 Generate activities for ${dayRange}. ${baseDaily} activities/day. Optimize by geographic proximity. Vary activities across days.
-Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening. city_name: "${cityName}" (or area for day trips).
-JSON: {"activities":[{"day_number":${startDay},"position":0,"title":"...","description":"short","location":"Place","city_name":"${cityName}","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`;
+CRITICAL: Return/departure ONLY on Day ${tripLength}. NEVER include "return home" or departure flights before the last day.
+Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening. city_name: use the ACTUAL region/city name for each day (not just "${cityName}" for every day).
+JSON: {"activities":[{"day_number":${startDay},"position":0,"title":"...","description":"short","location":"Place","city_name":"ActualCityOrRegion","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`;
   };
 
   // Structure prompt (summary + accommodations)
-  const structurePrompt = `${tripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
-Suggest 1-3 accommodation options (hotels/hostels matching the budget).
-JSON: {"summary":"1 sentence overview","accommodations":[{"name":"Hotel Name","type":"hotel","location":"Area","price_per_night":80,"latitude":0.00,"longitude":0.00}]}`;
+  const accCount = needsSubDestinations ? Math.min(subDestCount, 5) : (isMultiDest ? Math.min(destinations.length, 4) : 2);
+  const structurePrompt = `${tripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.${needsSubDestinations ? ` The trip visits ${subDestCount} different regions/areas.` : ''}
+Suggest ${accCount} accommodation options in different areas/regions of the trip.
+JSON: {"summary":"1 sentence overview","accommodations":[{"name":"Hotel Name","type":"hotel","location":"Area/Region","price_per_night":80,"latitude":0.00,"longitude":0.00}]}`;
 
   // Fire all calls in parallel: structure + activity chunks
   console.log(`Starting parallel OpenAI calls: ${chunks.length} activity chunk(s) + 1 structure...`);
@@ -453,11 +509,15 @@ JSON: {"summary":"1 sentence overview","accommodations":[{"name":"Hotel Name","t
     // Activity chunk calls
     ...chunks.map(chunk => {
       const chunkDays = chunk.endDay - chunk.startDay + 1;
-      const chunkTokens = Math.min(14000, 1500 + (baseDaily * chunkDays * 180));
+      const chunkTokens = Math.min(16000, 1500 + (baseDaily * chunkDays * 200));
+      const isLastChunk = chunk.endDay === tripLength;
+      const systemMsg = isLastChunk
+        ? `Expert travel planner. Respond with valid JSON. Generate activities for EVERY day in the requested range. CRITICAL: departure/return home ONLY on the very last day (Day ${tripLength}). Never earlier. Be concise.`
+        : `Expert travel planner. Respond with valid JSON. Generate activities for EVERY day in the requested range. Do NOT include any return-home or departure activities — the trip continues. Be concise.`;
       return openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "Expert travel planner. Respond with valid JSON. Generate activities for EVERY day in the requested range, no skipped days. Be concise." },
+          { role: "system", content: systemMsg },
           { role: "user", content: buildActivitiesPrompt(chunk.startDay, chunk.endDay) }
         ],
         response_format: { type: "json_object" },
