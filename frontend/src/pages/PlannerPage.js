@@ -495,6 +495,7 @@ function PlannerPage() {
   const [showAssistant, setShowAssistant] = useState(true); // Toggle AI panel
   const [progressMessage, setProgressMessage] = useState('');
   const [generationTimedOut, setGenerationTimedOut] = useState(false);
+  const [accommodations, setAccommodations] = useState([]);
 
   const isGenerating = location.state?.generating;
 
@@ -545,14 +546,16 @@ function PlannerPage() {
         clearInterval(pollInterval);
         clearInterval(messageInterval);
 
-        const { data: updatedItinerary } = await supabase
-          .from('itineraries')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const [updatedItineraryResult, accResult] = await Promise.all([
+          supabase.from('itineraries').select('*').eq('id', id).single(),
+          supabase.from('accommodations').select('*').eq('itinerary_id', id)
+        ]);
 
-        if (updatedItinerary) {
-          setItinerary(updatedItinerary);
+        if (updatedItineraryResult.data) {
+          setItinerary(updatedItineraryResult.data);
+        }
+        if (accResult.data) {
+          setAccommodations(accResult.data);
         }
       }
     }, 3000);
@@ -628,15 +631,22 @@ function PlannerPage() {
       if (itineraryError) throw itineraryError;
       setItinerary(itineraryData);
 
-      const { data: activitiesData, error: activitiesError } = await supabase
-        .from('activities')
-        .select('*')
-        .eq('itinerary_id', id)
-        .order('day_number', { ascending: true })
-        .order('position', { ascending: true });
+      const [activitiesResult, accommodationsResult] = await Promise.all([
+        supabase
+          .from('activities')
+          .select('*')
+          .eq('itinerary_id', id)
+          .order('day_number', { ascending: true })
+          .order('position', { ascending: true }),
+        supabase
+          .from('accommodations')
+          .select('*')
+          .eq('itinerary_id', id)
+      ]);
 
-      if (activitiesError) throw activitiesError;
-      setActivities(activitiesData || []);
+      if (activitiesResult.error) throw activitiesResult.error;
+      setActivities(activitiesResult.data || []);
+      setAccommodations(accommodationsResult.data || []);
     } catch (error) {
       console.error('Error fetching itinerary:', error);
       alert('Failed to load itinerary');
@@ -1201,6 +1211,8 @@ function PlannerPage() {
                     itinerary={itinerary}
                     onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
                     onLoadItinerary={handleLoadItinerary}
+                    accommodations={accommodations}
+                    onAddAccommodation={handleAddActivityFromDrag}
                   />
                 </div>
               </Panel>

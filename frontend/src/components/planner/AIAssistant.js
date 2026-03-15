@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Loader, GripVertical } from 'lucide-react';
+import { Send, Sparkles, Loader, GripVertical, Hotel, ExternalLink, Plus, ChevronDown } from 'lucide-react';
 import Button from '../ui/Button';
 import { ACTIVITY_CATEGORIES } from '../../constants/travelerProfiles';
 
-function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
+function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodations, onAddAccommodation }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Working on it...');
   const [suggestedActivities, setSuggestedActivities] = useState([]);
   const [draggingId, setDraggingId] = useState(null);
+  const [showHotels, setShowHotels] = useState(true);
+  const [addToDayOpen, setAddToDayOpen] = useState(null); // which hotel index has day picker open
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -176,6 +178,29 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
     return cat?.color || '#71717A';
   };
 
+  const getBookingUrl = (hotelName) => {
+    const query = `${hotelName} ${itinerary.destination}`;
+    return `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(query)}`;
+  };
+
+  const handleAddHotelToDay = (hotel, dayNumber) => {
+    if (onAddAccommodation) {
+      onAddAccommodation({
+        title: `Check in: ${hotel.name}`,
+        description: `${hotel.type || 'Hotel'} — ${hotel.location || itinerary.destination}. ~$${hotel.price_per_night || '?'}/night`,
+        location: hotel.location || itinerary.destination,
+        category: 'accommodation',
+        duration_minutes: 30,
+        estimated_cost_min: hotel.price_per_night || 0,
+        estimated_cost_max: hotel.price_per_night || 0,
+        time_of_day: 'afternoon',
+        latitude: hotel.latitude || 0,
+        longitude: hotel.longitude || 0,
+      }, dayNumber);
+    }
+    setAddToDayOpen(null);
+  };
+
   // Render message content with markdown links
   const renderMessageContent = (content) => {
     if (!content) return null;
@@ -320,6 +345,82 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Hotel Suggestions */}
+      {accommodations && accommodations.length > 0 && (
+        <div className="border-t border-platinum-200">
+          <button
+            onClick={() => setShowHotels(!showHotels)}
+            className="w-full px-4 py-3 flex items-center justify-between bg-platinum-50 hover:bg-platinum-100 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Hotel size={16} className="text-columbia-600" />
+              <span className="text-sm font-bold text-charcoal-500">Hotel Suggestions</span>
+              <span className="text-xs px-2 py-0.5 bg-columbia-100 text-columbia-700 rounded-full">{accommodations.length}</span>
+            </div>
+            <ChevronDown size={16} className={`text-platinum-500 transition-transform ${showHotels ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showHotels && (
+            <div className="px-4 py-3 space-y-3 bg-platinum-50/50 max-h-[300px] overflow-y-auto">
+              {accommodations.map((hotel, idx) => (
+                <div key={hotel.id || idx} className="bg-white rounded-lg border border-platinum-200 p-3">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-charcoal-500 truncate">{hotel.name}</h4>
+                      <p className="text-xs text-platinum-600">{hotel.location || itinerary.destination}</p>
+                    </div>
+                    {hotel.price_per_night && (
+                      <span className="text-sm font-bold text-columbia-600 whitespace-nowrap">
+                        ${hotel.price_per_night}/night
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={getBookingUrl(hotel.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-columbia-700 bg-columbia-50 hover:bg-columbia-100 rounded-lg transition-colors border border-columbia-200"
+                    >
+                      <ExternalLink size={12} />
+                      View on Booking.com
+                    </a>
+
+                    <div className="relative">
+                      <button
+                        onClick={() => setAddToDayOpen(addToDayOpen === idx ? null : idx)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-coral-600 bg-coral-50 hover:bg-coral-100 rounded-lg transition-colors border border-coral-200"
+                      >
+                        <Plus size={12} />
+                        Add to Day
+                      </button>
+
+                      {addToDayOpen === idx && (
+                        <div className="absolute bottom-full right-0 mb-1 bg-white border border-platinum-200 rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto w-36">
+                          {Array.from({ length: itinerary.trip_length }, (_, i) => i + 1).map(day => (
+                            <button
+                              key={day}
+                              onClick={() => handleAddHotelToDay(hotel, day)}
+                              className="w-full px-3 py-2 text-left text-xs hover:bg-coral-50 transition-colors"
+                            >
+                              Day {day}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs text-platinum-500 text-center">
+                Prices are AI estimates. Check Booking.com for actual rates.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Preload Button */}
       {suggestedActivities.length > 0 && (
         <div className="p-3 border-t border-platinum-200 bg-platinum-50">
@@ -372,6 +473,13 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary }) {
             className="text-xs px-3 py-1 bg-platinum-100 rounded-full hover:bg-platinum-200 transition-colors"
           >
             Replace with beach day
+          </button>
+          <button
+            type="button"
+            onClick={() => setInputMessage('Suggest more hotel options')}
+            className="text-xs px-3 py-1 bg-platinum-100 rounded-full hover:bg-platinum-200 transition-colors"
+          >
+            More hotel options
           </button>
         </div>
       </form>

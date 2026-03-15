@@ -49,7 +49,7 @@ app.get('/api/destinations', async (req, res) => {
 // AI Itinerary Generation
 app.post('/api/ai/generate-itinerary', async (req, res) => {
   try {
-    const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles, region, tripOrigin, travelMode } = req.body;
+    const { itineraryId, destination, tripLength, travelPace, budget, travelerProfiles, region, tripOrigin, travelMode, isMultiDestination } = req.body;
 
     let generatedItinerary;
     let finalDestination = destination;
@@ -61,7 +61,7 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
 
       if (process.env.OPENAI_API_KEY) {
         try {
-          finalDestination = await pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles, region });
+          finalDestination = await pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles, region, isMultiDestination });
           console.log(`AI picked destination: ${finalDestination}`);
 
           // Validate the destination was picked
@@ -273,7 +273,7 @@ app.post('/api/ai/chat', async (req, res) => {
 // ============================================
 
 // Pick a destination for users who selected "Undecided"
-async function pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles, region }) {
+async function pickDestinationForUser({ tripLength, travelPace, budget, travelerProfiles, region, isMultiDestination }) {
   const budgetDescriptions = {
     'budget': 'budget-friendly, affordable destinations',
     'medium': 'moderately priced destinations with good value',
@@ -302,9 +302,9 @@ async function pickDestinationForUser({ tripLength, travelPace, budget, traveler
     'oceania': 'Oceania (e.g., Sydney, Auckland, Melbourne, Queenstown, Fiji)'
   };
 
-  // For longer trips (8+ days), suggest multiple destinations
-  const isMultiCity = tripLength >= 8;
-  const numCities = isMultiCity ? Math.min(Math.floor(tripLength / 3), 4) : 1;
+  // Suggest multiple destinations for multi-dest requests or longer trips (8+ days)
+  const isMultiCity = isMultiDestination || tripLength >= 8;
+  const numCities = isMultiCity ? Math.max(2, Math.min(Math.floor(tripLength / 3), 4)) : 1;
 
   let prompt;
   if (isMultiCity) {
@@ -370,17 +370,21 @@ Return ONLY the destination in format "City, Country" (e.g., "Tokyo, Japan"). No
 async function generateOpenAIItinerary({ destination, tripLength, travelPace, budget, travelerProfiles, tripOrigin, travelMode }) {
   const activitiesPerDay = {
     'relaxed': 2,
-    'moderate': 3,
+    'moderate': 2,
     'balanced': 3,
     'active': 4,
-    'packed': 4
+    'packed': 5
+  };
+
+  const paceDescription = {
+    'relaxed': '1-2 activities per day, plenty of downtime',
+    'moderate': '2 activities per day, balanced schedule',
+    'balanced': '3 activities per day, good mix of action and rest',
+    'active': '3-4 activities per day, busy but manageable',
+    'packed': '4-5 activities per day, maximize every moment'
   };
 
   const baseDaily = activitiesPerDay[travelPace] || 3;
-  const dailyActivities = tripLength > 14 ? Math.min(baseDaily, 2) :
-                           tripLength > 7 ? Math.min(baseDaily, 3) :
-                           baseDaily;
-  const limitedTripLength = Math.min(tripLength, 21);
 
   const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
 
@@ -395,39 +399,47 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
 
   const cityName = isMultiDest ? destinations[0].split(',')[0].trim() : destination.split(',')[0].trim();
 
-  // Build concise prompt for activities
-  const activitiesPrompt = isMultiDest
-    ? `${limitedTripLength}-day trip: ${destinations.join(' → ')}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${originLine}
-Route destinations geographically to minimize backtracking. ~${Math.floor(limitedTripLength / destinations.length)} days each.
-Include transport activities between destinations. ${dailyActivities} activities/day, every day 1-${limitedTripLength}.
-Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening.
-JSON: {"activities":[{"day_number":1,"position":0,"title":"...","description":"short","location":"Place","city_name":"City","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`
-    : `${limitedTripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${originLine}
-${dailyActivities} activities/day, every day 1-${limitedTripLength}. Optimize by geographic proximity.
-Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening. city_name: "${cityName}" (or area for day trips).
-JSON: {"activities":[{"day_number":1,"position":0,"title":"...","description":"short","location":"Place","city_name":"${cityName}","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`;
+  // Split into chunks of up to 15 days for long trips
+  const CHUNK_SIZE = 15;
+  const chunks = [];
+  for (let start = 1; start <= tripLength; start += CHUNK_SIZE) {
+    chunks.push({ startDay: start, endDay: Math.min(start + CHUNK_SIZE - 1, tripLength) });
+  }
 
-  // Build concise prompt for structure (summary + accommodations)
-  const structurePrompt = `${limitedTripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
-Suggest 1-3 accommodation options (hotels/hostels).
+  // Build activity prompt for a day range
+  const buildActivitiesPrompt = (startDay, endDay) => {
+    const chunkDays = endDay - startDay + 1;
+    const dayRange = startDay === 1 && endDay === tripLength
+      ? `every day 1-${tripLength}`
+      : `ONLY days ${startDay}-${endDay} (${chunkDays} days)`;
+
+    const paceLine = `Pace: ${paceDescription[travelPace] || baseDaily + ' activities/day'}.`;
+
+    if (isMultiDest) {
+      const daysPerDest = Math.floor(tripLength / destinations.length);
+      return `${tripLength}-day trip: ${destinations.join(' → ')}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${paceLine} ${originLine}
+Generate activities for ${dayRange}. Route destinations geographically. ~${daysPerDest} days each.
+Include transport between destinations. ${baseDaily} activities/day. Respect travel time between cities.
+Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening.
+JSON: {"activities":[{"day_number":${startDay},"position":0,"title":"...","description":"short","location":"Place","city_name":"City","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`;
+    }
+
+    return `${tripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${paceLine} ${originLine}
+Generate activities for ${dayRange}. ${baseDaily} activities/day. Optimize by geographic proximity. Vary activities across days.
+Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening. city_name: "${cityName}" (or area for day trips).
+JSON: {"activities":[{"day_number":${startDay},"position":0,"title":"...","description":"short","location":"Place","city_name":"${cityName}","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`;
+  };
+
+  // Structure prompt (summary + accommodations)
+  const structurePrompt = `${tripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}.
+Suggest 1-3 accommodation options (hotels/hostels matching the budget).
 JSON: {"summary":"1 sentence overview","accommodations":[{"name":"Hotel Name","type":"hotel","location":"Area","price_per_night":80,"latitude":0.00,"longitude":0.00}]}`;
 
-  const totalActivities = dailyActivities * limitedTripLength;
-  const activitiesMaxTokens = Math.min(14000, 1500 + (totalActivities * 180));
+  // Fire all calls in parallel: structure + activity chunks
+  console.log(`Starting parallel OpenAI calls: ${chunks.length} activity chunk(s) + 1 structure...`);
 
-  // Fire both calls in parallel
-  console.log('Starting parallel OpenAI calls...');
-  const [activitiesCompletion, structureCompletion] = await Promise.all([
-    openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "Expert travel planner. Respond with valid JSON. Generate activities for every day, no skipped days. Be concise." },
-        { role: "user", content: activitiesPrompt }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: activitiesMaxTokens
-    }),
+  const calls = [
+    // Structure call
     openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -437,37 +449,59 @@ JSON: {"summary":"1 sentence overview","accommodations":[{"name":"Hotel Name","t
       response_format: { type: "json_object" },
       temperature: 0.7,
       max_tokens: 800
+    }),
+    // Activity chunk calls
+    ...chunks.map(chunk => {
+      const chunkDays = chunk.endDay - chunk.startDay + 1;
+      const chunkTokens = Math.min(14000, 1500 + (baseDaily * chunkDays * 180));
+      return openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "Expert travel planner. Respond with valid JSON. Generate activities for EVERY day in the requested range, no skipped days. Be concise." },
+          { role: "user", content: buildActivitiesPrompt(chunk.startDay, chunk.endDay) }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: chunkTokens
+      });
     })
-  ]);
-  console.log('Both OpenAI calls completed');
+  ];
 
-  const activitiesContent = activitiesCompletion.choices[0].message.content;
-  const structureContent = structureCompletion.choices[0].message.content;
+  const results = await Promise.all(calls);
+  console.log('All OpenAI calls completed');
 
-  if (!activitiesContent || activitiesContent.trim() === '') {
-    throw new Error('OpenAI returned empty activities response');
-  }
+  const structureContent = results[0].choices[0].message.content;
+  const activityChunks = results.slice(1).map(r => r.choices[0].message.content);
 
   try {
-    const activitiesResult = JSON.parse(activitiesContent);
     const structureResult = JSON.parse(structureContent);
 
+    // Merge all activity chunks
+    const allActivities = [];
+    for (const chunkContent of activityChunks) {
+      if (!chunkContent || chunkContent.trim() === '') continue;
+      const parsed = JSON.parse(chunkContent);
+      if (parsed.activities && Array.isArray(parsed.activities)) {
+        allActivities.push(...parsed.activities);
+      }
+    }
+
     const result = {
-      summary: structureResult.summary || `${limitedTripLength}-day trip to ${destination}`,
-      activities: activitiesResult.activities || [],
+      summary: structureResult.summary || `${tripLength}-day trip to ${destination}`,
+      activities: allActivities,
       accommodations: structureResult.accommodations || []
     };
 
     // Validate all days are covered - fill missing days with placeholders
     if (result.activities.length > 0) {
       const daysWithActivities = new Set(result.activities.map(a => a.day_number));
-      for (let day = 1; day <= limitedTripLength; day++) {
+      for (let day = 1; day <= tripLength; day++) {
         if (!daysWithActivities.has(day)) {
           console.warn(`Day ${day} has no activities, adding placeholder`);
           result.activities.push({
             day_number: day,
             position: 0,
-            title: `Explore ${destinations[Math.min(Math.floor((day - 1) / Math.max(1, Math.floor(limitedTripLength / destinations.length))), destinations.length - 1)]}`,
+            title: `Explore ${destinations[Math.min(Math.floor((day - 1) / Math.max(1, Math.floor(tripLength / destinations.length))), destinations.length - 1)]}`,
             description: 'Free time to explore at your own pace',
             location: destinations[0],
             city_name: cityName,
@@ -485,7 +519,7 @@ JSON: {"summary":"1 sentence overview","accommodations":[{"name":"Hotel Name","t
 
     return result;
   } catch (parseError) {
-    console.error('Failed to parse OpenAI response:', activitiesContent, structureContent);
+    console.error('Failed to parse OpenAI response:', structureContent, activityChunks);
     throw new Error('OpenAI returned invalid JSON: ' + parseError.message);
   }
 }
@@ -672,10 +706,10 @@ include 1-3 activity suggestions in the activities array with this structure:
 function generateMockItinerary({ destination, tripLength, travelPace, budget, travelerProfiles }) {
   const activitiesPerDay = {
     'relaxed': 2,
-    'moderate': 3,
-    'balanced': 4,
-    'active': 5,
-    'packed': 6
+    'moderate': 2,
+    'balanced': 3,
+    'active': 4,
+    'packed': 5
   };
 
   const dailyActivities = activitiesPerDay[travelPace] || 4;

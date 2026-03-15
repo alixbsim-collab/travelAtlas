@@ -214,8 +214,7 @@ function CreateItineraryPage() {
   const handleSelectUndecided = (region) => {
     setFormData(prev => ({ ...prev, destination: 'Undecided', region }));
     setShowUndecidedModal(false);
-    setIsMultiDestination(false);
-    setDestinations([]);
+    // Keep multi-destination state — AI will propose a multi-dest route if enabled
   };
 
   const handleProfileToggle = (profileId) => {
@@ -230,6 +229,7 @@ function CreateItineraryPage() {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
+        if (formData.destination === 'Undecided' && formData.region) return true;
         if (isMultiDestination) return destinations.length > 0;
         return formData.destination.trim().length > 0;
       case 2:
@@ -250,7 +250,7 @@ function CreateItineraryPage() {
   const handleNext = () => {
     if (canProceed() && currentStep < 7) {
       // Sync multi-dest to formData when leaving step 1
-      if (currentStep === 1 && isMultiDestination && destinations.length > 0) {
+      if (currentStep === 1 && isMultiDestination && destinations.length > 0 && formData.destination !== 'Undecided') {
         setFormData(prev => ({ ...prev, destination: destinations.join(', ') }));
       }
       setCurrentStep(prev => prev + 1);
@@ -341,7 +341,8 @@ function CreateItineraryPage() {
           travelerProfiles: formData.travelerProfiles,
           region: formData.region || null,
           tripOrigin: formData.tripOrigin || null,
-          travelMode: formData.travelMode || null
+          travelMode: formData.travelMode || null,
+          isMultiDestination: isMultiDestination
         })
       }).catch(err => console.error('Background AI generation error:', err));
 
@@ -495,18 +496,18 @@ function CreateItineraryPage() {
 
               {showSuggestions && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-platinum-200 overflow-hidden z-50 max-h-[300px] overflow-y-auto">
-                  {!isMultiDestination && (
-                    <button
-                      onClick={() => handleDestinationSelect({ name: 'Undecided' })}
-                      className="w-full px-4 py-3 text-left hover:bg-coral-50 transition-colors border-b border-platinum-200 flex items-center gap-3"
-                    >
-                      <Sparkles size={18} className="text-coral-500" />
-                      <div>
-                        <span className="font-medium">Undecided</span>
-                        <span className="text-sm text-platinum-500 ml-2">- Let us inspire you</span>
-                      </div>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleDestinationSelect({ name: 'Undecided' })}
+                    className="w-full px-4 py-3 text-left hover:bg-coral-50 transition-colors border-b border-platinum-200 flex items-center gap-3"
+                  >
+                    <Sparkles size={18} className="text-coral-500" />
+                    <div>
+                      <span className="font-medium">Undecided</span>
+                      <span className="text-sm text-platinum-500 ml-2">
+                        {isMultiDestination ? '- AI picks a multi-city route' : '- Let us inspire you'}
+                      </span>
+                    </div>
+                  </button>
                   {filteredDestinations.map((dest, index) => (
                     <button
                       key={index}
@@ -545,6 +546,13 @@ function CreateItineraryPage() {
                 <p className="text-sm text-green-600 mt-2 flex items-center justify-center gap-1">
                   <Check size={14} />
                   Destination accepted — we'll plan your trip!
+                </p>
+              )}
+              {/* Undecided + Multi-dest confirmation */}
+              {formData.destination === 'Undecided' && isMultiDestination && formData.region && !showSuggestions && (
+                <p className="text-sm text-coral-600 mt-2 flex items-center justify-center gap-1">
+                  <Sparkles size={14} />
+                  AI will design a multi-destination route in {REGIONS.find(r => r.id === formData.region)?.name || formData.region}
                 </p>
               )}
             </div>

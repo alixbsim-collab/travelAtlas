@@ -79,11 +79,11 @@ export const TRAVELER_PROFILES = [
 ];
 
 export const TRAVEL_PACE_OPTIONS = [
-  { value: 'relaxed', label: 'Relaxed', emoji: '🐌', description: '1-2 activities per day, lots of downtime' },
-  { value: 'moderate', label: 'Moderate', emoji: '🚶', description: '2-3 activities per day, balanced schedule' },
-  { value: 'balanced', label: 'Balanced', emoji: '⚖️', description: '3-4 activities per day, good mix of action and rest' },
-  { value: 'active', label: 'Active', emoji: '🏃', description: '4-5 activities per day, busy but manageable' },
-  { value: 'packed', label: 'Packed', emoji: '⚡', description: '5+ activities per day, maximize every moment' }
+  { value: 'relaxed', label: 'Relaxed', emoji: '🐌', description: '1-2 activities per day, plenty of downtime and slow mornings' },
+  { value: 'moderate', label: 'Moderate', emoji: '🚶', description: '2 activities per day, balanced with free time' },
+  { value: 'balanced', label: 'Balanced', emoji: '⚖️', description: '3 activities per day, good mix of action and rest' },
+  { value: 'active', label: 'Active', emoji: '🏃', description: '3-4 activities per day, busy but manageable' },
+  { value: 'packed', label: 'Packed', emoji: '⚡', description: '4+ activities per day, maximize every moment' }
 ];
 
 export const BUDGET_OPTIONS = [
