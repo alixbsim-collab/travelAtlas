@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { TRAVELER_PROFILES, TRAVEL_PACE_OPTIONS, BUDGET_OPTIONS } from '../constants/travelerProfiles';
-import { DESTINATIONS } from '../constants/destinations';
 import { MapPin, Calendar, Users, DollarSign, Gauge, Sparkles, ArrowRight, ArrowLeft, Check, Search, X, Globe, BookOpen, Plane, Train, Car, Shuffle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
 
 // Regions for "Undecided" flow
 const REGIONS = [
@@ -98,58 +99,86 @@ function CreateItineraryPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter destinations based on input
+  // Mapbox geocoding search helper
+  const searchMapbox = async (query, setter) => {
+    if (!query || query.length < 2 || !MAPBOX_TOKEN) {
+      setter([]);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&types=place,country,region&limit=6&language=en`
+      );
+      const data = await res.json();
+      const results = (data.features || []).map(f => ({
+        name: f.place_type[0] === 'country' ? f.text : f.place_name,
+        type: f.place_type[0] === 'country' ? 'country' : 'city',
+      }));
+      setter(results);
+    } catch {
+      setter([]);
+    }
+  };
+
+  // Debounced destination search via Mapbox
   useEffect(() => {
     const searchTerm = isMultiDestination ? destinationInput : formData.destination;
-    if (searchTerm.length > 0) {
-      const lower = searchTerm.toLowerCase();
-      const filtered = DESTINATIONS
-        .filter(dest =>
-          dest.name.toLowerCase().includes(lower) ||
-          dest.country.toLowerCase().includes(lower)
-        )
-        .filter(dest => !destinations.includes(dest.name))
-        .sort((a, b) => {
-          // Prefix matches first
-          const aPrefix = a.name.toLowerCase().startsWith(lower) ? 0 : 1;
-          const bPrefix = b.name.toLowerCase().startsWith(lower) ? 0 : 1;
-          if (aPrefix !== bPrefix) return aPrefix - bPrefix;
-          // Cities before countries
-          if (a.type !== b.type) return a.type === 'city' ? -1 : 1;
-          return 0;
-        })
-        .slice(0, 8);
-      setFilteredDestinations(filtered);
-    } else {
-      setFilteredDestinations(DESTINATIONS.filter(dest => dest.type === 'city' && !destinations.includes(dest.name)).slice(0, 8));
+    if (searchTerm.length < 2) {
+      setFilteredDestinations([]);
+      return;
     }
+    const timer = setTimeout(() => searchMapbox(searchTerm, (results) => {
+      setFilteredDestinations(results.filter(r => !destinations.includes(r.name)));
+    }), 300);
+    return () => clearTimeout(timer);
   }, [formData.destination, destinationInput, destinations, isMultiDestination]);
 
-  // Filter origins based on input
+  // Debounced origin search via Mapbox
   useEffect(() => {
-    if (formData.tripOrigin.length > 0) {
-      const lower = formData.tripOrigin.toLowerCase();
-      const filtered = DESTINATIONS
-        .filter(dest =>
-          dest.name.toLowerCase().includes(lower) ||
-          dest.country.toLowerCase().includes(lower)
-        )
-        .sort((a, b) => {
-          const aPrefix = a.name.toLowerCase().startsWith(lower) ? 0 : 1;
-          const bPrefix = b.name.toLowerCase().startsWith(lower) ? 0 : 1;
-          if (aPrefix !== bPrefix) return aPrefix - bPrefix;
-          if (a.type !== b.type) return a.type === 'city' ? -1 : 1;
-          return 0;
-        })
-        .slice(0, 6);
-      setFilteredOrigins(filtered);
-    } else {
+    if (formData.tripOrigin.length < 2) {
       setFilteredOrigins([]);
+      return;
     }
+    const timer = setTimeout(() => searchMapbox(formData.tripOrigin, setFilteredOrigins), 300);
+    return () => clearTimeout(timer);
   }, [formData.tripOrigin]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Date/days sync helpers
+  const updateTripLength = (newLength) => {
+    const clamped = Math.max(1, Math.min(30, newLength));
+    setFormData(prev => {
+      const updates = { tripLength: clamped };
+      if (prev.startDate) {
+        const end = new Date(prev.startDate);
+        end.setDate(end.getDate() + clamped - 1);
+        updates.endDate = end;
+      }
+      return { ...prev, ...updates };
+    });
+  };
+
+  const updateStartDate = (date) => {
+    setFormData(prev => {
+      const end = new Date(date);
+      end.setDate(end.getDate() + prev.tripLength - 1);
+      return { ...prev, startDate: date, endDate: end };
+    });
+  };
+
+  const updateEndDate = (date) => {
+    setFormData(prev => {
+      if (prev.startDate) {
+        const diffMs = date - prev.startDate;
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+        const clamped = Math.max(1, Math.min(30, diffDays));
+        return { ...prev, endDate: date, tripLength: clamped };
+      }
+      return { ...prev, endDate: date };
+    });
   };
 
   const handleDestinationSelect = (destination) => {
@@ -512,11 +541,10 @@ function CreateItineraryPage() {
 
               {/* Custom destination confirmation */}
               {!isMultiDestination && formData.destination.trim().length > 1 && !showSuggestions &&
-                !DESTINATIONS.some(d => d.name.toLowerCase() === formData.destination.toLowerCase()) &&
                 formData.destination !== 'Undecided' && (
                 <p className="text-sm text-green-600 mt-2 flex items-center justify-center gap-1">
                   <Check size={14} />
-                  Custom destination accepted — we'll plan your trip!
+                  Destination accepted — we'll plan your trip!
                 </p>
               )}
             </div>
@@ -618,12 +646,11 @@ function CreateItineraryPage() {
                 </div>
               )}
 
-              {/* Custom origin confirmation */}
-              {formData.tripOrigin.trim().length > 1 && !showOriginSuggestions &&
-                !DESTINATIONS.some(d => d.name.toLowerCase() === formData.tripOrigin.toLowerCase()) && (
+              {/* Origin confirmation */}
+              {formData.tripOrigin.trim().length > 1 && !showOriginSuggestions && (
                 <p className="text-sm text-green-600 mt-2 flex items-center justify-center gap-1">
                   <Check size={14} />
-                  Custom origin accepted
+                  Origin accepted
                 </p>
               )}
             </div>
@@ -678,7 +705,7 @@ function CreateItineraryPage() {
                 <div className="flex items-center justify-center gap-4">
                   <button
                     type="button"
-                    onClick={() => handleInputChange('tripLength', Math.max(1, formData.tripLength - 1))}
+                    onClick={() => updateTripLength(formData.tripLength - 1)}
                     className="w-12 h-12 rounded-full bg-platinum-200 hover:bg-platinum-300 flex items-center justify-center text-2xl transition-colors"
                   >
                     -
@@ -688,7 +715,7 @@ function CreateItineraryPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleInputChange('tripLength', Math.min(30, formData.tripLength + 1))}
+                    onClick={() => updateTripLength(formData.tripLength + 1)}
                     className="w-12 h-12 rounded-full bg-platinum-200 hover:bg-platinum-300 flex items-center justify-center text-2xl transition-colors"
                   >
                     +
@@ -715,7 +742,7 @@ function CreateItineraryPage() {
                     </label>
                     <DatePicker
                       selected={formData.startDate}
-                      onChange={(date) => handleInputChange('startDate', date)}
+                      onChange={(date) => updateStartDate(date)}
                       className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400"
                       placeholderText="Select date"
                       minDate={new Date()}
@@ -727,7 +754,7 @@ function CreateItineraryPage() {
                     </label>
                     <DatePicker
                       selected={formData.endDate}
-                      onChange={(date) => handleInputChange('endDate', date)}
+                      onChange={(date) => updateEndDate(date)}
                       className="w-full px-4 py-3 border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400"
                       placeholderText="Select date"
                       minDate={formData.startDate || new Date()}
