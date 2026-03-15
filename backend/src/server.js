@@ -306,11 +306,13 @@ async function pickDestinationForUser({ tripLength, travelPace, budget, traveler
   const isMultiCity = isMultiDestination || tripLength >= 8;
   const numCities = isMultiCity ? Math.max(2, Math.min(Math.floor(tripLength / 3), 4)) : 1;
 
+  const profileDesc = describeProfiles(travelerProfiles);
+
   let prompt;
   if (isMultiCity) {
     prompt = `Based on these travel preferences, suggest ${numCities} destinations for a ${tripLength}-day multi-city trip:
 
-Travel Style: ${travelerProfiles.join(', ')}
+Traveler: ${profileDesc || travelerProfiles.join(', ')}
 Budget: ${budgetDescriptions[budget] || budget}
 Pace: ${paceDescriptions[travelPace] || travelPace}
 Trip Length: ${tripLength} days
@@ -321,24 +323,28 @@ RULES:
 - Pick ${numCities} cities that are geographically close enough to travel between reasonably
 - Cities should complement each other (don't pick 3 beach towns)
 - Order them in a logical travel sequence
+- CRITICAL: Match destinations to the traveler style. Van lifers/road trippers need scenic driving routes. Adventure seekers need outdoor hubs. Beach lovers need coastal towns. Cultural explorers need history-rich cities.
 
 Return ONLY the destinations separated by commas in format "City1, City2, City3" (e.g., "Tokyo, Kyoto, Osaka" or "Paris, Barcelona, Rome"). No country names, no other text.`;
   } else {
     prompt = `Based on these travel preferences, suggest ONE perfect destination (city and country):
 
-Travel Style: ${travelerProfiles.join(', ')}
+Traveler: ${profileDesc || travelerProfiles.join(', ')}
 Budget: ${budgetDescriptions[budget] || budget}
 Pace: ${paceDescriptions[travelPace] || travelPace}
 Trip Length: ${tripLength} days
 ${region ? `Region: ${regionExamples[region] || region}` : ''}
 ${regionConstraint}
 
-Consider:
-- Cultural explorers love history-rich cities like Rome, Kyoto, Istanbul
-- Food lovers enjoy culinary capitals like Tokyo, Bangkok, Barcelona
-- Adventure seekers want Queenstown, Costa Rica, Iceland
-- Beach lovers prefer Bali, Maldives, Santorini
-- Nature enthusiasts love Norway, New Zealand, Patagonia
+CRITICAL: The destination MUST match the traveler style:
+- Van lifers/road trippers → scenic driving regions (e.g., Queenstown NZ, Iceland, Scottish Highlands, California Coast, Tasmania)
+- Adventure seekers → outdoor adventure hubs (e.g., Queenstown, Interlaken, Chamonix, Costa Rica)
+- Cultural explorers → history-rich cities (e.g., Rome, Kyoto, Istanbul, Cusco)
+- Food lovers → culinary capitals (e.g., Tokyo, Bangkok, Barcelona, Lima)
+- Beach lovers → coastal paradises (e.g., Bali, Santorini, Zanzibar, Algarve)
+- Nature lovers → wilderness regions (e.g., Norway, Patagonia, New Zealand South Island, Canadian Rockies)
+- Backpackers → budget-friendly hotspots (e.g., Vietnam, Guatemala, Nepal, Morocco)
+- Digital nomads → nomad-friendly cities (e.g., Lisbon, Chiang Mai, Medellín, Tbilisi)
 
 Return ONLY the destination in format "City, Country" (e.g., "Tokyo, Japan"). No other text.`;
   }
@@ -365,6 +371,26 @@ Return ONLY the destination in format "City, Country" (e.g., "Tokyo, Japan"). No
 
   // Clean up the response - remove any quotes or extra formatting
   return destination.replace(/['"]/g, '').trim();
+}
+
+// Map traveler profile IDs to descriptions the AI can actually use
+const PROFILE_DESCRIPTIONS = {
+  'active-globetrotter': 'adventure-seeking, loves hiking, climbing, outdoor sports, and physical activities',
+  'eco-conscious': 'environmentally responsible, prefers sustainable tourism, eco-friendly lodges, conservation experiences',
+  'van-lifer': 'road-trip oriented, loves scenic drives, camping, freedom to explore, stopping at viewpoints and small towns along the way',
+  'off-grid': 'seeks remote wilderness, off-the-beaten-path destinations, rugged terrain, minimal tourist crowds',
+  'digital-nomad': 'remote worker, needs reliable wifi, cafés, coworking spaces, and urban conveniences',
+  'wellness': 'health-focused, enjoys yoga retreats, spas, meditation, thermal baths, and mindful experiences',
+  'backpacker': 'budget-conscious, stays in hostels, seeks authentic local street food, walking tours, and free attractions',
+  'cultural-explorer': 'history and culture enthusiast, visits museums, temples, historical sites, traditional neighborhoods',
+  'beach-bum': 'sun and sea lover, prioritizes beaches, snorkeling, surfing, coastal walks, and seaside restaurants',
+  'nature-lover': 'nature enthusiast, loves national parks, wildlife, scenic hikes, waterfalls, and natural wonders',
+  'family-traveler': 'traveling with family/kids, needs kid-friendly activities, safe areas, playgrounds, and comfortable transport'
+};
+
+function describeProfiles(profileIds) {
+  if (!profileIds || profileIds.length === 0) return '';
+  return profileIds.map(id => PROFILE_DESCRIPTIONS[id] || id).join('; ');
 }
 
 async function generateOpenAIItinerary({ destination, tripLength, travelPace, budget, travelerProfiles, tripOrigin, travelMode }) {
@@ -464,23 +490,32 @@ Use city_name to indicate which specific region/city the traveler is in each day
       }
     }
 
+    const profileDesc = describeProfiles(travelerProfiles);
+    const qualityRules = `
+QUALITY RULES:
+- NEVER repeat the same location or attraction across different days. Every activity must be at a UNIQUE place.
+- Group each day's activities by geographic area — all activities on the same day should be near each other. Do NOT zigzag across the city.
+- Tailor activities to the traveler style: ${profileDesc || travelerProfiles.join(', ')}. Activities should strongly reflect these preferences.`;
+
     // Multi-destination prompt
     if (isMultiDest) {
       const daysPerDest = Math.floor(tripLength / destinations.length);
-      return `${tripLength}-day trip: ${destinations.join(' → ')}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${paceLine}
+      return `${tripLength}-day trip: ${destinations.join(' → ')}. Budget: ${budget}. Traveler: ${profileDesc || travelerProfiles.join(', ')}. ${paceLine}
 ${travelLogistics}
 Generate activities for ${dayRange}. Route: ~${daysPerDest} days per destination, in order.
 Include transport between destinations. ${baseDaily} activities/day. Respect travel time.
 CRITICAL: Return/departure ONLY on Day ${tripLength}. NEVER include "return home" or departure flights before the last day.
+${qualityRules}
 Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening.
 JSON: {"activities":[{"day_number":${startDay},"position":0,"title":"...","description":"short","location":"Place","city_name":"City","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`;
     }
 
     // Single destination prompt (with sub-destination routing for long trips)
-    return `${tripLength}-day trip to ${destination}. Budget: ${budget}. Style: ${travelerProfiles.join(', ')}. ${paceLine}
+    return `${tripLength}-day trip to ${destination}. Budget: ${budget}. Traveler: ${profileDesc || travelerProfiles.join(', ')}. ${paceLine}
 ${travelLogistics}${routeGuidance}
-Generate activities for ${dayRange}. ${baseDaily} activities/day. Optimize by geographic proximity. Vary activities across days.
+Generate activities for ${dayRange}. ${baseDaily} activities/day.
 CRITICAL: Return/departure ONLY on Day ${tripLength}. NEVER include "return home" or departure flights before the last day.
+${qualityRules}
 Categories: ${validCategories.join(', ')}. time_of_day: morning|afternoon|evening. city_name: use the ACTUAL region/city name for each day (not just "${cityName}" for every day).
 JSON: {"activities":[{"day_number":${startDay},"position":0,"title":"...","description":"short","location":"Place","city_name":"ActualCityOrRegion","category":"...","duration_minutes":90,"estimated_cost_min":0,"estimated_cost_max":20,"time_of_day":"morning","latitude":0.00,"longitude":0.00}]}`;
   };
@@ -512,8 +547,8 @@ JSON: {"summary":"1 sentence overview","accommodations":[{"name":"Hotel Name","t
       const chunkTokens = Math.min(16000, 1500 + (baseDaily * chunkDays * 200));
       const isLastChunk = chunk.endDay === tripLength;
       const systemMsg = isLastChunk
-        ? `Expert travel planner. Respond with valid JSON. Generate activities for EVERY day in the requested range. CRITICAL: departure/return home ONLY on the very last day (Day ${tripLength}). Never earlier. Be concise.`
-        : `Expert travel planner. Respond with valid JSON. Generate activities for EVERY day in the requested range. Do NOT include any return-home or departure activities — the trip continues. Be concise.`;
+        ? `Expert travel planner. Respond with valid JSON. Generate activities for EVERY day in the requested range. CRITICAL: departure/return home ONLY on the very last day (Day ${tripLength}). Never earlier. NEVER repeat the same location across different days. Group each day by geographic area. Be concise.`
+        : `Expert travel planner. Respond with valid JSON. Generate activities for EVERY day in the requested range. Do NOT include any return-home or departure activities — the trip continues. NEVER repeat the same location across different days. Group each day by geographic area. Be concise.`;
       return openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [

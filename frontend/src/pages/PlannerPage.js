@@ -8,7 +8,7 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe, X, MessageSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe, X, MessageSquare, PanelLeftClose, PanelLeftOpen, Link2, MessageCircle, Check, Hotel as HotelIcon } from 'lucide-react';
 import { ACTIVITY_CATEGORIES } from '../constants/travelerProfiles';
 import {
   DndContext,
@@ -496,6 +496,11 @@ function PlannerPage() {
   const [progressMessage, setProgressMessage] = useState('');
   const [generationTimedOut, setGenerationTimedOut] = useState(false);
   const [accommodations, setAccommodations] = useState([]);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
+  const [hotelDropPrompt, setHotelDropPrompt] = useState(null); // { hotel, dayNumber }
 
   const isGenerating = location.state?.generating;
 
@@ -630,6 +635,7 @@ function PlannerPage() {
 
       if (itineraryError) throw itineraryError;
       setItinerary(itineraryData);
+      setIsPublished(itineraryData.is_published || false);
 
       const [activitiesResult, accommodationsResult] = await Promise.all([
         supabase
@@ -661,10 +667,11 @@ function PlannerPage() {
     try {
       const { error } = await supabase
         .from('itineraries')
-        .update({ updated_at: new Date().toISOString() })
+        .update({ updated_at: new Date().toISOString(), is_published: true })
         .eq('id', id);
       if (error) throw error;
-      alert('Itinerary saved successfully!');
+      setIsPublished(true);
+      alert('Itinerary saved & published!');
     } catch (error) {
       console.error('Error saving itinerary:', error);
       alert('Failed to save itinerary');
@@ -745,6 +752,42 @@ function PlannerPage() {
     }
   };
 
+  // Handle adding accommodation with date range (check-in / check-out)
+  const handleAddAccommodationRange = async (hotel, checkInDay, checkOutDay) => {
+    const checkInDate = itinerary.start_date
+      ? (() => { const d = new Date(itinerary.start_date); d.setDate(d.getDate() + (checkInDay - 1)); return d.toISOString().split('T')[0]; })()
+      : null;
+    const checkOutDate = itinerary.start_date
+      ? (() => { const d = new Date(itinerary.start_date); d.setDate(d.getDate() + (checkOutDay - 1)); return d.toISOString().split('T')[0]; })()
+      : null;
+
+    const newAcc = {
+      itinerary_id: id,
+      name: hotel.name,
+      type: hotel.type || 'hotel',
+      location: hotel.location || itinerary.destination,
+      price_per_night: hotel.price_per_night || null,
+      check_in_date: checkInDate,
+      check_out_date: checkOutDate,
+      latitude: hotel.latitude || null,
+      longitude: hotel.longitude || null,
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('accommodations')
+        .insert(newAcc)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setAccommodations(prev => [...prev, data]);
+    } catch (error) {
+      console.error('Error adding accommodation:', error);
+      alert('Failed to add accommodation');
+    }
+  };
+
   // Handle adding activity from AI chat drag
   const handleAddActivityFromDrag = async (activityData, dayNumber) => {
     const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
@@ -787,24 +830,74 @@ function PlannerPage() {
     }
   };
 
-  const handleShare = async () => {
-    try {
+  const handleCopyLink = async () => {
+    // Auto-publish when sharing
+    if (!isPublished) {
       const { error } = await supabase
         .from('itineraries')
         .update({ is_published: true })
         .eq('id', id);
-      if (error) throw error;
+      if (!error) setIsPublished(true);
+    }
+    const shareUrl = `${window.location.origin}/itinerary/${id}`;
+    await navigator.clipboard.writeText(shareUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleShareWhatsApp = async () => {
+    if (!isPublished) {
+      const { error } = await supabase
+        .from('itineraries')
+        .update({ is_published: true })
+        .eq('id', id);
+      if (!error) setIsPublished(true);
+    }
+    const shareUrl = `${window.location.origin}/itinerary/${id}`;
+    const text = `${itinerary.title} — ${shareUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    setShareOpen(false);
+  };
+
+  const handleNativeShare = async () => {
+    if (!isPublished) {
+      const { error } = await supabase
+        .from('itineraries')
+        .update({ is_published: true })
+        .eq('id', id);
+      if (!error) setIsPublished(true);
+    }
+    if (navigator.share) {
       const shareUrl = `${window.location.origin}/itinerary/${id}`;
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Shareable link copied to clipboard!');
-    } catch (error) {
-      console.error('Error sharing itinerary:', error);
-      alert('Failed to create shareable link');
+      await navigator.share({ title: itinerary.title, url: shareUrl });
+      setShareOpen(false);
     }
   };
 
-  const handleExport = () => {
-    alert('Export functionality coming soon!');
+  const handleExport = async () => {
+    setExporting(true);
+    setShareOpen(false);
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const container = document.createElement('div');
+      container.innerHTML = buildPrintableHTML(itinerary, activities, accommodations);
+      document.body.appendChild(container);
+
+      await html2pdf().set({
+        margin: [10, 10, 10, 10],
+        filename: `${itinerary.title || 'itinerary'}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      }).from(container).save();
+
+      document.body.removeChild(container);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleDragStart = (event) => {
@@ -935,11 +1028,24 @@ function PlannerPage() {
   const handleDrop = (e, dayNumber) => {
     e.preventDefault();
     setDragOverDay(null);
-    const activityData = e.dataTransfer.getData('application/json');
-    if (activityData) {
-      const activity = JSON.parse(activityData);
-      handleAddActivityFromDrag(activity, dayNumber);
+    const rawData = e.dataTransfer.getData('application/json');
+    if (rawData) {
+      const data = JSON.parse(rawData);
+      if (data.__type === 'hotel') {
+        // Show "How many nights?" prompt
+        setHotelDropPrompt({ hotel: data, dayNumber });
+      } else {
+        handleAddActivityFromDrag(data, dayNumber);
+      }
     }
+  };
+
+  const handleConfirmHotelNights = (nights) => {
+    if (!hotelDropPrompt) return;
+    const { hotel, dayNumber } = hotelDropPrompt;
+    const checkOutDay = Math.min(dayNumber + nights, itinerary.trip_length + 1);
+    handleAddAccommodationRange(hotel, dayNumber, checkOutDay);
+    setHotelDropPrompt(null);
   };
 
   const handleDragOver = (e, dayNumber) => {
@@ -1139,6 +1245,76 @@ function PlannerPage() {
     />
   );
 
+  // Find accommodation for a specific day number
+  const getAccommodationForDay = (dayNumber) => {
+    if (!itinerary.start_date) return null;
+    const dayDate = new Date(itinerary.start_date);
+    dayDate.setDate(dayDate.getDate() + (dayNumber - 1));
+    const dayStr = dayDate.toISOString().split('T')[0];
+
+    return accommodations.find(acc => {
+      if (!acc.check_in_date || !acc.check_out_date) return false;
+      return dayStr >= acc.check_in_date && dayStr < acc.check_out_date;
+    });
+  };
+
+  // Hotel nights prompt modal
+  const renderHotelNightsModal = hotelDropPrompt && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setHotelDropPrompt(null)}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 text-center">
+          <div className="w-12 h-12 bg-columbia-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <HotelIcon size={24} className="text-columbia-600" />
+          </div>
+          <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-1">
+            {hotelDropPrompt.hotel.name}
+          </h3>
+          <p className="text-sm text-platinum-600 mb-4">
+            Starting {itinerary.start_date ? getDateForDay(itinerary.start_date, hotelDropPrompt.dayNumber) : `Day ${hotelDropPrompt.dayNumber}`} — How many nights?
+          </p>
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {[1, 2, 3].map(n => {
+              const maxNights = itinerary.trip_length - hotelDropPrompt.dayNumber + 1;
+              if (n > maxNights) return null;
+              return (
+                <button
+                  key={n}
+                  onClick={() => handleConfirmHotelNights(n)}
+                  className="py-3 rounded-xl bg-columbia-50 hover:bg-columbia-100 border border-columbia-200 text-columbia-700 font-bold text-sm transition-colors"
+                >
+                  {n} night{n > 1 ? 's' : ''}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => {
+                const input = prompt(`How many nights? (max ${itinerary.trip_length - hotelDropPrompt.dayNumber + 1})`);
+                if (input) {
+                  const n = parseInt(input);
+                  const maxNights = itinerary.trip_length - hotelDropPrompt.dayNumber + 1;
+                  if (n > 0 && n <= maxNights) {
+                    handleConfirmHotelNights(n);
+                  } else {
+                    alert(`Please enter a number between 1 and ${maxNights}`);
+                  }
+                }
+              }}
+              className="py-3 rounded-xl bg-platinum-50 hover:bg-platinum-100 border border-platinum-200 text-charcoal-500 font-medium text-sm transition-colors"
+            >
+              Custom
+            </button>
+          </div>
+        </div>
+        <button
+          onClick={() => setHotelDropPrompt(null)}
+          className="w-full py-3 text-sm text-platinum-500 hover:text-charcoal-500 border-t border-platinum-200 transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+
   const days = Array.from({ length: itinerary.trip_length }, (_, i) => i + 1);
   const activitiesWithCoords = activities.filter(a => a.latitude && a.longitude);
   const filteredActivities = selectedDay === 'all'
@@ -1149,6 +1325,7 @@ function PlannerPage() {
     <div className="h-screen flex flex-col bg-naples-100">
       {renderNotesModal}
       {renderAddActivityModal}
+      {renderHotelNightsModal}
       {/* Top Navigation */}
       <div className="bg-white/80 backdrop-blur-lg px-6 py-4">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between">
@@ -1186,14 +1363,51 @@ function PlannerPage() {
               <Save size={16} />
               {saving ? 'Saving...' : 'Save'}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
-              <Share2 size={16} />
-              Share
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
-              <Download size={16} />
-              Export
-            </Button>
+            <div className="relative">
+              <Button variant="outline" size="sm" onClick={() => setShareOpen(!shareOpen)} className="gap-2">
+                <Share2 size={16} />
+                Share
+              </Button>
+              {shareOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShareOpen(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-xl shadow-lg border border-platinum-200 py-1 w-52">
+                    <button
+                      onClick={handleShareWhatsApp}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full"
+                    >
+                      <MessageCircle size={16} />
+                      WhatsApp
+                    </button>
+                    {typeof navigator.share === 'function' && (
+                      <button
+                        onClick={handleNativeShare}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full"
+                      >
+                        <Share2 size={16} />
+                        Messages
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { handleCopyLink(); setShareOpen(false); }}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full"
+                    >
+                      {linkCopied ? <Check size={16} className="text-green-500" /> : <Link2 size={16} />}
+                      {linkCopied ? 'Copied!' : 'Copy Link'}
+                    </button>
+                    <div className="border-t border-platinum-200 my-1" />
+                    <button
+                      onClick={handleExport}
+                      disabled={exporting}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full disabled:opacity-50"
+                    >
+                      <Download size={16} />
+                      {exporting ? 'Exporting...' : 'Export as PDF'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1212,7 +1426,7 @@ function PlannerPage() {
                     onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
                     onLoadItinerary={handleLoadItinerary}
                     accommodations={accommodations}
-                    onAddAccommodation={handleAddActivityFromDrag}
+                    onAddAccommodation={handleAddAccommodationRange}
                   />
                 </div>
               </Panel>
@@ -1277,6 +1491,7 @@ function PlannerPage() {
                           : `Day ${day}`;
                         const dayHeader = cityName ? `${dayLabel} — ${cityName}` : dayLabel;
                         const skeletonCount = itinerary.travel_pace === 'relaxed' ? 2 : itinerary.travel_pace === 'packed' ? 4 : 3;
+                        const dayAccommodation = getAccommodationForDay(day);
                         return (
                           <div
                             key={day}
@@ -1289,6 +1504,15 @@ function PlannerPage() {
                             onDragOver={(e) => handleDragOver(e, day)}
                             onDragLeave={handleDragLeave}
                           >
+                            {dayAccommodation && (
+                              <div className="flex items-center gap-2 text-xs text-columbia-700 bg-columbia-50 px-3 py-1.5 rounded-lg mb-3 border border-columbia-200">
+                                <span>🏨</span>
+                                <span className="font-medium">{dayAccommodation.name}</span>
+                                {dayAccommodation.price_per_night && (
+                                  <span className="text-columbia-500">${dayAccommodation.price_per_night}/night</span>
+                                )}
+                              </div>
+                            )}
                             <div className="flex items-center justify-between mb-4">
                               <h3 className="text-lg font-heading font-bold text-charcoal-500">
                                 {dayHeader}
@@ -1616,6 +1840,102 @@ function PlannerPage() {
       </div>
     </div>
   );
+}
+
+// Build printable HTML for PDF export
+function buildPrintableHTML(itinerary, activities, accommodations) {
+  const days = Array.from({ length: itinerary.trip_length }, (_, i) => i + 1);
+  const DAY_COLORS_PDF = [
+    '#EF8557', '#4A7B91', '#FFDB70', '#2C4251', '#BBD3DD',
+    '#C85A2E', '#7DADC1', '#F0C84D', '#386074', '#DEE3E1'
+  ];
+
+  const fmtDate = (date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const dayDate = (startDate, dayNumber) => {
+    if (!startDate) return `Day ${dayNumber}`;
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + (dayNumber - 1));
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  let html = `
+    <div style="font-family: 'Inter', 'Helvetica', sans-serif; color: #2C4251; max-width: 700px; margin: 0 auto;">
+      <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #EF8557;">
+        <h1 style="font-size: 28px; margin: 0 0 8px 0; color: #2C4251;">${itinerary.title || 'Trip Itinerary'}</h1>
+        <p style="font-size: 14px; color: #71717A; margin: 0;">
+          ${itinerary.destination} &bull; ${itinerary.trip_length} days
+          ${itinerary.start_date ? ` &bull; ${fmtDate(itinerary.start_date)} — ${fmtDate(itinerary.end_date)}` : ''}
+        </p>
+      </div>
+  `;
+
+  days.forEach(day => {
+    const dayActivities = activities.filter(a => a.day_number === day);
+    const label = dayDate(itinerary.start_date, day);
+    const city = dayActivities[0]?.city_name;
+
+    html += `
+      <div style="margin-bottom: 24px; page-break-inside: avoid;">
+        <div style="background: #F5F3F0; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid ${DAY_COLORS_PDF[(day - 1) % DAY_COLORS_PDF.length]};">
+          <strong style="font-size: 16px;">Day ${day} — ${label}</strong>
+          ${city ? `<span style="color: #71717A; font-size: 13px; margin-left: 8px;">${city}</span>` : ''}
+        </div>
+    `;
+
+    if (dayActivities.length === 0) {
+      html += `<p style="color: #71717A; font-size: 13px; font-style: italic; padding-left: 20px;">No activities planned</p>`;
+    } else {
+      dayActivities.forEach(activity => {
+        html += `
+          <div style="padding: 8px 0 8px 20px; border-bottom: 1px solid #f0f0f0;">
+            <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">${activity.title}</div>
+            ${activity.description ? `<div style="font-size: 12px; color: #71717A; margin-bottom: 2px;">${activity.description}</div>` : ''}
+            <div style="font-size: 11px; color: #9CA3AF;">
+              ${activity.location ? `📍 ${activity.location}` : ''}
+              ${activity.duration_minutes ? ` &bull; ${Math.floor(activity.duration_minutes / 60)}h${activity.duration_minutes % 60 > 0 ? ` ${activity.duration_minutes % 60}m` : ''}` : ''}
+              ${activity.time_of_day ? ` &bull; ${activity.time_of_day}` : ''}
+              ${activity.estimated_cost_min != null ? ` &bull; $${activity.estimated_cost_min}${activity.estimated_cost_max && activity.estimated_cost_max !== activity.estimated_cost_min ? `–$${activity.estimated_cost_max}` : ''}` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    html += `</div>`;
+  });
+
+  if (accommodations.length > 0) {
+    html += `
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #4A7B91;">
+        <h2 style="font-size: 18px; margin: 0 0 12px 0;">Accommodations</h2>
+    `;
+    accommodations.forEach(acc => {
+      html += `
+        <div style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+          <strong style="font-size: 14px;">🏨 ${acc.name}</strong>
+          <div style="font-size: 12px; color: #71717A;">
+            ${acc.location || ''}
+            ${acc.price_per_night ? ` &bull; $${acc.price_per_night}/night` : ''}
+            ${acc.check_in_date ? ` &bull; ${fmtDate(acc.check_in_date)} — ${fmtDate(acc.check_out_date)}` : ''}
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  html += `
+      <div style="text-align: center; margin-top: 30px; padding-top: 16px; border-top: 1px solid #e0e0e0;">
+        <p style="font-size: 11px; color: #9CA3AF;">Created with Travel Atlas</p>
+      </div>
+    </div>
+  `;
+
+  return html;
 }
 
 export default PlannerPage;

@@ -5,7 +5,8 @@ import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { TRAVELER_PROFILES } from '../constants/travelerProfiles';
-import { PlusCircle, MapPin, Copy, Trash2, Edit, X, Check, Image, Link as LinkIcon, Search, FileText } from 'lucide-react';
+import { PlusCircle, MapPin, Copy, Trash2, Edit, X, Check, Image, Link as LinkIcon, Search, FileText, Globe, Compass } from 'lucide-react';
+import { TRAVEL_PACE_OPTIONS } from '../constants/travelerProfiles';
 
 // Profile Edit Modal Component
 function ProfileEditModal({ itinerary, onClose, onSave }) {
@@ -246,6 +247,7 @@ function TravelDesignerDashboard() {
   const [loading, setLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState(null);
   const [editingImage, setEditingImage] = useState(null);
+  const [communityItineraries, setCommunityItineraries] = useState([]);
 
   useEffect(() => {
     fetchUserAndData();
@@ -255,9 +257,9 @@ function TravelDesignerDashboard() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
-      await Promise.all([fetchSavedItineraries(user.id), fetchAtlasFiles()]);
+      await Promise.all([fetchSavedItineraries(user.id), fetchAtlasFiles(), fetchCommunityItineraries(user.id)]);
     } else {
-      await fetchAtlasFiles();
+      await Promise.all([fetchAtlasFiles(), fetchCommunityItineraries(null)]);
     }
 
     setLoading(false);
@@ -274,6 +276,27 @@ function TravelDesignerDashboard() {
       console.error('Error fetching itineraries:', error);
     } else {
       setSavedItineraries(data || []);
+    }
+  };
+
+  const fetchCommunityItineraries = async (currentUserId) => {
+    let query = supabase
+      .from('itineraries')
+      .select('id, title, destination, trip_length, travel_pace, budget, thumbnail_url, created_at, user_id')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
+      .limit(12);
+
+    // Exclude own itineraries if logged in
+    if (currentUserId) {
+      query = query.neq('user_id', currentUserId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching community itineraries:', error);
+    } else {
+      setCommunityItineraries(data || []);
     }
   };
 
@@ -551,6 +574,76 @@ function TravelDesignerDashboard() {
             </div>
           )}
         </section>
+
+        {/* Community Itineraries Section */}
+        {communityItineraries.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-heading font-bold text-charcoal-500 mb-1 flex items-center gap-2">
+                  <Globe size={22} className="text-coral-500" />
+                  Community Itineraries
+                </h2>
+                <p className="text-platinum-600">
+                  Published trip plans from fellow travelers
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {communityItineraries.map((trip) => {
+                const paceInfo = TRAVEL_PACE_OPTIONS.find(p => p.value === trip.travel_pace);
+                return (
+                  <Link key={trip.id} to={`/itinerary/${trip.id}`} className="group">
+                    <div className="rounded-xl overflow-hidden border border-platinum-200 hover:border-coral-300 hover:shadow-lg transition-all bg-white">
+                      {/* Thumbnail */}
+                      <div className="h-36 relative overflow-hidden bg-columbia-100">
+                        {trip.thumbnail_url ? (
+                          <img
+                            src={trip.thumbnail_url}
+                            alt={trip.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Compass size={36} className="text-columbia-300" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                        <div className="absolute bottom-2 left-3 right-3">
+                          <h3 className="text-white font-heading font-bold text-sm leading-tight drop-shadow-lg truncate">
+                            {trip.title || trip.destination}
+                          </h3>
+                        </div>
+                        <div className="absolute top-2 right-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-naples-400 text-charcoal-500 text-xs font-bold shadow-sm">
+                            {trip.trip_length}d
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Info */}
+                      <div className="p-3">
+                        <div className="flex items-center gap-2 text-xs text-platinum-600">
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} className="text-coral-500" />
+                            {trip.destination}
+                          </span>
+                          {paceInfo && (
+                            <span className="flex items-center gap-1">
+                              <span>{paceInfo.emoji}</span>
+                              {paceInfo.label}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Atlas Files Section */}
         <section>

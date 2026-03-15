@@ -5,25 +5,39 @@ import { useAuth } from '../contexts/AuthContext';
 import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { User, MapPin, Globe, Calendar } from 'lucide-react';
+import { MapPin, Globe, Calendar, Send, Clock } from 'lucide-react';
+import { TRAVELER_PROFILES } from '../constants/travelerProfiles';
 
 function ProfilePage() {
   const { user } = useAuth();
   const [itineraries, setItineraries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
-    if (user) fetchItineraries();
+    if (user) {
+      fetchItineraries();
+      fetchProfile();
+    }
   }, [user]);
 
   const fetchItineraries = async () => {
     const { data } = await supabase
       .from('itineraries')
-      .select('id, title, destinations, created_at')
+      .select('id, title, destination, trip_length, travel_pace, is_published, thumbnail_url, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     setItineraries(data || []);
     setLoading(false);
+  };
+
+  const fetchProfile = async () => {
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('bio, country, travel_style')
+      .eq('id', user.id)
+      .single();
+    if (data) setProfile(data);
   };
 
   if (!user) {
@@ -48,14 +62,15 @@ function ProfilePage() {
 
   // Compute stats from itineraries
   const totalItineraries = itineraries.length;
-  const allDestinations = itineraries.flatMap(it => {
-    try {
-      const dests = typeof it.destinations === 'string' ? JSON.parse(it.destinations) : it.destinations;
-      return Array.isArray(dests) ? dests : [];
-    } catch { return []; }
-  });
-  const uniqueDestinations = new Set(allDestinations.map(d => d.name || d)).size;
-  const uniqueCountries = new Set(allDestinations.map(d => d.country || '').filter(Boolean)).size;
+  const publishedCount = itineraries.filter(it => it.is_published).length;
+  const totalDays = itineraries.reduce((sum, it) => sum + (it.trip_length || 0), 0);
+  const uniqueDestinations = new Set(itineraries.map(it => it.destination).filter(Boolean)).size;
+  const publishedItineraries = itineraries.filter(it => it.is_published);
+
+  // Travel style badges from profile
+  const travelStyleBadges = (profile?.travel_style || []).map(styleId => {
+    return TRAVELER_PROFILES.find(p => p.id === styleId);
+  }).filter(Boolean);
 
   return (
     <PageContainer>
@@ -75,9 +90,34 @@ function ProfilePage() {
                 {userName}
               </h2>
               <p className="text-sm text-platinum-600 mb-1">{userEmail}</p>
+              {profile?.country && (
+                <p className="text-sm text-platinum-600 mb-1">{profile.country}</p>
+              )}
               <p className="text-platinum-500 text-sm">
                 Member since {memberSince}
               </p>
+
+              {/* Bio */}
+              {profile?.bio && (
+                <p className="text-sm text-platinum-600 mt-3 italic">
+                  "{profile.bio}"
+                </p>
+              )}
+
+              {/* Travel Style Badges */}
+              {travelStyleBadges.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
+                  {travelStyleBadges.map(style => (
+                    <span
+                      key={style.id}
+                      className="text-xs px-2 py-1 bg-coral-50 text-coral-600 rounded-full"
+                      title={style.description}
+                    >
+                      {style.emoji} {style.title.replace('The ', '')}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
 
@@ -87,21 +127,59 @@ function ProfilePage() {
               <h3 className="text-xl font-heading font-bold mb-4">
                 Travel Stats
               </h3>
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                 <div>
                   <div className="text-3xl font-bold text-coral-500">{totalItineraries}</div>
-                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><Calendar size={14} />Itineraries</div>
+                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><Calendar size={14} />Trips</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-columbia-500">{uniqueDestinations}</div>
-                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><MapPin size={14} />Places</div>
+                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><MapPin size={14} />Destinations</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-naples-500">{uniqueCountries}</div>
-                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><Globe size={14} />Countries</div>
+                  <div className="text-3xl font-bold text-naples-500">{totalDays}</div>
+                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><Clock size={14} />Days Planned</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-green-500">{publishedCount}</div>
+                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><Send size={14} />Published</div>
                 </div>
               </div>
             </Card>
+
+            {/* Published Itineraries */}
+            {publishedItineraries.length > 0 && (
+              <Card>
+                <h3 className="text-xl font-heading font-bold mb-4 flex items-center gap-2">
+                  <Globe size={20} className="text-coral-500" />
+                  Published to Atlas Network
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {publishedItineraries.map(it => (
+                    <Link
+                      key={it.id}
+                      to={`/itinerary/${it.id}`}
+                      className="rounded-xl overflow-hidden border border-platinum-200 hover:border-coral-300 hover:shadow-md transition-all group"
+                    >
+                      <div className="h-24 bg-columbia-100 relative overflow-hidden">
+                        {it.thumbnail_url ? (
+                          <img src={it.thumbnail_url} alt={it.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-3xl">✈️</div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <p className="text-white text-xs font-bold truncate drop-shadow-lg">{it.title || it.destination}</p>
+                        </div>
+                      </div>
+                      <div className="p-2 text-xs text-platinum-600">
+                        <span className="flex items-center gap-1"><MapPin size={10} />{it.destination}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             <Card>
               <h3 className="text-xl font-heading font-bold mb-4">
@@ -129,15 +207,29 @@ function ProfilePage() {
                       to={`/designer/planner/${it.id}`}
                       className="flex items-center justify-between p-3 rounded-lg hover:bg-platinum-50 transition-colors group"
                     >
-                      <div>
-                        <p className="font-medium text-charcoal-500 group-hover:text-coral-500 transition-colors">
-                          {it.title || 'Untitled Trip'}
-                        </p>
-                        <p className="text-sm text-platinum-500">
-                          {new Date(it.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-platinum-100 overflow-hidden flex-shrink-0">
+                          {it.thumbnail_url ? (
+                            <img src={it.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-lg">✈️</div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-charcoal-500 group-hover:text-coral-500 transition-colors">
+                            {it.title || 'Untitled Trip'}
+                          </p>
+                          <p className="text-xs text-platinum-500">
+                            {it.destination} · {it.trip_length} days · {new Date(it.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-platinum-400 group-hover:text-coral-400 transition-colors">→</span>
+                      <div className="flex items-center gap-2">
+                        {it.is_published && (
+                          <span className="text-xs px-2 py-0.5 bg-green-50 text-green-600 rounded-full">Published</span>
+                        )}
+                        <span className="text-platinum-400 group-hover:text-coral-400 transition-colors">→</span>
+                      </div>
                     </Link>
                   ))}
                 </div>

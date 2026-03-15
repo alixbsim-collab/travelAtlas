@@ -10,6 +10,7 @@ import AtlasFilesPage from './pages/AtlasFilesPage';
 import AtlasFileEditorPage from './pages/AtlasFileEditorPage';
 import AtlasFileViewPage from './pages/AtlasFileViewPage';
 import ProfilePage from './pages/ProfilePage';
+import ItineraryViewPage from './pages/ItineraryViewPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -30,6 +31,7 @@ function App() {
         <Route path="/atlas/edit/:id" element={<MainLayout><AtlasFileEditorPage /></MainLayout>} />
         <Route path="/atlas/:id" element={<MainLayout><AtlasFileViewPage /></MainLayout>} />
         <Route path="/profile" element={<MainLayout><ProfilePage /></MainLayout>} />
+        <Route path="/itinerary/:id" element={<MainLayout><ItineraryViewPage /></MainLayout>} />
         <Route path="/login" element={<MainLayout><LoginPage /></MainLayout>} />
         <Route path="/register" element={<MainLayout><RegisterPage /></MainLayout>} />
         <Route path="/forgot-password" element={<MainLayout><ForgotPasswordPage /></MainLayout>} />

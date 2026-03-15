@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Loader, GripVertical, Hotel, ExternalLink, Plus, ChevronDown } from 'lucide-react';
+import { Send, Sparkles, Loader, GripVertical, Hotel, ExternalLink, ChevronDown } from 'lucide-react';
 import Button from '../ui/Button';
 import { ACTIVITY_CATEGORIES } from '../../constants/travelerProfiles';
 
@@ -11,7 +11,6 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
   const [suggestedActivities, setSuggestedActivities] = useState([]);
   const [draggingId, setDraggingId] = useState(null);
   const [showHotels, setShowHotels] = useState(true);
-  const [addToDayOpen, setAddToDayOpen] = useState(null); // which hotel index has day picker open
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -183,22 +182,17 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
     return `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(query)}`;
   };
 
-  const handleAddHotelToDay = (hotel, dayNumber) => {
-    if (onAddAccommodation) {
-      onAddAccommodation({
-        title: `Check in: ${hotel.name}`,
-        description: `${hotel.type || 'Hotel'} — ${hotel.location || itinerary.destination}. ~$${hotel.price_per_night || '?'}/night`,
-        location: hotel.location || itinerary.destination,
-        category: 'accommodation',
-        duration_minutes: 30,
-        estimated_cost_min: hotel.price_per_night || 0,
-        estimated_cost_max: hotel.price_per_night || 0,
-        time_of_day: 'afternoon',
-        latitude: hotel.latitude || 0,
-        longitude: hotel.longitude || 0,
-      }, dayNumber);
-    }
-    setAddToDayOpen(null);
+  const handleHotelDragStart = (e, hotel, idx) => {
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('application/json', JSON.stringify({ ...hotel, __type: 'hotel' }));
+    setDraggingId(`hotel-${idx}`);
+    const dragImage = e.target.cloneNode(true);
+    dragImage.style.opacity = '0.8';
+    dragImage.style.position = 'absolute';
+    dragImage.style.top = '-1000px';
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    setTimeout(() => document.body.removeChild(dragImage), 0);
   };
 
   // Render message content with markdown links
@@ -363,11 +357,24 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
           {showHotels && (
             <div className="px-4 py-3 space-y-3 bg-platinum-50/50 max-h-[300px] overflow-y-auto">
               {accommodations.map((hotel, idx) => (
-                <div key={hotel.id || idx} className="bg-white rounded-lg border border-platinum-200 p-3">
+                <div
+                  key={hotel.id || idx}
+                  draggable
+                  onDragStart={(e) => handleHotelDragStart(e, hotel, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`bg-white rounded-lg border-2 border-dashed p-3 cursor-grab active:cursor-grabbing transition-all ${
+                    draggingId === `hotel-${idx}`
+                      ? 'border-columbia-400 bg-columbia-50 opacity-50'
+                      : 'border-platinum-200 hover:border-columbia-300 hover:shadow-md'
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-charcoal-500 truncate">{hotel.name}</h4>
-                      <p className="text-xs text-platinum-600">{hotel.location || itinerary.destination}</p>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <GripVertical size={14} className="text-platinum-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-charcoal-500 truncate">{hotel.name}</h4>
+                        <p className="text-xs text-platinum-600">{hotel.location || itinerary.destination}</p>
+                      </div>
                     </div>
                     {hotel.price_per_night && (
                       <span className="text-sm font-bold text-columbia-600 whitespace-nowrap">
@@ -381,35 +388,17 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
                       href={getBookingUrl(hotel.name)}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-columbia-700 bg-columbia-50 hover:bg-columbia-100 rounded-lg transition-colors border border-columbia-200"
                     >
                       <ExternalLink size={12} />
                       View on Booking.com
                     </a>
+                  </div>
 
-                    <div className="relative">
-                      <button
-                        onClick={() => setAddToDayOpen(addToDayOpen === idx ? null : idx)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-coral-600 bg-coral-50 hover:bg-coral-100 rounded-lg transition-colors border border-coral-200"
-                      >
-                        <Plus size={12} />
-                        Add to Day
-                      </button>
-
-                      {addToDayOpen === idx && (
-                        <div className="absolute bottom-full right-0 mb-1 bg-white border border-platinum-200 rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto w-36">
-                          {Array.from({ length: itinerary.trip_length }, (_, i) => i + 1).map(day => (
-                            <button
-                              key={day}
-                              onClick={() => handleAddHotelToDay(hotel, day)}
-                              className="w-full px-3 py-2 text-left text-xs hover:bg-coral-50 transition-colors"
-                            >
-                              Day {day}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  <div className="mt-2 text-xs text-columbia-500 font-medium flex items-center gap-1">
+                    <GripVertical size={12} />
+                    Drag to a day to add to your trip
                   </div>
                 </div>
               ))}
