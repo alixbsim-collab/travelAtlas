@@ -833,9 +833,15 @@ RESPONSE FORMAT — always respond with this JSON:
 CRITICAL RULES FOR ADDING DAYS:
 - The activities array MUST contain exactly ${baseDaily} activities. NEVER return an empty activities array.
 - The day_number in activities MUST equal insert_at.
-- If the last day currently has departure/airport/travel-home activities, insert the new day BEFORE the last day (insert_at = ${tripLength}) so departure gets pushed to the new last day automatically.
-- Example: trip is 7 days, last day has departure → insert_at = 7, days_count = 1, new_trip_length = 8. Old Day 7 (departure) becomes Day 8.
-- If user says "add a day not in [city]" → pick a different city/region nearby that fits the traveler style, and insert before the departure day.
+- YOU MUST CHOOSE THE OPTIMAL insert_at POSITION by analyzing the current itinerary:
+  1. Look at the geographic flow of the trip (which cities/areas are visited on which days)
+  2. Look at the thematic flow (nature days, city days, relaxation days)
+  3. Insert the new day where it makes the MOST SENSE geographically and logically
+  4. If the last day has departure/airport/travel-home activities, NEVER insert after it — insert before it so departure stays last
+  5. If two consecutive days are in different areas, consider inserting between them to smooth the transition
+  6. If a city deserves more time based on traveler style, insert next to the existing day in that city
+- Example: trip is 7 days, Day 5 is in Bergen city, Day 6 jumps to Fjærland, Day 7 is departure → if adding a nature day, insert_at = 6 (between Bergen and the jump) to explore Fjærland area more, pushing old Day 6-7 to 7-8.
+- In your "message", ALWAYS explain WHERE you inserted the day and WHY that position optimizes the trip flow.
 - Each activity must be a REAL, SPECIFIC, NAMED place with ACCURATE GPS coordinates for ${destination} area.
 - Activities must strongly match the traveler style: ${profileDesc || 'general'}.
 
@@ -844,7 +850,9 @@ CRITICAL RULES FOR ALL ACTIONS:
 - Group activities geographically — same day = same area of the city.
 - Category MUST be one of: ${validCategories.join(', ')}.
 - time_of_day MUST be one of: morning, afternoon, evening.
-- For simple recommendations/suggestions/questions, set "action": null and put suggestions in the "activities" array.
+- When the user asks to add/delete/modify days, ALWAYS execute the action immediately. Do NOT just suggest — actually include the action object with all required fields. Be decisive and take action.
+- When the user asks "where should I add a day" or "where does it make sense", analyze the itinerary and EXECUTE the add_days action at the optimal position. Explain your reasoning in the message.
+- For simple recommendations/suggestions/questions (not structural changes), set "action": null and put suggestions in the "activities" array.
 - If user asks for blogs/links, include markdown [text](url) links in the message.
 - If action is null, set "action": null (not "action": {"type": "null"}).`;
 
