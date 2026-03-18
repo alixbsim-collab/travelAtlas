@@ -631,39 +631,66 @@ async function executeAIAction(itineraryId, action, itineraryContext) {
   const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
   const validTimesOfDay = ['morning', 'afternoon', 'evening', 'night', 'all-day'];
 
+  const buildRow = (a, i) => ({
+    itinerary_id: itineraryId,
+    day_number: a.day_number,
+    position: a.position != null ? a.position : i,
+    title: a.title || 'New Activity',
+    description: a.description || '',
+    location: a.location || '',
+    category: validCategories.includes(a.category) ? a.category : 'other',
+    duration_minutes: parseInt(a.duration_minutes) || 60,
+    estimated_cost_min: Math.max(0, parseFloat(a.estimated_cost_min) || 0),
+    estimated_cost_max: Math.max(0, parseFloat(a.estimated_cost_max) || 0),
+    latitude: a.latitude || null,
+    longitude: a.longitude || null,
+    time_of_day: validTimesOfDay.includes(a.time_of_day) ? a.time_of_day : 'morning',
+    city_name: a.city_name || null,
+  });
+
   try {
     if (action.type === 'add_days') {
-      // Insert new activities for added days
-      const newActivities = (action.activities || []).map((a, i) => ({
-        itinerary_id: itineraryId,
-        day_number: a.day_number,
-        position: a.position || i,
-        title: a.title || 'New Activity',
-        description: a.description || '',
-        location: a.location || '',
-        category: validCategories.includes(a.category) ? a.category : 'other',
-        duration_minutes: parseInt(a.duration_minutes) || 60,
-        estimated_cost_min: Math.max(0, parseFloat(a.estimated_cost_min) || 0),
-        estimated_cost_max: Math.max(0, parseFloat(a.estimated_cost_max) || 0),
-        latitude: a.latitude || null,
-        longitude: a.longitude || null,
-        time_of_day: validTimesOfDay.includes(a.time_of_day) ? a.time_of_day : 'morning',
-        city_name: a.city_name || null,
-      }));
+      const insertAt = action.insert_at || (itineraryContext?.tripLength || 7) + 1; // default: append at end
+      const daysToAdd = action.days_count || 1;
 
-      // Update trip_length
-      if (action.new_trip_length) {
-        await supabase.from('itineraries').update({ trip_length: action.new_trip_length }).eq('id', itineraryId);
+      console.log(`add_days: insertAt=${insertAt}, daysToAdd=${daysToAdd}, new_trip_length=${action.new_trip_length}`);
+
+      // Step 1: Shift existing activities at or after insert_at up by daysToAdd
+      const { data: laterActivities } = await supabase
+        .from('activities')
+        .select('id, day_number')
+        .eq('itinerary_id', itineraryId)
+        .gte('day_number', insertAt)
+        .order('day_number', { ascending: false }); // shift from highest first to avoid conflicts
+
+      if (laterActivities && laterActivities.length > 0) {
+        for (const act of laterActivities) {
+          await supabase.from('activities').update({ day_number: act.day_number + daysToAdd }).eq('id', act.id);
+        }
+        console.log(`Shifted ${laterActivities.length} activities from day ${insertAt}+ by +${daysToAdd}`);
       }
+
+      // Step 2: Insert new activities
+      const newActivities = (action.activities || []).map((a, i) => buildRow(a, i));
 
       if (newActivities.length > 0) {
         const { error } = await supabase.from('activities').insert(newActivities);
         if (error) console.error('Error inserting new day activities:', error);
+        else console.log(`Inserted ${newActivities.length} activities for new day(s)`);
+      } else {
+        console.warn('add_days action had 0 activities to insert!');
+      }
+
+      // Step 3: Update trip_length
+      if (action.new_trip_length) {
+        await supabase.from('itineraries').update({ trip_length: action.new_trip_length }).eq('id', itineraryId);
       }
 
     } else if (action.type === 'delete_day') {
       const dayToDelete = action.day_number;
       const newTripLength = action.new_trip_length;
+
+      console.log(`delete_day: day=${dayToDelete}, new_trip_length=${newTripLength}`);
 
       // Delete activities for that day
       await supabase.from('activities').delete().eq('itinerary_id', itineraryId).eq('day_number', dayToDelete);
@@ -673,7 +700,8 @@ async function executeAIAction(itineraryId, action, itineraryContext) {
         .from('activities')
         .select('id, day_number')
         .eq('itinerary_id', itineraryId)
-        .gt('day_number', dayToDelete);
+        .gt('day_number', dayToDelete)
+        .order('day_number', { ascending: true }); // shift from lowest first
 
       if (laterActivities && laterActivities.length > 0) {
         for (const act of laterActivities) {
@@ -689,26 +717,13 @@ async function executeAIAction(itineraryId, action, itineraryContext) {
     } else if (action.type === 'replace_day') {
       const dayToReplace = action.day_number;
 
+      console.log(`replace_day: day=${dayToReplace}, ${(action.activities || []).length} new activities`);
+
       // Delete existing activities for that day
       await supabase.from('activities').delete().eq('itinerary_id', itineraryId).eq('day_number', dayToReplace);
 
       // Insert new activities
-      const newActivities = (action.activities || []).map((a, i) => ({
-        itinerary_id: itineraryId,
-        day_number: dayToReplace,
-        position: a.position || i,
-        title: a.title || 'New Activity',
-        description: a.description || '',
-        location: a.location || '',
-        category: validCategories.includes(a.category) ? a.category : 'other',
-        duration_minutes: parseInt(a.duration_minutes) || 60,
-        estimated_cost_min: Math.max(0, parseFloat(a.estimated_cost_min) || 0),
-        estimated_cost_max: Math.max(0, parseFloat(a.estimated_cost_max) || 0),
-        latitude: a.latitude || null,
-        longitude: a.longitude || null,
-        time_of_day: validTimesOfDay.includes(a.time_of_day) ? a.time_of_day : 'morning',
-        city_name: a.city_name || null,
-      }));
+      const newActivities = (action.activities || []).map((a, i) => buildRow({ ...a, day_number: dayToReplace }, i));
 
       if (newActivities.length > 0) {
         const { error } = await supabase.from('activities').insert(newActivities);
@@ -761,24 +776,34 @@ CURRENT ITINERARY:
 ${currentItinerarySummary || '(empty — no activities yet)'}
 
 YOU CAN DO THESE ACTIONS:
-1. **add_days** — Add new days to the trip (at the end or insert in the middle by shifting existing days). Generate a FULL day of ${baseDaily} high-quality activities per new day.
-2. **delete_day** — Remove a specific day and shift remaining days down.
-3. **replace_day** — Replace all activities on a specific day with better ones.
-4. **suggest** — Suggest individual activities for the user to drag into their itinerary (default for recommendations).
+
+1. **add_days** — Insert new day(s) into the trip. The system will automatically shift existing days after the insertion point.
+   Required fields: type, insert_at, days_count, new_trip_length, activities
+   - insert_at: the day NUMBER where the new day goes (existing days at this number and after get pushed forward)
+   - days_count: how many days to add (usually 1)
+   - new_trip_length: ${tripLength} + days_count
+   - activities: MUST contain exactly ${baseDaily} activities per new day
+
+2. **delete_day** — Remove a specific day. The system shifts remaining days down automatically.
+   Required fields: type, day_number, new_trip_length
+
+3. **replace_day** — Replace all activities on a specific day with new ones.
+   Required fields: type, day_number, activities
 
 RESPONSE FORMAT — always respond with this JSON:
 {
-  "message": "Your helpful response explaining what you did",
+  "message": "Your helpful response explaining what you did and why",
   "action": {
-    "type": "add_days|delete_day|replace_day|null",
-    "day_number": 3,
-    "new_trip_length": 8,
+    "type": "add_days",
+    "insert_at": 7,
+    "days_count": 1,
+    "new_trip_length": ${tripLength + 1},
     "activities": [
       {
-        "day_number": 8,
+        "day_number": 7,
         "position": 0,
         "title": "Specific Real Place Name",
-        "description": "Why this is amazing and what to expect (1-2 sentences)",
+        "description": "Why this is amazing (1-2 sentences)",
         "location": "Exact neighborhood or area",
         "city_name": "City name",
         "category": "one of: ${validCategories.join(', ')}",
@@ -794,19 +819,22 @@ RESPONSE FORMAT — always respond with this JSON:
   "activities": []
 }
 
-RULES:
-- For "add a day", "add 2 days", "extend the trip", "one more day" → use action type "add_days". Generate ${baseDaily} activities per new day. Set new_trip_length correctly.
-- For "delete day 3", "remove the last day", "shorten the trip" → use action type "delete_day". Set day_number and new_trip_length.
-- For "replace day 2", "change day 5 to beach activities" → use action type "replace_day". Generate ${baseDaily} replacement activities.
-- For "add one day NOT in Bergen" or similar → add a day in a DIFFERENT city/region than what's already in the itinerary. Pick the best nearby destination.
-- For recommendations, suggestions, questions → use action: null, put suggestions in the "activities" array.
-- If user asks for blogs/links, include markdown [text](url) links in the message.
+CRITICAL RULES FOR ADDING DAYS:
+- The activities array MUST contain exactly ${baseDaily} activities. NEVER return an empty activities array.
+- The day_number in activities MUST equal insert_at.
+- If the last day currently has departure/airport/travel-home activities, insert the new day BEFORE the last day (insert_at = ${tripLength}) so departure gets pushed to the new last day automatically.
+- Example: trip is 7 days, last day has departure → insert_at = 7, days_count = 1, new_trip_length = 8. Old Day 7 (departure) becomes Day 8.
+- If user says "add a day not in [city]" → pick a different city/region nearby that fits the traveler style, and insert before the departure day.
+- Each activity must be a REAL, SPECIFIC, NAMED place with ACCURATE GPS coordinates for ${destination} area.
+- Activities must strongly match the traveler style: ${profileDesc || 'general'}.
+
+CRITICAL RULES FOR ALL ACTIONS:
 - NEVER repeat locations that already exist in the itinerary.
-- Every activity must be a REAL, specific, named place with accurate coordinates.
-- Activities must strongly match the traveler style (${profileDesc || 'general'}).
-- Group activities geographically — same day = same area.
+- Group activities geographically — same day = same area of the city.
 - Category MUST be one of: ${validCategories.join(', ')}.
 - time_of_day MUST be one of: morning, afternoon, evening.
+- For simple recommendations/suggestions/questions, set "action": null and put suggestions in the "activities" array.
+- If user asks for blogs/links, include markdown [text](url) links in the message.
 - If action is null, set "action": null (not "action": {"type": "null"}).`;
 
   const messages = [
