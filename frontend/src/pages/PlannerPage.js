@@ -149,7 +149,15 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
               >
                 {categoryInfo.emoji}
               </button>
-              <h4 className="font-heading font-bold">{activity.title}</h4>
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(activity.title + (activity.location ? ' ' + activity.location : ''))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="font-heading font-bold hover:text-coral-500 transition-colors"
+              >
+                {activity.title}
+              </a>
               {activity.custom_notes && (
                 <MessageSquare size={14} className="text-naples-600" title="Has notes" />
               )}
@@ -518,14 +526,11 @@ function PlannerPage() {
     let msgIndex = 0;
 
     const progressMessages = [
-      'Waking up the server...',
-      'Server is warming up...',
-      'Connecting to AI...',
-      `Designing your ${itinerary?.trip_length || ''}-day adventure...`,
-      'Generating activities for your trip...',
-      'Adding local recommendations...',
-      'Finalizing your personalized itinerary...',
-      'Almost there, adding the finishing touches...',
+      'Connecting...',
+      'Planning your days...',
+      'Finding the best spots...',
+      'Adding activities...',
+      'Almost done...',
     ];
 
     setProgressMessage(progressMessages[0]);
@@ -785,6 +790,36 @@ function PlannerPage() {
     } catch (error) {
       console.error('Error adding accommodation:', error);
       alert('Failed to add accommodation');
+    }
+  };
+
+  const handleDeleteAccommodation = async (accId) => {
+    try {
+      const { error } = await supabase.from('accommodations').delete().eq('id', accId);
+      if (error) throw error;
+      setAccommodations(prev => prev.filter(a => a.id !== accId));
+    } catch (error) {
+      console.error('Error deleting accommodation:', error);
+    }
+  };
+
+  // Handle AI structural action (add/delete/replace day) — refetch data from DB
+  const handleAIAction = async (action) => {
+    try {
+      // Refetch itinerary (trip_length may have changed) + activities
+      const [itineraryResult, activitiesResult, accommodationsResult] = await Promise.all([
+        supabase.from('itineraries').select('*').eq('id', id).single(),
+        supabase.from('activities').select('*').eq('itinerary_id', id)
+          .order('day_number', { ascending: true })
+          .order('position', { ascending: true }),
+        supabase.from('accommodations').select('*').eq('itinerary_id', id)
+      ]);
+
+      if (itineraryResult.data) setItinerary(itineraryResult.data);
+      if (activitiesResult.data) setActivities(activitiesResult.data);
+      if (accommodationsResult.data) setAccommodations(accommodationsResult.data);
+    } catch (error) {
+      console.error('Error refetching after AI action:', error);
     }
   };
 
@@ -1102,70 +1137,27 @@ function PlannerPage() {
   if (generatingActivities && activities.length === 0) {
     return (
       <div className="min-h-screen bg-naples-100 flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          {/* Animated icon */}
-          <div className="relative w-24 h-24 mx-auto mb-8">
-            <div className="absolute inset-0 rounded-full bg-naples-200 animate-ping opacity-30" />
-            <div className="relative w-24 h-24 rounded-full bg-naples-100 flex items-center justify-center">
-              <span className="text-4xl animate-bounce">✈️</span>
-            </div>
+        <div className="max-w-sm w-full text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-coral-400 mb-6">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           </div>
 
-          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
-            Crafting Your Adventure
+          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-1">
+            {itinerary.destination}
           </h1>
-          <p className="text-lg text-charcoal-400 mb-2">
-            {itinerary.destination} — {itinerary.trip_length} days
+          <p className="text-sm text-platinum-500 mb-6">
+            {itinerary.trip_length} days
           </p>
-          <p className="text-coral-600 font-medium mb-8">
+
+          <p className="text-sm text-charcoal-400">
             {progressMessage || 'Getting everything ready...'}
-          </p>
-
-          {/* Progress bar */}
-          <div className="w-full bg-platinum-200 rounded-full h-2 mb-8 overflow-hidden">
-            <div
-              className="h-full bg-coral-400 rounded-full transition-all duration-1000 ease-out"
-              style={{
-                width: progressMessage.includes('Waking') ? '10%'
-                  : progressMessage.includes('warming') ? '20%'
-                  : progressMessage.includes('Connecting') ? '35%'
-                  : progressMessage.includes('Designing') ? '50%'
-                  : progressMessage.includes('Generating') ? '65%'
-                  : progressMessage.includes('recommendations') ? '80%'
-                  : progressMessage.includes('Finalizing') ? '90%'
-                  : progressMessage.includes('finishing') ? '95%'
-                  : '15%'
-              }}
-            />
-          </div>
-
-          <div className="bg-white rounded-2xl border border-platinum-200 p-5 text-left">
-            <p className="text-sm text-platinum-600 mb-3 font-medium">What's happening:</p>
-            <ul className="space-y-2 text-sm text-platinum-600">
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs">✓</span>
-                Itinerary created
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-naples-100 text-naples-600 flex items-center justify-center text-xs animate-pulse">⟳</span>
-                AI is generating {itinerary.trip_length} days of activities
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-platinum-100 text-platinum-400 flex items-center justify-center text-xs">○</span>
-                Adding coordinates and local tips
-              </li>
-            </ul>
-          </div>
-
-          <p className="text-xs text-platinum-500 mt-6">
-            This usually takes 30–90 seconds. The first request after inactivity takes a bit longer while the server wakes up.
           </p>
 
           <button
             onClick={() => navigate('/designer')}
-            className="mt-6 text-sm text-platinum-500 hover:text-charcoal-500 underline"
+            className="mt-10 text-xs text-platinum-400 hover:text-charcoal-500 transition-colors"
           >
-            Go back to dashboard
+            Cancel
           </button>
         </div>
       </div>
@@ -1423,10 +1415,12 @@ function PlannerPage() {
                 <div className="h-full flex flex-col min-w-0">
                   <AIAssistant
                     itinerary={itinerary}
+                    activities={activities}
                     onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
                     onLoadItinerary={handleLoadItinerary}
                     accommodations={accommodations}
                     onAddAccommodation={handleAddAccommodationRange}
+                    onActionExecuted={handleAIAction}
                   />
                 </div>
               </Panel>
@@ -1504,16 +1498,7 @@ function PlannerPage() {
                             onDragOver={(e) => handleDragOver(e, day)}
                             onDragLeave={handleDragLeave}
                           >
-                            {dayAccommodation && (
-                              <div className="flex items-center gap-2 text-xs text-columbia-700 bg-columbia-50 px-3 py-1.5 rounded-lg mb-3 border border-columbia-200">
-                                <span>🏨</span>
-                                <span className="font-medium">{dayAccommodation.name}</span>
-                                {dayAccommodation.price_per_night && (
-                                  <span className="text-columbia-500">${dayAccommodation.price_per_night}/night</span>
-                                )}
-                              </div>
-                            )}
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center justify-between mb-1">
                               <h3 className="text-lg font-heading font-bold text-charcoal-500">
                                 {dayHeader}
                               </h3>
@@ -1525,6 +1510,59 @@ function PlannerPage() {
                                 Add Activity
                               </button>
                             </div>
+                            {dayAccommodation ? (
+                              <div className="flex items-center gap-2 text-xs text-columbia-700 bg-columbia-50 px-3 py-1.5 rounded-lg mb-3 border border-columbia-200 group/acc">
+                                <HotelIcon size={12} />
+                                <a
+                                  href={`https://www.google.com/search?q=${encodeURIComponent(dayAccommodation.name + ' ' + (dayAccommodation.location || itinerary.destination))}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium hover:text-coral-500 transition-colors"
+                                >
+                                  {dayAccommodation.name}
+                                </a>
+                                {dayAccommodation.price_per_night && (
+                                  <span className="text-columbia-500">${dayAccommodation.price_per_night}/night</span>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteAccommodation(dayAccommodation.id)}
+                                  className="ml-auto opacity-0 group-hover/acc:opacity-100 text-platinum-400 hover:text-red-500 transition-all"
+                                  title="Remove accommodation"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  if (!showAssistant) setShowAssistant(true);
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const rawData = e.dataTransfer.getData('application/json');
+                                  if (rawData) {
+                                    const data = JSON.parse(rawData);
+                                    if (data.__type === 'hotel') {
+                                      setHotelDropPrompt({ hotel: data, dayNumber: day });
+                                    }
+                                  }
+                                }}
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  e.currentTarget.classList.add('border-columbia-400', 'bg-columbia-50', 'text-columbia-600');
+                                }}
+                                onDragLeave={(e) => {
+                                  e.currentTarget.classList.remove('border-columbia-400', 'bg-columbia-50', 'text-columbia-600');
+                                }}
+                                className="flex items-center gap-2 text-xs text-platinum-400 px-3 py-1.5 rounded-lg mb-3 border border-dashed border-platinum-200 w-full hover:border-columbia-300 hover:text-columbia-500 hover:bg-columbia-50/50 transition-all cursor-pointer"
+                              >
+                                <HotelIcon size={12} />
+                                <span className="italic">Accommodation to be defined</span>
+                                <span className="ml-auto text-[10px] opacity-0 group-hover:opacity-60">drag hotel here</span>
+                              </button>
+                            )}
 
                             {isDragOver && (
                               <div className="mb-3 p-2 bg-coral-100 rounded-lg text-center">

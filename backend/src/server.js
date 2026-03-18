@@ -237,16 +237,22 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
 // AI Chat
 app.post('/api/ai/chat', async (req, res) => {
   try {
-    const { itineraryId, message, conversationHistory, itineraryContext } = req.body;
+    const { itineraryId, message, conversationHistory, itineraryContext, currentActivities } = req.body;
 
     // Use OpenAI if API key is configured
     if (process.env.OPENAI_API_KEY) {
-      const response = await generateOpenAIChat(message, conversationHistory, itineraryContext);
+      const response = await generateOpenAIChat(message, conversationHistory, itineraryContext, currentActivities);
+
+      // If the AI returned an action, execute it on the database
+      if (response.action && itineraryId) {
+        await executeAIAction(itineraryId, response.action, itineraryContext);
+      }
 
       res.json({
         success: true,
         response: response.message,
-        updatedActivities: response.activities
+        updatedActivities: response.activities,
+        action: response.action || null
       });
     } else {
       // Fallback to mock
@@ -256,7 +262,8 @@ app.post('/api/ai/chat', async (req, res) => {
       res.json({
         success: true,
         response: response.message,
-        updatedActivities: response.activities
+        updatedActivities: response.activities,
+        action: null
       });
     }
   } catch (error) {
@@ -619,135 +626,196 @@ JSON: {"summary":"1 sentence overview","accommodations":[{"name":"Hotel Name","t
   }
 }
 
-async function generateOpenAIChat(message, conversationHistory, itineraryContext) {
+// Execute structural actions returned by the AI (add day, delete day, etc.)
+async function executeAIAction(itineraryId, action, itineraryContext) {
+  const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
+  const validTimesOfDay = ['morning', 'afternoon', 'evening', 'night', 'all-day'];
+
+  try {
+    if (action.type === 'add_days') {
+      // Insert new activities for added days
+      const newActivities = (action.activities || []).map((a, i) => ({
+        itinerary_id: itineraryId,
+        day_number: a.day_number,
+        position: a.position || i,
+        title: a.title || 'New Activity',
+        description: a.description || '',
+        location: a.location || '',
+        category: validCategories.includes(a.category) ? a.category : 'other',
+        duration_minutes: parseInt(a.duration_minutes) || 60,
+        estimated_cost_min: Math.max(0, parseFloat(a.estimated_cost_min) || 0),
+        estimated_cost_max: Math.max(0, parseFloat(a.estimated_cost_max) || 0),
+        latitude: a.latitude || null,
+        longitude: a.longitude || null,
+        time_of_day: validTimesOfDay.includes(a.time_of_day) ? a.time_of_day : 'morning',
+        city_name: a.city_name || null,
+      }));
+
+      // Update trip_length
+      if (action.new_trip_length) {
+        await supabase.from('itineraries').update({ trip_length: action.new_trip_length }).eq('id', itineraryId);
+      }
+
+      if (newActivities.length > 0) {
+        const { error } = await supabase.from('activities').insert(newActivities);
+        if (error) console.error('Error inserting new day activities:', error);
+      }
+
+    } else if (action.type === 'delete_day') {
+      const dayToDelete = action.day_number;
+      const newTripLength = action.new_trip_length;
+
+      // Delete activities for that day
+      await supabase.from('activities').delete().eq('itinerary_id', itineraryId).eq('day_number', dayToDelete);
+
+      // Shift all activities after the deleted day down by 1
+      const { data: laterActivities } = await supabase
+        .from('activities')
+        .select('id, day_number')
+        .eq('itinerary_id', itineraryId)
+        .gt('day_number', dayToDelete);
+
+      if (laterActivities && laterActivities.length > 0) {
+        for (const act of laterActivities) {
+          await supabase.from('activities').update({ day_number: act.day_number - 1 }).eq('id', act.id);
+        }
+      }
+
+      // Update trip_length
+      if (newTripLength) {
+        await supabase.from('itineraries').update({ trip_length: newTripLength }).eq('id', itineraryId);
+      }
+
+    } else if (action.type === 'replace_day') {
+      const dayToReplace = action.day_number;
+
+      // Delete existing activities for that day
+      await supabase.from('activities').delete().eq('itinerary_id', itineraryId).eq('day_number', dayToReplace);
+
+      // Insert new activities
+      const newActivities = (action.activities || []).map((a, i) => ({
+        itinerary_id: itineraryId,
+        day_number: dayToReplace,
+        position: a.position || i,
+        title: a.title || 'New Activity',
+        description: a.description || '',
+        location: a.location || '',
+        category: validCategories.includes(a.category) ? a.category : 'other',
+        duration_minutes: parseInt(a.duration_minutes) || 60,
+        estimated_cost_min: Math.max(0, parseFloat(a.estimated_cost_min) || 0),
+        estimated_cost_max: Math.max(0, parseFloat(a.estimated_cost_max) || 0),
+        latitude: a.latitude || null,
+        longitude: a.longitude || null,
+        time_of_day: validTimesOfDay.includes(a.time_of_day) ? a.time_of_day : 'morning',
+        city_name: a.city_name || null,
+      }));
+
+      if (newActivities.length > 0) {
+        const { error } = await supabase.from('activities').insert(newActivities);
+        if (error) console.error('Error inserting replacement activities:', error);
+      }
+    }
+  } catch (error) {
+    console.error('Error executing AI action:', error);
+  }
+}
+
+async function generateOpenAIChat(message, conversationHistory, itineraryContext, currentActivities) {
   const destination = itineraryContext?.destination || 'the destination';
-  const lowerMessage = message.toLowerCase();
+  const tripLength = itineraryContext?.tripLength || 7;
+  const budget = itineraryContext?.budget || 'medium';
+  const travelPace = itineraryContext?.travelPace || 'balanced';
+  const travelerProfiles = itineraryContext?.travelerProfiles || [];
+  const profileDesc = describeProfiles(travelerProfiles);
 
-  // Check if user is asking for blogs, links, or external resources
-  const wantsLinks = lowerMessage.match(/blog|link|article|website|review|read|resource|guide|tip/);
-
-  // Check if user is asking about specific places/activities (should always return cards)
-  const wantsRecommendations = lowerMessage.match(/recommend|suggest|best|top|where|what|should|can you|find|show|give|tell me about|looking for|want to|places|things to do|restaurant|hotel|tour|experience|activity|activities/);
-
-  // Valid categories for activities
   const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
 
-  // Build the system prompt based on what the user wants
-  let systemPrompt;
+  // Build a summary of current itinerary for context
+  let currentItinerarySummary = '';
+  if (currentActivities && currentActivities.length > 0) {
+    const dayGroups = {};
+    currentActivities.forEach(a => {
+      const day = a.day_number || 1;
+      if (!dayGroups[day]) dayGroups[day] = [];
+      dayGroups[day].push(`${a.title} (${a.category}, ${a.location || 'no location'})`);
+    });
+    const dayLines = Object.keys(dayGroups).sort((a, b) => a - b).map(day =>
+      `Day ${day}: ${dayGroups[day].join(', ')}`
+    );
+    currentItinerarySummary = dayLines.join('\n');
+  }
 
-  if (wantsLinks) {
-    // User wants blogs/links - search and provide real URLs
-    systemPrompt = `You are an expert travel assistant with web search capabilities for ${destination}.
+  const activitiesPerDay = { 'relaxed': 2, 'moderate': 2, 'balanced': 3, 'active': 4, 'packed': 5 };
+  const baseDaily = activitiesPerDay[travelPace] || 3;
 
-When users ask for blogs, articles, or links, you MUST:
-1. Provide REAL, WORKING URLs to actual travel blogs and resources
-2. Include 3-5 relevant links with descriptions
-3. ALSO suggest 2-3 related activities they can add to their itinerary
+  const systemPrompt = `You are an expert travel planner for ${destination}. You are helping modify a ${tripLength}-day trip.
 
-For blog/link requests about ${destination}, include links from:
-- TripAdvisor: https://www.tripadvisor.com/Tourism-g${destination.replace(/\s/g, '_')}-Vacations.html
-- Lonely Planet: https://www.lonelyplanet.com/${destination.toLowerCase().replace(/\s/g, '-')}
-- Culture Trip: https://theculturetrip.com/search?q=${encodeURIComponent(destination)}
-- Travel blogs: Search for "${destination} travel blog" or "${destination} things to do"
-- GetYourGuide: https://www.getyourguide.com/s/?q=${encodeURIComponent(destination)}
-- Viator: https://www.viator.com/searchResults/all?text=${encodeURIComponent(destination)}
+TRIP CONTEXT:
+- Destination: ${destination}
+- Trip length: ${tripLength} days
+- Budget: ${budget}
+- Pace: ${travelPace} (${baseDaily} activities/day)
+- Traveler style: ${profileDesc || travelerProfiles.join(', ') || 'general'}
 
-ALWAYS respond with this JSON format:
+CURRENT ITINERARY:
+${currentItinerarySummary || '(empty — no activities yet)'}
+
+YOU CAN DO THESE ACTIONS:
+1. **add_days** — Add new days to the trip (at the end or insert in the middle by shifting existing days). Generate a FULL day of ${baseDaily} high-quality activities per new day.
+2. **delete_day** — Remove a specific day and shift remaining days down.
+3. **replace_day** — Replace all activities on a specific day with better ones.
+4. **suggest** — Suggest individual activities for the user to drag into their itinerary (default for recommendations).
+
+RESPONSE FORMAT — always respond with this JSON:
 {
-  "message": "Your helpful response with embedded [link text](URL) markdown links for blogs and resources",
-  "activities": [
-    {
-      "day_number": 1,
-      "position": 0,
-      "title": "Activity name based on what blogs recommend",
-      "description": "Brief description",
-      "location": "Specific location in ${destination}",
-      "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|other",
-      "duration_minutes": 120,
-      "estimated_cost_min": 0,
-      "estimated_cost_max": 50,
-      "time_of_day": "morning|afternoon|evening",
-      "latitude": 0.0,
-      "longitude": 0.0
-    }
-  ]
-}
-
-Include actual clickable links in the message field using markdown format [text](url).`;
-
-  } else if (wantsRecommendations) {
-    // User wants recommendations - ALWAYS provide activity cards
-    systemPrompt = `You are an expert travel planner for ${destination}.
-
-IMPORTANT: For ANY recommendation or suggestion, you MUST provide draggable activity cards.
-
-When users ask about places, restaurants, tours, experiences, or anything travel-related:
-1. Give a helpful response
-2. ALWAYS include 2-4 specific activity cards they can drag to their itinerary
-
-ALWAYS respond with this JSON format:
-{
-  "message": "Your helpful response here",
-  "activities": [
-    {
-      "day_number": 1,
-      "position": 0,
-      "title": "Specific place/activity name",
-      "description": "Why this is great and what to expect",
-      "location": "Exact location in ${destination}",
-      "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|other",
-      "duration_minutes": 90,
-      "estimated_cost_min": 0,
-      "estimated_cost_max": 30,
-      "time_of_day": "morning|afternoon|evening",
-      "latitude": 0.0,
-      "longitude": 0.0
-    }
-  ]
-}
-
-Category MUST be one of: ${validCategories.join(', ')}
-Use real coordinates for ${destination} locations.
-NEVER return an empty activities array for travel-related questions.`;
-
-  } else {
-    // General conversation - still try to provide activity cards when relevant
-    systemPrompt = `You are a friendly travel assistant helping plan a trip to ${destination}.
-
-For travel-related questions, try to suggest specific activities when possible.
-For non-travel questions, just have a helpful conversation.
-
-Respond with JSON format:
-{
-  "message": "Your response here",
+  "message": "Your helpful response explaining what you did",
+  "action": {
+    "type": "add_days|delete_day|replace_day|null",
+    "day_number": 3,
+    "new_trip_length": 8,
+    "activities": [
+      {
+        "day_number": 8,
+        "position": 0,
+        "title": "Specific Real Place Name",
+        "description": "Why this is amazing and what to expect (1-2 sentences)",
+        "location": "Exact neighborhood or area",
+        "city_name": "City name",
+        "category": "one of: ${validCategories.join(', ')}",
+        "duration_minutes": 90,
+        "estimated_cost_min": 0,
+        "estimated_cost_max": 30,
+        "time_of_day": "morning|afternoon|evening",
+        "latitude": 0.00,
+        "longitude": 0.00
+      }
+    ]
+  },
   "activities": []
 }
 
-If the question is about places, food, things to do, or experiences in ${destination},
-include 1-3 activity suggestions in the activities array with this structure:
-{
-  "day_number": 1,
-  "position": 0,
-  "title": "Activity name",
-  "description": "Description",
-  "location": "Location",
-  "category": "food|culture|nature|adventure|relaxation|shopping|nightlife|other",
-  "duration_minutes": 60,
-  "estimated_cost_min": 0,
-  "estimated_cost_max": 20,
-  "time_of_day": "morning|afternoon|evening",
-  "latitude": 0.0,
-  "longitude": 0.0
-}`;
-  }
+RULES:
+- For "add a day", "add 2 days", "extend the trip", "one more day" → use action type "add_days". Generate ${baseDaily} activities per new day. Set new_trip_length correctly.
+- For "delete day 3", "remove the last day", "shorten the trip" → use action type "delete_day". Set day_number and new_trip_length.
+- For "replace day 2", "change day 5 to beach activities" → use action type "replace_day". Generate ${baseDaily} replacement activities.
+- For "add one day NOT in Bergen" or similar → add a day in a DIFFERENT city/region than what's already in the itinerary. Pick the best nearby destination.
+- For recommendations, suggestions, questions → use action: null, put suggestions in the "activities" array.
+- If user asks for blogs/links, include markdown [text](url) links in the message.
+- NEVER repeat locations that already exist in the itinerary.
+- Every activity must be a REAL, specific, named place with accurate coordinates.
+- Activities must strongly match the traveler style (${profileDesc || 'general'}).
+- Group activities geographically — same day = same area.
+- Category MUST be one of: ${validCategories.join(', ')}.
+- time_of_day MUST be one of: morning, afternoon, evening.
+- If action is null, set "action": null (not "action": {"type": "null"}).`;
 
   const messages = [
     { role: "system", content: systemPrompt }
   ];
 
-  // Add conversation history
+  // Add conversation history (last 6 messages for better context)
   if (conversationHistory && conversationHistory.length > 0) {
-    const recentHistory = conversationHistory.slice(-4);
+    const recentHistory = conversationHistory.slice(-6);
     messages.push(...recentHistory.map(msg => ({
       role: msg.role,
       content: msg.content
@@ -756,21 +824,21 @@ include 1-3 activity suggestions in the activities array with this structure:
 
   messages.push({
     role: "user",
-    content: `${message}\n\nTrip context: ${itineraryContext?.tripLength || 7}-day trip to ${destination}, ${itineraryContext?.budget || 'medium'} budget.`
+    content: message
   });
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: messages,
     response_format: { type: "json_object" },
-    temperature: 0.8,
-    max_tokens: 2000
+    temperature: 0.7,
+    max_tokens: 4000
   });
 
   try {
     const result = JSON.parse(completion.choices[0].message.content);
 
-    // Validate and clean activities
+    // Validate and clean activities (for suggestions)
     let activities = result.activities || [];
     activities = activities.map(activity => ({
       ...activity,
@@ -780,15 +848,30 @@ include 1-3 activity suggestions in the activities array with this structure:
       duration_minutes: activity.duration_minutes || 60
     }));
 
+    // Validate action
+    let action = result.action || null;
+    if (action && action.type === 'null') action = null;
+    if (action && action.activities) {
+      action.activities = action.activities.map(a => ({
+        ...a,
+        category: validCategories.includes(a.category) ? a.category : 'other',
+        day_number: a.day_number || 1,
+        position: a.position || 0,
+        duration_minutes: a.duration_minutes || 60
+      }));
+    }
+
     return {
       message: result.message || completion.choices[0].message.content,
-      activities: activities
+      activities: activities,
+      action: action
     };
   } catch (parseError) {
     console.error('Failed to parse chat response:', completion.choices[0].message.content);
     return {
       message: completion.choices[0].message.content,
-      activities: []
+      activities: [],
+      action: null
     };
   }
 }

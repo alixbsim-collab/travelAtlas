@@ -3,7 +3,7 @@ import { Send, Sparkles, Loader, GripVertical, Hotel, ExternalLink, ChevronDown 
 import Button from '../ui/Button';
 import { ACTIVITY_CATEGORIES } from '../../constants/travelerProfiles';
 
-function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodations, onAddAccommodation }) {
+function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodations, onAddAccommodation, activities, onActionExecuted }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -102,6 +102,15 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
     }, 3000);
 
     try {
+      // Build compact activities summary for context
+      const activitySummary = (activities || []).map(a => ({
+        day_number: a.day_number,
+        title: a.title,
+        category: a.category,
+        location: a.location,
+        city_name: a.city_name,
+      }));
+
       // Call backend API for AI response
       const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
       const response = await fetch(`${apiUrl}/api/ai/chat`, {
@@ -117,7 +126,8 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
             travelPace: itinerary.travel_pace,
             budget: itinerary.budget,
             travelerProfiles: itinerary.traveler_profiles
-          }
+          },
+          currentActivities: activitySummary
         })
       });
 
@@ -133,8 +143,13 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
 
         setMessages(prev => [...prev, aiMessage]);
 
-        if (data.updatedActivities) {
+        if (data.updatedActivities && data.updatedActivities.length > 0) {
           setSuggestedActivities(data.updatedActivities);
+        }
+
+        // If AI executed a structural action (add/delete/replace day), notify parent to refetch
+        if (data.action && onActionExecuted) {
+          onActionExecuted(data.action);
         }
       } else {
         throw new Error(data.error || 'Failed to get AI response');
