@@ -1346,10 +1346,10 @@ function PlannerPage() {
               size="sm"
               onClick={() => setShowAssistant(!showAssistant)}
               className="gap-2"
-              title={showAssistant ? 'Hide Assistant' : 'Show Assistant'}
+              title={showAssistant ? 'Hide AI assistant' : 'Show AI assistant'}
             >
               {showAssistant ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
-              {showAssistant ? 'Hide Assistant' : 'Assistant'}
+              AI Assistant
             </Button>
             <Button variant="outline" size="sm" onClick={handleSave} disabled={saving} className="gap-2">
               <Save size={16} />
