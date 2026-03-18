@@ -681,9 +681,15 @@ async function executeAIAction(itineraryId, action, itineraryContext) {
         console.warn('add_days action had 0 activities to insert!');
       }
 
-      // Step 3: Update trip_length
+      // Step 3: Update trip_length and title
       if (action.new_trip_length) {
-        await supabase.from('itineraries').update({ trip_length: action.new_trip_length }).eq('id', itineraryId);
+        const updateFields = { trip_length: action.new_trip_length };
+        // Also update the title to reflect new day count
+        const { data: currentItinerary } = await supabase.from('itineraries').select('title').eq('id', itineraryId).single();
+        if (currentItinerary?.title) {
+          updateFields.title = currentItinerary.title.replace(/\d+\s*days?/, `${action.new_trip_length} days`);
+        }
+        await supabase.from('itineraries').update(updateFields).eq('id', itineraryId);
       }
 
     } else if (action.type === 'delete_day') {
@@ -709,9 +715,14 @@ async function executeAIAction(itineraryId, action, itineraryContext) {
         }
       }
 
-      // Update trip_length
+      // Update trip_length and title
       if (newTripLength) {
-        await supabase.from('itineraries').update({ trip_length: newTripLength }).eq('id', itineraryId);
+        const updateFields = { trip_length: newTripLength };
+        const { data: currentItinerary } = await supabase.from('itineraries').select('title').eq('id', itineraryId).single();
+        if (currentItinerary?.title) {
+          updateFields.title = currentItinerary.title.replace(/\d+\s*days?/, `${newTripLength} days`);
+        }
+        await supabase.from('itineraries').update(updateFields).eq('id', itineraryId);
       }
 
     } else if (action.type === 'replace_day') {
