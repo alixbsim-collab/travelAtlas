@@ -149,7 +149,7 @@ function CreateItineraryPage() {
 
   // Date/days sync helpers
   const updateTripLength = (newLength) => {
-    const clamped = Math.max(1, Math.min(30, newLength));
+    const clamped = Math.max(1, Math.min(90, newLength));
     setFormData(prev => {
       const updates = { tripLength: clamped };
       if (prev.startDate) {
@@ -174,7 +174,7 @@ function CreateItineraryPage() {
       if (prev.startDate) {
         const diffMs = date - prev.startDate;
         const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
-        const clamped = Math.max(1, Math.min(30, diffDays));
+        const clamped = Math.max(1, Math.min(90, diffDays));
         return { ...prev, endDate: date, tripLength: clamped };
       }
       return { ...prev, endDate: date };
@@ -718,9 +718,21 @@ function CreateItineraryPage() {
                   >
                     -
                   </button>
-                  <div className="text-5xl font-bold text-columbia-700">
-                    {formData.tripLength}
-                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    max="90"
+                    value={formData.tripLength}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (!isNaN(val)) updateTripLength(val);
+                      else if (e.target.value === '') handleInputChange('tripLength', '');
+                    }}
+                    onBlur={() => {
+                      if (!formData.tripLength || formData.tripLength < 1) updateTripLength(1);
+                    }}
+                    className="text-5xl font-bold text-columbia-700 w-24 text-center bg-transparent border-none outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
                   <button
                     type="button"
                     onClick={() => updateTripLength(formData.tripLength + 1)}
