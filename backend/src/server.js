@@ -141,6 +141,10 @@ app.post('/api/ai/generate-itinerary', async (req, res) => {
     if (itineraryId && generatedItinerary.activities && generatedItinerary.activities.length > 0) {
       console.log(`Inserting ${generatedItinerary.activities.length} activities for itinerary ${itineraryId}`);
 
+      // Delete any existing activities first (handles regeneration/preload)
+      await supabase.from('activities').delete().eq('itinerary_id', itineraryId);
+
+
       // Valid categories for database constraint
       const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
 

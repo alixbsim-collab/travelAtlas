@@ -685,77 +685,6 @@ function PlannerPage() {
     }
   };
 
-  const handleLoadItinerary = async (suggestedActivities) => {
-    const validCategories = ['food', 'nature', 'culture', 'adventure', 'relaxation', 'shopping', 'nightlife', 'transport', 'accommodation', 'other'];
-    const validTimeOfDay = ['morning', 'afternoon', 'evening', 'night', 'all-day'];
-
-    const sanitizeActivity = (activity, index) => {
-      const duration = parseInt(activity.duration_minutes) || 60;
-      const costMin = activity.estimated_cost_min ? parseFloat(activity.estimated_cost_min) : null;
-      const costMax = activity.estimated_cost_max ? parseFloat(activity.estimated_cost_max) : null;
-      return {
-        itinerary_id: id,
-        day_number: activity.day_number || 1,
-        position: index,
-        title: activity.title || 'Untitled Activity',
-        description: activity.description || '',
-        location: activity.location || '',
-        category: validCategories.includes(activity.category) ? activity.category : 'other',
-        duration_minutes: duration > 0 ? duration : 60,
-        estimated_cost_min: costMin !== null && costMin >= 0 ? costMin : null,
-        estimated_cost_max: costMax !== null && costMin !== null && costMax >= costMin ? costMax : costMin,
-        latitude: activity.latitude && parseFloat(activity.latitude) !== 0 ? parseFloat(activity.latitude) : null,
-        longitude: activity.longitude && parseFloat(activity.longitude) !== 0 ? parseFloat(activity.longitude) : null,
-        time_of_day: validTimeOfDay.includes(activity.time_of_day) ? activity.time_of_day : null
-      };
-    };
-
-    try {
-      let mode = 'replace';
-      if (activities.length > 0) {
-        const choice = window.confirm(
-          'You already have activities in your itinerary.\n\nClick OK to REPLACE all activities with the suggested ones.\nClick Cancel to ADD the suggestions to your existing itinerary.'
-        );
-        mode = choice ? 'replace' : 'merge';
-      }
-
-      if (mode === 'replace' && activities.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('activities')
-          .delete()
-          .eq('itinerary_id', id);
-        if (deleteError) throw deleteError;
-      }
-
-      let activitiesToInsert;
-      if (mode === 'merge') {
-        // Add new activities after existing ones in each day
-        activitiesToInsert = suggestedActivities.map((activity, index) => {
-          const existingCount = activities.filter(a => a.day_number === (activity.day_number || 1)).length;
-          return sanitizeActivity(activity, existingCount + index);
-        });
-      } else {
-        activitiesToInsert = suggestedActivities.map((activity, index) => sanitizeActivity(activity, index));
-      }
-
-      const { data, error } = await supabase
-        .from('activities')
-        .insert(activitiesToInsert)
-        .select();
-
-      if (error) throw error;
-
-      if (mode === 'merge') {
-        setActivities([...activities, ...data]);
-      } else {
-        setActivities(data);
-      }
-      alert('Itinerary loaded successfully!');
-    } catch (error) {
-      console.error('Error loading itinerary:', error);
-      alert('Failed to load suggested itinerary');
-    }
-  };
 
   // Handle adding accommodation with date range (check-in / check-out)
   const handleAddAccommodationRange = async (hotel, checkInDay, checkOutDay) => {
@@ -1416,10 +1345,7 @@ function PlannerPage() {
                   <AIAssistant
                     itinerary={itinerary}
                     activities={activities}
-                    onActivityDrag={(activity) => console.log('Activity dragged:', activity)}
-                    onLoadItinerary={handleLoadItinerary}
                     accommodations={accommodations}
-                    onAddAccommodation={handleAddAccommodationRange}
                     onActionExecuted={handleAIAction}
                   />
                 </div>
@@ -1535,7 +1461,10 @@ function PlannerPage() {
                             ) : (
                               <button
                                 onClick={() => {
-                                  if (!showAssistant) setShowAssistant(true);
+                                  const name = window.prompt('Enter hotel/accommodation name:');
+                                  if (name && name.trim()) {
+                                    handleAddAccommodationRange({ name: name.trim(), type: 'hotel' }, day, day + 1);
+                                  }
                                 }}
                                 onDrop={(e) => {
                                   e.preventDefault();

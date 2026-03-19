@@ -3,12 +3,11 @@ import { Send, Sparkles, Loader, GripVertical, Hotel, ExternalLink, ChevronDown 
 import Button from '../ui/Button';
 import { ACTIVITY_CATEGORIES } from '../../constants/travelerProfiles';
 
-function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodations, onAddAccommodation, activities, onActionExecuted }) {
+function AIAssistant({ itinerary, accommodations, activities, onActionExecuted }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Working on it...');
-  const [suggestedActivities, setSuggestedActivities] = useState([]);
   const [draggingId, setDraggingId] = useState(null);
   const [showHotels, setShowHotels] = useState(true);
   const messagesEndRef = useRef(null);
@@ -63,7 +62,11 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
         };
 
         setMessages(prev => [...prev, aiMessage]);
-        setSuggestedActivities(data.itinerary.activities);
+
+        // Activities were inserted into DB by the backend — tell parent to refetch
+        if (onActionExecuted) {
+          onActionExecuted({ type: 'regenerate' });
+        }
       } else {
         throw new Error(data.error || 'Failed to generate itinerary');
       }
@@ -142,10 +145,6 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
         };
 
         setMessages(prev => [...prev, aiMessage]);
-
-        if (data.updatedActivities && data.updatedActivities.length > 0) {
-          setSuggestedActivities(data.updatedActivities);
-        }
 
         // If AI executed a structural action (add/delete/replace day), notify parent to refetch
         if (data.action && onActionExecuted) {
@@ -425,20 +424,19 @@ function AIAssistant({ itinerary, onActivityDrag, onLoadItinerary, accommodation
         </div>
       )}
 
-      {/* Preload Button */}
-      {suggestedActivities.length > 0 && (
-        <div className="p-3 border-t border-platinum-200 bg-platinum-50">
-          <Button
-            onClick={() => onLoadItinerary(suggestedActivities)}
-            variant="outline"
-            size="sm"
-            className="w-full gap-2"
-          >
-            <Sparkles size={16} />
-            Preload Suggested Itinerary
-          </Button>
-        </div>
-      )}
+      {/* Preload / Regenerate Button */}
+      <div className="p-3 border-t border-platinum-200 bg-platinum-50">
+        <Button
+          onClick={generateInitialItinerary}
+          variant="outline"
+          size="sm"
+          className="w-full gap-2"
+          disabled={loading}
+        >
+          <Sparkles size={16} />
+          Preload Suggested Itinerary
+        </Button>
+      </div>
 
       {/* Input */}
       <form onSubmit={handleSendMessage} className="p-4 border-t border-platinum-200">
