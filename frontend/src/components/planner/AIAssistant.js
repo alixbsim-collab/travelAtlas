@@ -3,7 +3,7 @@ import { Send, Sparkles, Loader, GripVertical, Hotel, ExternalLink, ChevronDown 
 import Button from '../ui/Button';
 import { ACTIVITY_CATEGORIES } from '../../constants/travelerProfiles';
 
-function AIAssistant({ itinerary, accommodations, activities, onActionExecuted }) {
+function AIAssistant({ itinerary, accommodations, activities, onActionExecuted, onAddAccommodation }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -408,11 +408,31 @@ function AIAssistant({ itinerary, accommodations, activities, onActionExecuted }
                       <ExternalLink size={12} />
                       View on Booking.com
                     </a>
-                  </div>
-
-                  <div className="mt-2 text-xs text-columbia-500 font-medium flex items-center gap-1">
-                    <GripVertical size={12} />
-                    Drag to a day to add to your trip
+                    {onAddAccommodation && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const dayInput = prompt(`Add "${hotel.name}" starting which day? (1-${itinerary.trip_length})`);
+                          if (dayInput) {
+                            const day = parseInt(dayInput);
+                            if (day >= 1 && day <= itinerary.trip_length) {
+                              const nightsInput = prompt(`How many nights? (max ${itinerary.trip_length - day + 1})`);
+                              if (nightsInput) {
+                                const nights = parseInt(nightsInput);
+                                const maxNights = itinerary.trip_length - day + 1;
+                                if (nights >= 1 && nights <= maxNights) {
+                                  onAddAccommodation(hotel, day, day + nights);
+                                }
+                              }
+                            }
+                          }
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-columbia-500 hover:bg-columbia-600 rounded-lg transition-colors"
+                      >
+                        <Hotel size={12} />
+                        Add to trip
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

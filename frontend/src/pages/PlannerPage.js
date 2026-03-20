@@ -513,7 +513,9 @@ function PlannerPage() {
   const isGenerating = location.state?.generating;
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -1347,6 +1349,7 @@ function PlannerPage() {
                     activities={activities}
                     accommodations={accommodations}
                     onActionExecuted={handleAIAction}
+                    onAddAccommodation={handleAddAccommodationRange}
                   />
                 </div>
               </Panel>
