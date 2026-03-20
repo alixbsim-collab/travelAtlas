@@ -510,6 +510,21 @@ function PlannerPage() {
   const [isPublished, setIsPublished] = useState(false);
   const [hotelDropPrompt, setHotelDropPrompt] = useState(null); // { hotel, dayNumber }
 
+  // Augment accommodations from DB with day numbers computed from dates
+  const augmentAccommodations = (accs, startDate) => {
+    if (!accs) return [];
+    return accs.map(acc => {
+      if (acc.check_in_day && acc.check_out_day) return acc;
+      if (!startDate || !acc.check_in_date || !acc.check_out_date) return acc;
+      const start = new Date(startDate);
+      const checkIn = new Date(acc.check_in_date);
+      const checkOut = new Date(acc.check_out_date);
+      const checkInDay = Math.round((checkIn - start) / (1000 * 60 * 60 * 24)) + 1;
+      const checkOutDay = Math.round((checkOut - start) / (1000 * 60 * 60 * 24)) + 1;
+      return { ...acc, check_in_day: checkInDay, check_out_day: checkOutDay };
+    });
+  };
+
   const isGenerating = location.state?.generating;
 
   const sensors = useSensors(
@@ -567,7 +582,7 @@ function PlannerPage() {
           setItinerary(updatedItineraryResult.data);
         }
         if (accResult.data) {
-          setAccommodations(accResult.data);
+          setAccommodations(augmentAccommodations(accResult.data, updatedItineraryResult.data?.start_date));
         }
       }
     }, 3000);
@@ -659,7 +674,7 @@ function PlannerPage() {
 
       if (activitiesResult.error) throw activitiesResult.error;
       setActivities(activitiesResult.data || []);
-      setAccommodations(accommodationsResult.data || []);
+      setAccommodations(augmentAccommodations(accommodationsResult.data || [], itineraryData.start_date));
     } catch (error) {
       console.error('Error fetching itinerary:', error);
       alert('Failed to load itinerary');
@@ -710,14 +725,15 @@ function PlannerPage() {
     };
 
     try {
-      const { data, error } = await supabase
-        .from('accommodations')
-        .insert(newAcc)
-        .select()
-        .single();
-
-      if (error) throw error;
-      setAccommodations(prev => [...prev, data]);
+      // Try with day number columns first, fall back without
+      let result = await supabase.from('accommodations').insert({ ...newAcc, check_in_day: checkInDay, check_out_day: checkOutDay }).select().single();
+      if (result.error) {
+        result = await supabase.from('accommodations').insert(newAcc).select().single();
+        if (result.error) throw result.error;
+      }
+      const data = result.data;
+      // Always augment with day numbers locally for matching
+      setAccommodations(prev => [...prev, { ...data, check_in_day: checkInDay, check_out_day: checkOutDay }]);
     } catch (error) {
       console.error('Error adding accommodation:', error);
       alert('Failed to add accommodation');
@@ -748,7 +764,7 @@ function PlannerPage() {
 
       if (itineraryResult.data) setItinerary(itineraryResult.data);
       if (activitiesResult.data) setActivities(activitiesResult.data);
-      if (accommodationsResult.data) setAccommodations(accommodationsResult.data);
+      if (accommodationsResult.data) setAccommodations(augmentAccommodations(accommodationsResult.data, itineraryResult.data?.start_date));
     } catch (error) {
       console.error('Error refetching after AI action:', error);
     }
@@ -1170,13 +1186,16 @@ function PlannerPage() {
 
   // Find accommodation for a specific day number
   const getAccommodationForDay = (dayNumber) => {
-    if (!itinerary.start_date) return null;
-    const dayDate = new Date(itinerary.start_date);
-    dayDate.setDate(dayDate.getDate() + (dayNumber - 1));
-    const dayStr = dayDate.toISOString().split('T')[0];
-
     return accommodations.find(acc => {
-      if (!acc.check_in_date || !acc.check_out_date) return false;
+      // Use day numbers if available
+      if (acc.check_in_day && acc.check_out_day) {
+        return dayNumber >= acc.check_in_day && dayNumber < acc.check_out_day;
+      }
+      // Fall back to dates
+      if (!itinerary.start_date || !acc.check_in_date || !acc.check_out_date) return false;
+      const dayDate = new Date(itinerary.start_date);
+      dayDate.setDate(dayDate.getDate() + (dayNumber - 1));
+      const dayStr = dayDate.toISOString().split('T')[0];
       return dayStr >= acc.check_in_date && dayStr < acc.check_out_date;
     });
   };
