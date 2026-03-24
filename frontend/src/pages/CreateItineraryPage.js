@@ -671,7 +671,6 @@ function CreateItineraryPage() {
 
             <div className="max-w-2xl mx-auto grid grid-cols-4 gap-3">
               {TRAVEL_MODE_OPTIONS.map((option) => {
-                const OptionIcon = option.icon;
                 return (
                   <button
                     key={option.value}

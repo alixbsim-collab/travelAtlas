@@ -43,8 +43,11 @@ function AtlasFileViewPage() {
       setAtlasFile(data);
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (user && data.author_id === user.id) {
-        setIsOwner(true);
+      if (user) {
+        const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
+        if (data.author_id === user.id || (userName && data.author === userName)) {
+          setIsOwner(true);
+        }
       }
     } catch (error) {
       console.error('Error fetching atlas file:', error);

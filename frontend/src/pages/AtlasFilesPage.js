@@ -139,22 +139,38 @@ function AtlasFilesPage() {
     setUser(currentUser);
 
     if (currentUser) {
-      const [myRes, exploreRes] = await Promise.all([
+      const userName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || '';
+
+      const [myByIdRes, myByNameRes, exploreRes] = await Promise.all([
+        // Match by author_id
         supabase
           .from('atlas_files')
           .select('*')
           .eq('author_id', currentUser.id)
           .order('updated_at', { ascending: false }),
+        // Also match by author name (fallback for mismatched author_id)
+        userName ? supabase
+          .from('atlas_files')
+          .select('*')
+          .eq('author', userName)
+          .order('updated_at', { ascending: false })
+          : { data: [] },
+        // Explore: all published stories
         supabase
           .from('atlas_files')
           .select('*')
           .not('published_at', 'is', null)
-          .neq('author_id', currentUser.id)
           .order('published_at', { ascending: false }),
       ]);
 
-      setMyFiles(myRes.data || []);
-      setExploreFiles(exploreRes.data || []);
+      // Merge my stories (deduplicate by id)
+      const allMyFiles = [...(myByIdRes.data || []), ...(myByNameRes.data || [])];
+      const uniqueMyFiles = allMyFiles.filter((file, idx, arr) => arr.findIndex(f => f.id === file.id) === idx);
+      setMyFiles(uniqueMyFiles);
+
+      // Explore: exclude stories already in "my files"
+      const myIds = new Set(uniqueMyFiles.map(f => f.id));
+      setExploreFiles((exploreRes.data || []).filter(f => !myIds.has(f.id)));
     } else {
       const { data } = await supabase
         .from('atlas_files')
