@@ -33,6 +33,7 @@ CREATE TABLE user_profiles (
   country TEXT,
   favorite_destinations TEXT[],
   travel_style TEXT[], -- Array of traveler profile IDs
+  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );
@@ -262,6 +263,152 @@ CREATE POLICY "Authors can delete their own atlas files" ON atlas_files
   FOR DELETE USING (auth.uid() = author_id);
 
 -- ============================================
+-- ATLAS FILE VERSIONS TABLE (Versioning System)
+-- ============================================
+
+DROP TABLE IF EXISTS atlas_file_day_activities CASCADE;
+DROP TABLE IF EXISTS atlas_file_days CASCADE;
+DROP TABLE IF EXISTS atlas_file_versions CASCADE;
+DROP TABLE IF EXISTS forked_itineraries CASCADE;
+
+CREATE TABLE atlas_file_versions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  atlas_file_id UUID REFERENCES atlas_files(id) ON DELETE CASCADE NOT NULL,
+  version_number INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+  intro TEXT,
+  tips TEXT,
+  published_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  UNIQUE(atlas_file_id, version_number)
+);
+
+-- Enable RLS
+ALTER TABLE atlas_file_versions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view published versions" ON atlas_file_versions
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM atlas_files
+      WHERE atlas_files.id = atlas_file_versions.atlas_file_id
+      AND (atlas_files.published_at IS NOT NULL OR atlas_files.author_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Authors can manage versions of their atlas files" ON atlas_file_versions
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM atlas_files
+      WHERE atlas_files.id = atlas_file_versions.atlas_file_id
+      AND atlas_files.author_id = auth.uid()
+    )
+  );
+
+-- ============================================
+-- ATLAS FILE DAYS TABLE
+-- ============================================
+
+CREATE TABLE atlas_file_days (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  version_id UUID REFERENCES atlas_file_versions(id) ON DELETE CASCADE NOT NULL,
+  day_number INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT,
+  images TEXT[] DEFAULT '{}'
+);
+
+-- Enable RLS
+ALTER TABLE atlas_file_days ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view days of accessible versions" ON atlas_file_days
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM atlas_file_versions v
+      JOIN atlas_files af ON af.id = v.atlas_file_id
+      WHERE v.id = atlas_file_days.version_id
+      AND (af.published_at IS NOT NULL OR af.author_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Authors can manage days of their atlas file versions" ON atlas_file_days
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM atlas_file_versions v
+      JOIN atlas_files af ON af.id = v.atlas_file_id
+      WHERE v.id = atlas_file_days.version_id
+      AND af.author_id = auth.uid()
+    )
+  );
+
+-- ============================================
+-- ATLAS FILE DAY ACTIVITIES TABLE
+-- ============================================
+
+CREATE TABLE atlas_file_day_activities (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  day_id UUID REFERENCES atlas_file_days(id) ON DELETE CASCADE NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  title TEXT NOT NULL,
+  description TEXT,
+  location TEXT,
+  category TEXT,
+  duration_minutes INTEGER,
+  estimated_cost_min DECIMAL(10, 2),
+  estimated_cost_max DECIMAL(10, 2),
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  time_of_day TEXT
+);
+
+-- Enable RLS
+ALTER TABLE atlas_file_day_activities ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view activities of accessible days" ON atlas_file_day_activities
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM atlas_file_days d
+      JOIN atlas_file_versions v ON v.id = d.version_id
+      JOIN atlas_files af ON af.id = v.atlas_file_id
+      WHERE d.id = atlas_file_day_activities.day_id
+      AND (af.published_at IS NOT NULL OR af.author_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Authors can manage activities of their atlas file days" ON atlas_file_day_activities
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM atlas_file_days d
+      JOIN atlas_file_versions v ON v.id = d.version_id
+      JOIN atlas_files af ON af.id = v.atlas_file_id
+      WHERE d.id = atlas_file_day_activities.day_id
+      AND af.author_id = auth.uid()
+    )
+  );
+
+-- ============================================
+-- FORKED ITINERARIES TABLE
+-- ============================================
+
+CREATE TABLE forked_itineraries (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  source_atlas_file_id UUID REFERENCES atlas_files(id) NOT NULL,
+  source_version_number INTEGER NOT NULL,
+  itinerary_id UUID REFERENCES itineraries(id) ON DELETE CASCADE NOT NULL,
+  forked_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- Enable RLS
+ALTER TABLE forked_itineraries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own forks" ON forked_itineraries
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create forks" ON forked_itineraries
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- ============================================
 -- AI CONVERSATIONS TABLE
 -- ============================================
 
@@ -315,6 +462,21 @@ CREATE INDEX idx_atlas_files_published ON atlas_files(published_at) WHERE publis
 CREATE INDEX idx_atlas_files_author ON atlas_files(author_id);
 CREATE INDEX idx_atlas_files_source_type ON atlas_files(source_type);
 
+-- Atlas File Versions
+CREATE INDEX idx_atlas_file_versions_atlas_file ON atlas_file_versions(atlas_file_id);
+CREATE INDEX idx_atlas_file_versions_status ON atlas_file_versions(status) WHERE status = 'published';
+
+-- Atlas File Days
+CREATE INDEX idx_atlas_file_days_version ON atlas_file_days(version_id);
+CREATE INDEX idx_atlas_file_days_number ON atlas_file_days(version_id, day_number);
+
+-- Atlas File Day Activities
+CREATE INDEX idx_atlas_file_day_activities_day ON atlas_file_day_activities(day_id);
+
+-- Forked Itineraries
+CREATE INDEX idx_forked_itineraries_user ON forked_itineraries(user_id);
+CREATE INDEX idx_forked_itineraries_source ON forked_itineraries(source_atlas_file_id);
+
 -- AI Conversations
 CREATE INDEX idx_ai_conversations_itinerary_id ON ai_conversations(itinerary_id);
 
@@ -348,6 +510,9 @@ CREATE TRIGGER update_atlas_files_updated_at BEFORE UPDATE ON atlas_files
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_ai_conversations_updated_at BEFORE UPDATE ON ai_conversations
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_atlas_file_versions_updated_at BEFORE UPDATE ON atlas_file_versions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================

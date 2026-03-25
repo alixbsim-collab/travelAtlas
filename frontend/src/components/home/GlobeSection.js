@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../supabaseClient';
+import { listPublishedAtlasFiles } from '../../api/atlas';
 import ScrollReveal from '../ui/ScrollReveal';
 
 // City coordinates for common destinations
@@ -60,10 +60,7 @@ function GlobeSection() {
   useEffect(() => {
     // Fetch atlas files for markers
     const fetchAtlasFiles = async () => {
-      const { data } = await supabase
-        .from('atlas_files')
-        .select('id, title, destination')
-        .not('published_at', 'is', null);
+      const data = await listPublishedAtlasFiles({ fields: 'id,title,destination' });
 
       if (data) {
         const points = data

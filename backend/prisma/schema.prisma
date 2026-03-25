@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// EXISTING TABLES (mapped to current Supabase schema)
+// ============================================
+
+model UserProfile {
+  id                    String    @id @db.Uuid
+  username              String?   @unique
+  full_name             String?
+  avatar_url            String?
+  preferred_currency    String?   @default("USD")
+  bio                   String?
+  country               String?
+  favorite_destinations String[]
+  travel_style          String[]
+  role                  String    @default("user") // user | admin
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@map("user_profiles")
+}
+
+model AtlasFile {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title             String
+  description       String?
+  destination       String
+  trip_length       Int
+  category          String?
+  thumbnail_url     String?
+  cover_image_url   String?
+  content           Json?     // Legacy JSONB content (kept for backwards compat)
+  traveler_profiles String[]
+  is_premium        Boolean   @default(false)
+  author            String?
+  author_id         String?   @db.Uuid
+  source_type       String    @default("traveler")
+  view_count        Int       @default(0)
+  like_count        Int       @default(0)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+  published_at      DateTime? @db.Timestamptz(6)
+
+  versions          AtlasFileVersion[]
+  forks             ForkedItinerary[]
+
+  @@map("atlas_files")
+}
+
+model Itinerary {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String    @db.Uuid
+  title             String
+  destination       String
+  trip_length       Int
+  start_date        DateTime? @db.Date
+  end_date          DateTime? @db.Date
+  travel_pace       String?   @default("balanced")
+  budget            String?   @default("medium")
+  traveler_profiles String[]  @default([])
+  thumbnail_url     String?
+  is_template       Boolean   @default(false)
+  is_published      Boolean   @default(false)
+  is_favorite       Boolean   @default(false)
+  notes             String?
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  activities        Activity[]
+
+  @@map("itineraries")
+}
+
+model Activity {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  itinerary_id       String   @db.Uuid
+  day_number         Int
+  position           Int      @default(0)
+  title              String
+  description        String?
+  location           String?
+  category           String?  @default("other")
+  duration_minutes   Int?
+  estimated_cost_min Decimal? @db.Decimal(10, 2)
+  estimated_cost_max Decimal? @db.Decimal(10, 2)
+  booking_url        String?
+  booking_required   Boolean  @default(false)
+  latitude           Decimal? @db.Decimal(10, 8)
+  longitude          Decimal? @db.Decimal(11, 8)
+  custom_notes       String?
+  time_of_day        String?
+  is_completed       Boolean  @default(false)
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  itinerary          Itinerary @relation(fields: [itinerary_id], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+// ============================================
+// NEW TABLES — Versioning, Days, Activities, Forking
+// ============================================
+
+model AtlasFileVersion {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  atlas_file_id  String    @db.Uuid
+  version_number Int
+  status         String    @default("draft") // draft | published | archived
+  intro          String?   // HTML content
+  tips           String?   // HTML content
+  published_at   DateTime? @db.Timestamptz(6)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  atlas_file     AtlasFile @relation(fields: [atlas_file_id], references: [id], onDelete: Cascade)
+  days           AtlasFileDay[]
+
+  @@unique([atlas_file_id, version_number])
+  @@map("atlas_file_versions")
+}
+
+model AtlasFileDay {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  version_id String   @db.Uuid
+  day_number Int
+  title      String
+  content    String?  // HTML narrative
+  images     String[] // URLs
+
+  version    AtlasFileVersion @relation(fields: [version_id], references: [id], onDelete: Cascade)
+  activities AtlasFileDayActivity[]
+
+  @@map("atlas_file_days")
+}
+
+model AtlasFileDayActivity {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  day_id             String   @db.Uuid
+  position           Int      @default(0)
+  title              String
+  description        String?
+  location           String?
+  category           String?
+  duration_minutes   Int?
+  estimated_cost_min Decimal? @db.Decimal(10, 2)
+  estimated_cost_max Decimal? @db.Decimal(10, 2)
+  latitude           Decimal? @db.Decimal(10, 8)
+  longitude          Decimal? @db.Decimal(11, 8)
+  time_of_day        String?
+
+  day                AtlasFileDay @relation(fields: [day_id], references: [id], onDelete: Cascade)
+
+  @@map("atlas_file_day_activities")
+}
+
+model ForkedItinerary {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String   @db.Uuid
+  source_atlas_file_id  String   @db.Uuid
+  source_version_number Int
+  itinerary_id          String   @db.Uuid
+  forked_at             DateTime @default(now()) @db.Timestamptz(6)
+
+  source_atlas          AtlasFile @relation(fields: [source_atlas_file_id], references: [id])
+
+  @@map("forked_itineraries")
+}

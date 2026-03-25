@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { listPublishedAtlasFiles } from '../api/atlas';
 import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -301,16 +302,11 @@ function TravelDesignerDashboard() {
   };
 
   const fetchAtlasFiles = async () => {
-    const { data, error } = await supabase
-      .from('atlas_files')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(6);
-
-    if (error) {
-      console.error('Error fetching atlas files:', error);
-    } else {
+    try {
+      const data = await listPublishedAtlasFiles({ limit: 6 });
       setAtlasFiles(data || []);
+    } catch (error) {
+      console.error('Error fetching atlas files:', error);
     }
   };
 

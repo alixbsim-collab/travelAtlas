@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { supabase } from '../supabaseClient';
+import { getAtlasFile, forkAtlasFile } from '../api/atlas';
 import PageContainer from '../components/layout/PageContainer';
 import ScrollReveal from '../components/ui/ScrollReveal';
 import Button from '../components/ui/Button';
-import { ArrowLeft, Calendar, MapPin, User, Edit, Share2, Link2, MessageCircle, Download, Check } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, User, Edit, GitFork, Share2, Link2, MessageCircle, Download, Check } from 'lucide-react';
 import { getSourceConfig } from '../constants/sourceTypeConfig';
 
 function AtlasFileViewPage() {
@@ -34,13 +35,7 @@ function AtlasFileViewPage() {
 
   const fetchAtlasFile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('atlas_files')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
+      const data = await getAtlasFile(id);
       setAtlasFile(data);
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -55,6 +50,16 @@ function AtlasFileViewPage() {
       navigate('/atlas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFork = async () => {
+    try {
+      const result = await forkAtlasFile(id);
+      navigate(`/itinerary/${result.itinerary_id}`);
+    } catch (error) {
+      console.error('Error forking atlas file:', error);
+      alert('Failed to fork. Make sure you are logged in and the file has a published version.');
     }
   };
 
@@ -253,6 +258,11 @@ function AtlasFileViewPage() {
                 )}
               </div>
 
+              {!isOwner && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleFork}>
+                  <GitFork size={16} /> Fork to My Trips
+                </Button>
+              )}
               {isOwner && (
                 <Link to={`/atlas/edit/${id}`}>
                   <Button variant="outline" size="sm" className="gap-2">

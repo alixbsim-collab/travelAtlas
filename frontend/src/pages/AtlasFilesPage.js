@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabaseClient';
+import { listMyAtlasFiles, listPublishedAtlasFiles, deleteAtlasFile, forkAtlasFile } from '../api/atlas';
 import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import ScrollReveal from '../components/ui/ScrollReveal';
-import { PlusCircle, MapPin, Calendar, User, Edit, Trash2, Copy, MoreVertical, Globe, Lock, Award } from 'lucide-react';
+import { PlusCircle, MapPin, Calendar, User, Edit, Trash2, GitFork, Copy, MoreVertical, Globe, Lock, Award } from 'lucide-react';
 import { getSourceConfig } from '../constants/sourceTypeConfig';
 
-function AtlasFileCard({ file, isOwner, onDelete, onDuplicate }) {
+function AtlasFileCard({ file, isOwner, onDelete, onDuplicate, onFork }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const sourceConfig = getSourceConfig(file.source_type);
   const SourceIcon = sourceConfig.icon;
@@ -75,24 +76,24 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate }) {
         </Card>
       </Link>
 
-      {/* Owner actions menu */}
-      {isOwner && (
-        <div className="absolute top-2 right-2 z-10">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setMenuOpen(!menuOpen);
-            }}
-            className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center text-charcoal-400 hover:text-charcoal-500 hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
-          >
-            <MoreVertical size={16} />
-          </button>
+      {/* Actions menu */}
+      <div className="absolute top-2 right-2 z-10">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
+          className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center text-charcoal-400 hover:text-charcoal-500 hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
+        >
+          <MoreVertical size={16} />
+        </button>
 
-          {menuOpen && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-              <div className="absolute right-0 top-10 z-20 bg-white rounded-xl shadow-lg border border-platinum-200 py-1 w-40">
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+            <div className="absolute right-0 top-10 z-20 bg-white rounded-xl shadow-lg border border-platinum-200 py-1 w-40">
+              {isOwner && (
                 <Link
                   to={`/atlas/edit/${file.id}`}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors"
@@ -100,6 +101,8 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate }) {
                 >
                   <Edit size={14} /> Edit
                 </Link>
+              )}
+              {isOwner && (
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -110,6 +113,20 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate }) {
                 >
                   <Copy size={14} /> Duplicate
                 </button>
+              )}
+              {!isOwner && onFork && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                    onFork(file);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-charcoal-500 hover:bg-platinum-50 transition-colors w-full"
+                >
+                  <GitFork size={14} /> Fork to My Trips
+                </button>
+              )}
+              {isOwner && (
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -120,11 +137,11 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate }) {
                 >
                   <Trash2 size={14} /> Delete
                 </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -136,6 +153,7 @@ function AtlasFilesPage() {
   const [user, setUser] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
@@ -145,46 +163,24 @@ function AtlasFilesPage() {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     setUser(currentUser);
 
-    if (currentUser) {
-      const userName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || '';
+    try {
+      if (currentUser) {
+        const [myData, publishedData] = await Promise.all([
+          listMyAtlasFiles(),
+          listPublishedAtlasFiles(),
+        ]);
 
-      const [myByIdRes, myByNameRes, exploreRes] = await Promise.all([
-        // Match by author_id
-        supabase
-          .from('atlas_files')
-          .select('*')
-          .eq('author_id', currentUser.id)
-          .order('updated_at', { ascending: false }),
-        // Also match by author name (fallback for mismatched author_id)
-        userName ? supabase
-          .from('atlas_files')
-          .select('*')
-          .eq('author', userName)
-          .order('updated_at', { ascending: false })
-          : { data: [] },
-        // Explore: all published stories
-        supabase
-          .from('atlas_files')
-          .select('*')
-          .not('published_at', 'is', null)
-          .order('published_at', { ascending: false }),
-      ]);
+        setMyFiles(myData || []);
 
-      // Merge my stories (deduplicate by id)
-      const allMyFiles = [...(myByIdRes.data || []), ...(myByNameRes.data || [])];
-      const uniqueMyFiles = allMyFiles.filter((file, idx, arr) => arr.findIndex(f => f.id === file.id) === idx);
-      setMyFiles(uniqueMyFiles);
-
-      // Explore: exclude stories already in "my files"
-      const myIds = new Set(uniqueMyFiles.map(f => f.id));
-      setExploreFiles((exploreRes.data || []).filter(f => !myIds.has(f.id)));
-    } else {
-      const { data } = await supabase
-        .from('atlas_files')
-        .select('*')
-        .not('published_at', 'is', null)
-        .order('published_at', { ascending: false });
-      setExploreFiles(data || []);
+        // Explore: exclude stories already in "my files"
+        const myIds = new Set((myData || []).map(f => f.id));
+        setExploreFiles((publishedData || []).filter(f => !myIds.has(f.id)));
+      } else {
+        const publishedData = await listPublishedAtlasFiles();
+        setExploreFiles(publishedData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching atlas files:', error);
     }
 
     setLoading(false);
@@ -194,23 +190,31 @@ function AtlasFilesPage() {
     if (!deleteTarget) return;
     setDeleting(true);
 
-    const { error } = await supabase
-      .from('atlas_files')
-      .delete()
-      .eq('id', deleteTarget.id);
-
-    if (error) {
+    try {
+      await deleteAtlasFile(deleteTarget.id);
+      setMyFiles(prev => prev.filter(f => f.id !== deleteTarget.id));
+      setExploreFiles(prev => prev.filter(f => f.id !== deleteTarget.id));
+    } catch (error) {
       console.error('Error deleting atlas file:', error);
       alert('Failed to delete');
-    } else {
-      setMyFiles(prev => prev.filter(f => f.id !== deleteTarget.id));
     }
 
     setDeleting(false);
     setDeleteTarget(null);
   };
 
+  const handleFork = async (file) => {
+    try {
+      const result = await forkAtlasFile(file.id);
+      navigate(`/itinerary/${result.itinerary_id}`);
+    } catch (error) {
+      console.error('Error forking atlas file:', error);
+      alert('Failed to fork — make sure the file has a published version.');
+    }
+  };
+
   const handleDuplicate = async (file) => {
+    // For owner's own files, use Supabase direct insert (legacy compat)
     const { data: newFile, error } = await supabase
       .from('atlas_files')
       .insert({
@@ -361,6 +365,7 @@ function AtlasFilesPage() {
                           isOwner={false}
                           onDelete={() => {}}
                           onDuplicate={() => {}}
+                          onFork={user ? handleFork : null}
                         />
                       </ScrollReveal>
                     ))}
@@ -385,6 +390,7 @@ function AtlasFilesPage() {
                           isOwner={false}
                           onDelete={() => {}}
                           onDuplicate={() => {}}
+                          onFork={user ? handleFork : null}
                         />
                       </ScrollReveal>
                     ))}
