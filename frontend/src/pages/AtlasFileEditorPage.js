@@ -6,6 +6,7 @@ import RichTextEditor from '../components/editor/RichTextEditor';
 import Button from '../components/ui/Button';
 import ImageUploader from '../components/ui/ImageUploader';
 import { ArrowLeft, Plus, Trash2, Save, Globe, Lock, Image } from 'lucide-react';
+import { getSourceConfig } from '../constants/sourceTypeConfig';
 
 function AtlasFileEditorPage() {
   const { id } = useParams();
@@ -17,6 +18,7 @@ function AtlasFileEditorPage() {
   const [loading, setLoading] = useState(!!id || !!fromItinerary);
   const [isPublic, setIsPublic] = useState(false);
   const [showDayUploader, setShowDayUploader] = useState(null);
+  const [sourceType, setSourceType] = useState('traveler');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -56,6 +58,7 @@ function AtlasFileEditorPage() {
         cover_image_url: data.cover_image_url || '',
       });
       setIsPublic(!!data.published_at);
+      setSourceType(data.source_type || 'traveler');
 
       if (data.content) {
         const content = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
@@ -195,6 +198,7 @@ function AtlasFileEditorPage() {
       };
 
       if (id) {
+        // Don't override source_type on edit (preserve curated status)
         const { error } = await supabase
           .from('atlas_files')
           .update(atlasData)
@@ -203,7 +207,7 @@ function AtlasFileEditorPage() {
       } else {
         const { data, error } = await supabase
           .from('atlas_files')
-          .insert(atlasData)
+          .insert({ ...atlasData, source_type: 'traveler' })
           .select()
           .single();
         if (error) throw error;
@@ -245,6 +249,16 @@ function AtlasFileEditorPage() {
             Back
           </button>
           <div className="flex items-center gap-3">
+            {(() => {
+              const config = getSourceConfig(sourceType);
+              const TypeIcon = config.icon;
+              return (
+                <span className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full font-medium ${config.badge.bg} ${config.badge.text}`}>
+                  <TypeIcon size={12} />
+                  {config.label}
+                </span>
+              );
+            })()}
             <button
               type="button"
               onClick={() => setIsPublic(!isPublic)}

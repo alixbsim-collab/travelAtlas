@@ -6,6 +6,7 @@ import PageContainer from '../components/layout/PageContainer';
 import ScrollReveal from '../components/ui/ScrollReveal';
 import Button from '../components/ui/Button';
 import { ArrowLeft, Calendar, MapPin, User, Edit, Share2, Link2, MessageCircle, Download, Check } from 'lucide-react';
+import { getSourceConfig } from '../constants/sourceTypeConfig';
 
 function AtlasFileViewPage() {
   const { id } = useParams();
@@ -117,6 +118,8 @@ function AtlasFileViewPage() {
     : atlasFile.content || {};
 
   const days = content.days || [];
+  const config = getSourceConfig(atlasFile.source_type);
+  const TypeIcon = config.icon;
 
   return (
     <div>
@@ -130,6 +133,13 @@ function AtlasFileViewPage() {
             style={{ y: coverY, opacity: coverOpacity }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal-500/70 via-charcoal-500/20 to-transparent" />
+          {/* Source type badge */}
+          <div className="absolute top-6 left-6 md:top-8 md:left-16 z-10">
+            <span className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full font-medium backdrop-blur-sm bg-white/20 text-white border border-white/30">
+              <TypeIcon size={14} />
+              {config.label}
+            </span>
+          </div>
           <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16">
             <div className="container mx-auto max-w-4xl">
               <motion.h1
@@ -147,7 +157,7 @@ function AtlasFileViewPage() {
                 className="flex flex-wrap gap-4 text-sm text-white/80"
               >
                 {atlasFile.author && (
-                  <span className="flex items-center gap-1"><User size={16} />{atlasFile.author}</span>
+                  <span className="flex items-center gap-1"><User size={16} /><span className="opacity-70">{config.authorPrefix}</span> {atlasFile.author}</span>
                 )}
                 {atlasFile.destination && (
                   <span className="flex items-center gap-1"><MapPin size={16} />{atlasFile.destination}</span>
@@ -163,9 +173,15 @@ function AtlasFileViewPage() {
         /* No cover — fallback header */
         <div className="bg-charcoal-500 py-16">
           <div className="container mx-auto max-w-4xl px-4">
+            <div className="mb-4">
+              <span className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full font-medium bg-white/20 text-white border border-white/30 w-fit">
+                <TypeIcon size={14} />
+                {config.label}
+              </span>
+            </div>
             <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4">{atlasFile.title}</h1>
             <div className="flex flex-wrap gap-4 text-sm text-white/70">
-              {atlasFile.author && <span className="flex items-center gap-1"><User size={16} />{atlasFile.author}</span>}
+              {atlasFile.author && <span className="flex items-center gap-1"><User size={16} /><span className="opacity-70">{config.authorPrefix}</span> {atlasFile.author}</span>}
               {atlasFile.destination && <span className="flex items-center gap-1"><MapPin size={16} />{atlasFile.destination}</span>}
               {atlasFile.trip_length && <span className="flex items-center gap-1"><Calendar size={16} />{atlasFile.trip_length} days</span>}
             </div>
@@ -263,7 +279,7 @@ function AtlasFileViewPage() {
             <ScrollReveal>
               <div className="mb-10">
                 <div
-                  className="prose prose-lg max-w-none"
+                  className={`prose prose-lg max-w-none ${config.introStyle}`}
                   dangerouslySetInnerHTML={{ __html: content.intro }}
                 />
               </div>
@@ -275,10 +291,10 @@ function AtlasFileViewPage() {
             <ScrollReveal key={index} delay={index * 0.05}>
               <div className="mb-14">
                 <div className="flex items-center gap-4 mb-5">
-                  <div className="w-12 h-12 rounded-full bg-coral-100 text-coral-600 flex items-center justify-center font-heading font-bold text-lg flex-shrink-0">
+                  <div className={`w-12 h-12 rounded-full ${config.dayCircle.bg} ${config.dayCircle.text} flex items-center justify-center font-heading font-bold text-lg flex-shrink-0`}>
                     {index + 1}
                   </div>
-                  <h2 className="text-2xl font-heading font-bold text-charcoal-500 pb-2 border-b border-platinum-200 flex-1">
+                  <h2 className={`text-2xl font-heading font-bold text-charcoal-500 pb-2 border-b ${config.sectionDivider} flex-1`}>
                     {day.title}
                   </h2>
                 </div>
@@ -311,7 +327,7 @@ function AtlasFileViewPage() {
           {/* Tips */}
           {content.tips && (
             <ScrollReveal>
-              <div className="mb-12 bg-naples-50 rounded-2xl p-6 border border-naples-200">
+              <div className={`mb-12 ${config.tipsSection.bg} rounded-2xl p-6 border ${config.tipsSection.border}`}>
                 <h2 className="text-2xl font-heading font-bold text-charcoal-500 mb-4">
                   Travel Tips
                 </h2>

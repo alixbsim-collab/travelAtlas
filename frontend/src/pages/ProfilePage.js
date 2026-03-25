@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import PageContainer from '../components/layout/PageContainer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { MapPin, Globe, Calendar, Send, Clock } from 'lucide-react';
+import { MapPin, Globe, Calendar, Send, Clock, EyeOff } from 'lucide-react';
 import { TRAVELER_PROFILES } from '../constants/travelerProfiles';
 
 function ProfilePage() {
@@ -68,6 +68,22 @@ function ProfilePage() {
   const publishedItineraries = itineraries.filter(it => it.is_published);
 
   // Travel style badges from profile
+  const handleUnpublish = async (itineraryId) => {
+    const { error } = await supabase
+      .from('itineraries')
+      .update({ is_published: false })
+      .eq('id', itineraryId);
+
+    if (error) {
+      console.error('Error unpublishing:', error);
+      alert('Failed to unpublish itinerary');
+    } else {
+      setItineraries(prev =>
+        prev.map(it => it.id === itineraryId ? { ...it, is_published: false } : it)
+      );
+    }
+  };
+
   const travelStyleBadges = (profile?.travel_style || []).map(styleId => {
     return TRAVELER_PROFILES.find(p => p.id === styleId);
   }).filter(Boolean);
@@ -156,26 +172,35 @@ function ProfilePage() {
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   {publishedItineraries.map(it => (
-                    <Link
+                    <div
                       key={it.id}
-                      to={`/itinerary/${it.id}`}
                       className="rounded-xl overflow-hidden border border-platinum-200 hover:border-coral-300 hover:shadow-md transition-all group"
                     >
-                      <div className="h-24 bg-columbia-100 relative overflow-hidden">
-                        {it.thumbnail_url ? (
-                          <img src={it.thumbnail_url} alt={it.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">✈️</div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <p className="text-white text-xs font-bold truncate drop-shadow-lg">{it.title || it.destination}</p>
+                      <Link to={`/itinerary/${it.id}`}>
+                        <div className="h-24 bg-columbia-100 relative overflow-hidden">
+                          {it.thumbnail_url ? (
+                            <img src={it.thumbnail_url} alt={it.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-3xl">✈️</div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                          <div className="absolute bottom-2 left-2 right-2">
+                            <p className="text-white text-xs font-bold truncate drop-shadow-lg">{it.title || it.destination}</p>
+                          </div>
                         </div>
+                      </Link>
+                      <div className="p-2 flex items-center justify-between">
+                        <span className="flex items-center gap-1 text-xs text-platinum-600"><MapPin size={10} />{it.destination}</span>
+                        <button
+                          onClick={() => handleUnpublish(it.id)}
+                          className="flex items-center gap-1 text-xs text-platinum-500 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
+                          title="Unpublish from Atlas Network"
+                        >
+                          <EyeOff size={12} />
+                          Unpublish
+                        </button>
                       </div>
-                      <div className="p-2 text-xs text-platinum-600">
-                        <span className="flex items-center gap-1"><MapPin size={10} />{it.destination}</span>
-                      </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               </Card>

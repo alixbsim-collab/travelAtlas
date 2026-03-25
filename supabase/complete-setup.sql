@@ -234,6 +234,7 @@ CREATE TABLE atlas_files (
   is_premium BOOLEAN DEFAULT FALSE,
   author TEXT,
   author_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  source_type TEXT NOT NULL CHECK (source_type IN ('traveler', 'curated')) DEFAULT 'traveler',
   view_count INTEGER DEFAULT 0,
   like_count INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
@@ -312,6 +313,7 @@ CREATE INDEX idx_accommodations_dates ON accommodations(check_in_date, check_out
 CREATE INDEX idx_atlas_files_destination ON atlas_files(destination);
 CREATE INDEX idx_atlas_files_published ON atlas_files(published_at) WHERE published_at IS NOT NULL;
 CREATE INDEX idx_atlas_files_author ON atlas_files(author_id);
+CREATE INDEX idx_atlas_files_source_type ON atlas_files(source_type);
 
 -- AI Conversations
 CREATE INDEX idx_ai_conversations_itinerary_id ON ai_conversations(itinerary_id);
@@ -353,7 +355,7 @@ CREATE TRIGGER update_ai_conversations_updated_at BEFORE UPDATE ON ai_conversati
 -- ============================================
 
 -- Sample Atlas Files (curated content)
-INSERT INTO atlas_files (title, description, destination, trip_length, category, thumbnail_url, traveler_profiles, published_at, author) VALUES
+INSERT INTO atlas_files (title, description, destination, trip_length, category, thumbnail_url, traveler_profiles, published_at, author, source_type) VALUES
 (
   '10 Days in Japan: Cultural Immersion',
   'Experience the perfect blend of ancient traditions and modern innovation across Tokyo, Kyoto, and Osaka.',
@@ -363,7 +365,8 @@ INSERT INTO atlas_files (title, description, destination, trip_length, category,
   'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e',
   ARRAY['cultural-explorer', 'nature-lover'],
   NOW(),
-  'Travel Atlas Team'
+  'Travel Atlas Team',
+  'curated'
 ),
 (
   'Bali Wellness Retreat: 7 Days of Bliss',
@@ -374,7 +377,8 @@ INSERT INTO atlas_files (title, description, destination, trip_length, category,
   'https://images.unsplash.com/photo-1537996194471-e657df975ab4',
   ARRAY['wellness', 'beach-bum'],
   NOW(),
-  'Travel Atlas Team'
+  'Travel Atlas Team',
+  'curated'
 ),
 (
   'European Backpacking Adventure: 14 Days',
@@ -385,7 +389,8 @@ INSERT INTO atlas_files (title, description, destination, trip_length, category,
   'https://images.unsplash.com/photo-1499856871958-5b9627545d1a',
   ARRAY['backpacker', 'cultural-explorer'],
   NOW(),
-  'Travel Atlas Team'
+  'Travel Atlas Team',
+  'curated'
 ),
 (
   'New Zealand Nature Expedition: 12 Days',
@@ -396,7 +401,8 @@ INSERT INTO atlas_files (title, description, destination, trip_length, category,
   'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800',
   ARRAY['nature-lover', 'active-globetrotter'],
   NOW(),
-  'Travel Atlas Team'
+  'Travel Atlas Team',
+  'curated'
 ),
 (
   'Mediterranean Family Vacation: 10 Days',
@@ -407,7 +413,8 @@ INSERT INTO atlas_files (title, description, destination, trip_length, category,
   'https://images.unsplash.com/photo-1530521954074-e64f6810b32d',
   ARRAY['family-traveler', 'beach-bum'],
   NOW(),
-  'Travel Atlas Team'
+  'Travel Atlas Team',
+  'curated'
 );
 
 -- ============================================

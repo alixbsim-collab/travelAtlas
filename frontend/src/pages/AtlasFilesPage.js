@@ -7,15 +7,18 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import ScrollReveal from '../components/ui/ScrollReveal';
-import { PlusCircle, MapPin, Calendar, User, Edit, Trash2, Copy, MoreVertical, Globe, Lock } from 'lucide-react';
+import { PlusCircle, MapPin, Calendar, User, Edit, Trash2, Copy, MoreVertical, Globe, Lock, Award } from 'lucide-react';
+import { getSourceConfig } from '../constants/sourceTypeConfig';
 
 function AtlasFileCard({ file, isOwner, onDelete, onDuplicate }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const sourceConfig = getSourceConfig(file.source_type);
+  const SourceIcon = sourceConfig.icon;
 
   return (
     <div className="relative group">
       <Link to={`/atlas/${file.id}`}>
-        <Card hover className="flex flex-col h-full p-0 overflow-hidden">
+        <Card hover className={`flex flex-col h-full p-0 overflow-hidden ${sourceConfig.cardAccent}`}>
           <div className="h-44 overflow-hidden">
             {file.cover_image_url ? (
               <motion.img
@@ -34,11 +37,12 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate }) {
 
           <div className="flex-1 p-5">
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-xl font-heading font-bold line-clamp-2 text-charcoal-500 flex-1">
-                {file.title}
-              </h3>
+              <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${sourceConfig.badge.bg} ${sourceConfig.badge.text}`}>
+                <SourceIcon size={10} />
+                {sourceConfig.label}
+              </span>
               {isOwner && (
-                <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${
+                <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
                   file.published_at
                     ? 'bg-coral-100 text-coral-700'
                     : 'bg-platinum-100 text-platinum-600'
@@ -48,6 +52,9 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate }) {
                 </span>
               )}
             </div>
+            <h3 className="text-xl font-heading font-bold line-clamp-2 text-charcoal-500 mb-2">
+              {file.title}
+            </h3>
             {file.description && (
               <p className="text-sm text-platinum-600 mb-3 line-clamp-2">
                 {file.description}
@@ -216,6 +223,7 @@ function AtlasFilesPage() {
         author_id: user.id,
         author: file.author,
         published_at: null,
+        source_type: 'traveler',
       })
       .select()
       .single();
@@ -335,18 +343,55 @@ function AtlasFilesPage() {
               </div>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {exploreFiles.map((file, index) => (
-                <ScrollReveal key={file.id} delay={index * 0.06}>
-                  <AtlasFileCard
-                    file={file}
-                    isOwner={false}
-                    onDelete={() => {}}
-                    onDuplicate={() => {}}
-                  />
-                </ScrollReveal>
-              ))}
-            </div>
+            <>
+              {/* Curated by Travel Atlas */}
+              {exploreFiles.some(f => f.source_type === 'curated') && (
+                <div className="mb-10">
+                  <ScrollReveal>
+                    <h3 className="text-lg font-heading font-bold text-charcoal-400 mb-4 flex items-center gap-2">
+                      <Award size={18} className="text-columbia-600" />
+                      Curated by Travel Atlas
+                    </h3>
+                  </ScrollReveal>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {exploreFiles.filter(f => f.source_type === 'curated').map((file, index) => (
+                      <ScrollReveal key={file.id} delay={index * 0.06}>
+                        <AtlasFileCard
+                          file={file}
+                          isOwner={false}
+                          onDelete={() => {}}
+                          onDuplicate={() => {}}
+                        />
+                      </ScrollReveal>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* From the Community */}
+              {exploreFiles.some(f => f.source_type !== 'curated') && (
+                <div>
+                  <ScrollReveal>
+                    <h3 className="text-lg font-heading font-bold text-charcoal-400 mb-4 flex items-center gap-2">
+                      <Globe size={18} className="text-naples-500" />
+                      From the Community
+                    </h3>
+                  </ScrollReveal>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {exploreFiles.filter(f => f.source_type !== 'curated').map((file, index) => (
+                      <ScrollReveal key={file.id} delay={index * 0.06}>
+                        <AtlasFileCard
+                          file={file}
+                          isOwner={false}
+                          onDelete={() => {}}
+                          onDuplicate={() => {}}
+                        />
+                      </ScrollReveal>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
