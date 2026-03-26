@@ -27,7 +27,10 @@ router.get('/', optionalAuth, async (req: AuthenticatedRequest, res: Response) =
     const fields = (req.query.fields as string)?.split(',');
 
     const atlasFiles = await prisma.atlasFile.findMany({
-      where: { published_at: { not: null } },
+      where: {
+        published_at: { not: null },
+        versions: { some: { status: 'published' } },
+      },
       orderBy: { published_at: 'desc' },
       take: limit,
       include: {
