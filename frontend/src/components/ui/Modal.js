@@ -30,31 +30,31 @@ function Modal({ isOpen, onClose, title, children, size = 'md' }) {
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       ></div>
 
       {/* Modal */}
       <div className="flex min-h-screen items-center justify-center p-4">
         <div
-          className={`relative bg-white rounded-xl shadow-2xl ${sizes[size]} w-full transform transition-all`}
+          className={`relative bg-white rounded-2xl shadow-elevated ${sizes[size]} w-full transform transition-all`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {title && (
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-platinum-100">
               <h3
-                className="text-2xl font-heading font-bold text-charcoal-500"
+                className="text-xl font-semibold text-charcoal-500"
                 id="modal-title"
               >
                 {title}
               </h3>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-2 text-platinum-500 hover:text-charcoal-500 hover:bg-platinum-100 rounded-xl transition-colors"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

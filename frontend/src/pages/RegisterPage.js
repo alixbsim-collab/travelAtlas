@@ -83,26 +83,26 @@ function RegisterPage() {
   if (confirmationSent) {
     return (
       <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <Card className="w-full max-w-md text-center">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center bg-coral-100">
-            <Mail size={32} className="text-coral-500" />
+        <Card className="w-full max-w-md text-center !p-8">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center bg-coral-50">
+            <Mail size={30} className="text-coral-400" />
           </div>
-          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-3">
+          <h1 className="text-2xl text-charcoal-500 mb-3">
             Check Your Email
           </h1>
           <p className="text-platinum-600 mb-2">
             We've sent a confirmation link to
           </p>
           <p className="font-medium text-charcoal-500 mb-6">{formData.email}</p>
-          <p className="text-sm text-platinum-500 mb-6">
+          <p className="text-sm text-platinum-500 mb-6 leading-relaxed">
             Click the link in the email to activate your account. Check your spam folder if you don't see it.
           </p>
           <div className="flex items-center gap-2 justify-center text-sm text-platinum-500">
             <CheckCircle size={14} className="text-green-500" />
             Account created successfully
           </div>
-          <div className="mt-6 pt-6 border-t border-platinum-200">
-            <Link to="/login" className="text-coral-500 hover:text-coral-600 font-medium text-sm">
+          <div className="mt-6 pt-6 border-t border-platinum-100">
+            <Link to="/login" className="text-coral-500 hover:text-coral-600 font-medium text-sm transition-colors">
               Go to Sign In
             </Link>
           </div>
@@ -113,9 +113,9 @@ function RegisterPage() {
 
   return (
     <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-      <Card className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-2">
+      <Card className="w-full max-w-md !p-8">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl text-charcoal-500 mb-2">
             Join The Travel Atlas
           </h1>
           <p className="text-platinum-600">
@@ -123,9 +123,9 @@ function RegisterPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
               {error}
             </div>
           )}
@@ -172,15 +172,15 @@ function RegisterPage() {
           />
 
           <div className="text-sm text-platinum-600">
-            <label className="flex items-start">
-              <input type="checkbox" className="mr-2 mt-1" required />
+            <label className="flex items-start cursor-pointer">
+              <input type="checkbox" className="mr-2.5 mt-1 rounded border-platinum-300 text-coral-400 focus:ring-coral-200" required />
               <span>
                 I agree to the{' '}
-                <Link to="/terms" className="text-coral-500 hover:text-coral-500">
+                <Link to="/terms" className="text-coral-500 hover:text-coral-600 transition-colors">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link to="/privacy" className="text-coral-500 hover:text-coral-500">
+                <Link to="/privacy" className="text-coral-500 hover:text-coral-600 transition-colors">
                   Privacy Policy
                 </Link>
               </span>
@@ -192,9 +192,9 @@ function RegisterPage() {
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
+        <div className="mt-8 text-center text-sm">
           <span className="text-platinum-600">Already have an account? </span>
-          <Link to="/login" className="text-coral-500 hover:text-coral-500 font-medium">
+          <Link to="/login" className="text-coral-500 hover:text-coral-600 font-medium transition-colors">
             Sign in
           </Link>
         </div>

@@ -6,7 +6,7 @@ function TravelDesignerPage() {
   return (
     <PageContainer>
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-heading font-bold text-charcoal-500 mb-4">
+        <h1 className="text-4xl font-semibold text-charcoal-500 mb-4">
           Travel Designer
         </h1>
         <p className="text-lg text-platinum-600 mb-8">
@@ -16,7 +16,7 @@ function TravelDesignerPage() {
         <Card>
           <div className="text-center py-16">
             <div className="text-6xl mb-6">🎨</div>
-            <h2 className="text-2xl font-heading font-bold mb-4">
+            <h2 className="text-2xl font-semibold mb-4">
               Itinerary Builder Coming Soon
             </h2>
             <p className="text-platinum-600 max-w-md mx-auto">

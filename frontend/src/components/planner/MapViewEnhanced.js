@@ -53,7 +53,7 @@ function MapViewEnhanced({ activities, itinerary }) {
         <div className="w-12 h-12 bg-coral-50 rounded-full flex items-center justify-center mb-3">
           <Globe size={24} className="text-coral-500" />
         </div>
-        <h3 className="text-base font-heading font-bold text-charcoal-500 mb-1">
+        <h3 className="text-base font-semibold text-charcoal-500 mb-1">
           No locations yet
         </h3>
         <p className="text-sm text-platinum-600">
@@ -70,7 +70,7 @@ function MapViewEnhanced({ activities, itinerary }) {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Navigation className="text-coral-500" size={18} />
-            <h3 className="font-heading font-bold text-charcoal-500 text-sm">
+            <h3 className="font-semibold text-charcoal-500 text-sm">
               Journey Overview
             </h3>
           </div>

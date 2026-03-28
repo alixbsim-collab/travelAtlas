@@ -52,9 +52,9 @@ function LoginPage() {
 
   return (
     <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-      <Card className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-2">
+      <Card className="w-full max-w-md !p-8">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl text-charcoal-500 mb-2">
             Welcome Back
           </h1>
           <p className="text-platinum-600">
@@ -62,9 +62,9 @@ function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
@@ -90,11 +90,11 @@ function LoginPage() {
           />
 
           <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2" />
+            <label className="flex items-center cursor-pointer">
+              <input type="checkbox" className="mr-2 rounded border-platinum-300 text-coral-400 focus:ring-coral-200" />
               <span className="text-platinum-600">Remember me</span>
             </label>
-            <Link to="/forgot-password" className="text-coral-500 hover:text-coral-500">
+            <Link to="/forgot-password" className="text-coral-500 hover:text-coral-600 transition-colors">
               Forgot password?
             </Link>
           </div>
@@ -104,9 +104,9 @@ function LoginPage() {
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
+        <div className="mt-8 text-center text-sm">
           <span className="text-platinum-600">Don't have an account? </span>
-          <Link to="/register" className="text-coral-500 hover:text-coral-500 font-medium">
+          <Link to="/register" className="text-coral-500 hover:text-coral-600 font-medium transition-colors">
             Sign up
           </Link>
         </div>

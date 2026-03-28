@@ -11,7 +11,8 @@ function Input({
   required = false,
   className = '',
   id,
-  name
+  name,
+  ...rest
 }) {
   const inputId = id || name || label?.toLowerCase().replace(/\s+/g, '-');
 
@@ -23,7 +24,7 @@ function Input({
           className="block text-sm font-medium text-charcoal-500 mb-2"
         >
           {label}
-          {required && <span className="text-coral-500 ml-1">*</span>}
+          {required && <span className="text-coral-400 ml-1">*</span>}
         </label>
       )}
       <input
@@ -36,16 +37,18 @@ function Input({
         disabled={disabled}
         required={required}
         className={`
-          w-full px-4 py-2.5 rounded-lg border-2
-          ${error ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-coral-400'}
+          w-full px-4 py-3 rounded-xl border
+          ${error ? 'border-red-400 focus:border-red-400' : 'border-platinum-300 focus:border-coral-300'}
           focus:outline-none focus:ring-2
-          ${error ? 'focus:ring-red-200' : 'focus:ring-coral-200'}
-          disabled:bg-gray-100 disabled:cursor-not-allowed
-          transition-colors duration-200
+          ${error ? 'focus:ring-red-100' : 'focus:ring-coral-100'}
+          disabled:bg-platinum-50 disabled:cursor-not-allowed
+          transition-all duration-200
+          placeholder:text-platinum-400
         `}
+        {...rest}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-500">{error}</p>
+        <p className="mt-1.5 text-sm text-red-500">{error}</p>
       )}
     </div>
   );

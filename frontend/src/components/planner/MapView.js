@@ -35,7 +35,7 @@ function MapView({ activities, itinerary }) {
         <div className="w-16 h-16 bg-coral-50 rounded-full flex items-center justify-center mb-4">
           <MapPin size={32} className="text-coral-500" />
         </div>
-        <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-2">
+        <h3 className="text-lg font-semibold text-charcoal-500 mb-2">
           No locations yet
         </h3>
         <p className="text-platinum-600 max-w-sm">
@@ -97,7 +97,7 @@ function MapView({ activities, itinerary }) {
                 <div className="flex items-start gap-2 mb-2">
                   <span className="text-2xl">{getCategoryInfo(selectedActivity.category).emoji}</span>
                   <div>
-                    <h3 className="font-heading font-bold text-charcoal-500 mb-1">
+                    <h3 className="font-semibold text-charcoal-500 mb-1">
                       {selectedActivity.title}
                     </h3>
                     <span className="text-xs text-platinum-600 font-medium">

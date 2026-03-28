@@ -407,7 +407,7 @@ function CreateItineraryPage() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-naples-50">
               <MapPin size={40} className="text-naples-400" />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            <h2 className="text-3xl font-semibold text-charcoal-500 mb-3">
               Where do you want to go?
             </h2>
             <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
@@ -563,7 +563,7 @@ function CreateItineraryPage() {
                 <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 p-8" onClick={(e) => e.stopPropagation()}>
                   <div className="text-center mb-6">
                     <Sparkles size={32} className="mx-auto mb-3 text-coral-500" />
-                    <h3 className="text-2xl font-heading font-bold text-charcoal-500 mb-2">
+                    <h3 className="text-2xl font-semibold text-charcoal-500 mb-2">
                       Let us inspire you!
                     </h3>
                     <p className="text-platinum-600">
@@ -604,7 +604,7 @@ function CreateItineraryPage() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-columbia-100">
               <Plane size={40} className="text-columbia-700" />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            <h2 className="text-3xl font-semibold text-charcoal-500 mb-3">
               Where are you traveling from?
             </h2>
             <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
@@ -664,7 +664,7 @@ function CreateItineraryPage() {
             </div>
 
             {/* Travel mode selection */}
-            <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-4">
+            <h3 className="text-lg font-semibold text-charcoal-500 mb-4">
               How do you want to get there?
             </h3>
             <p className="text-platinum-600 mb-6 text-sm">Optional — helps us plan transport segments</p>
@@ -697,7 +697,7 @@ function CreateItineraryPage() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-columbia-100">
               <Calendar size={40} className="text-columbia-700" />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            <h2 className="text-3xl font-semibold text-charcoal-500 mb-3">
               When are you traveling?
             </h2>
             <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
@@ -791,7 +791,7 @@ function CreateItineraryPage() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-naples-50">
               <Gauge size={40} className="text-naples-400" />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            <h2 className="text-3xl font-semibold text-charcoal-500 mb-3">
               What's your travel pace?
             </h2>
             <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
@@ -833,7 +833,7 @@ function CreateItineraryPage() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-columbia-100">
               <Users size={40} className="text-columbia-700" />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            <h2 className="text-3xl font-semibold text-charcoal-500 mb-3">
               What kind of traveler are you?
             </h2>
             <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
@@ -855,7 +855,7 @@ function CreateItineraryPage() {
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">{profile.emoji}</div>
                     <div className="flex-1">
-                      <div className="font-heading font-bold mb-1">{profile.title}</div>
+                      <div className="font-semibold mb-1">{profile.title}</div>
                       <div className="text-sm text-platinum-600">{profile.description}</div>
                     </div>
                     {formData.travelerProfiles.includes(profile.id) && (
@@ -887,7 +887,7 @@ function CreateItineraryPage() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-naples-50">
               <DollarSign size={40} className="text-naples-400" />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            <h2 className="text-3xl font-semibold text-charcoal-500 mb-3">
               What's your budget?
             </h2>
             <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
@@ -930,7 +930,7 @@ function CreateItineraryPage() {
             <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center bg-naples-50">
               <Sparkles size={48} className="text-naples-400" />
             </div>
-            <h2 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+            <h2 className="text-3xl font-semibold text-charcoal-500 mb-3">
               Ready to create your trip?
             </h2>
             <p className="text-charcoal-400 mb-8 max-w-md mx-auto">
@@ -939,7 +939,7 @@ function CreateItineraryPage() {
 
             {/* Summary */}
             <div className="max-w-lg mx-auto bg-white rounded-2xl border border-platinum-200 p-6 text-left mb-8">
-              <h3 className="font-heading font-bold text-lg mb-4 text-charcoal-500">Trip Summary</h3>
+              <h3 className="font-semibold text-lg mb-4 text-charcoal-500">Trip Summary</h3>
 
               <div className="space-y-3">
                 <div className="flex items-center gap-3">

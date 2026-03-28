@@ -53,6 +53,48 @@ const getDateForDay = (startDate, dayNumber) => {
   return formatDate(date);
 };
 
+const getDayLocationLabels = (activities, days) => {
+  const parseLocation = (loc) => {
+    if (!loc) return [];
+    return loc.split(',').map(s => s.trim()).filter(Boolean);
+  };
+
+  const allCities = new Set();
+  activities.forEach(a => {
+    const parts = parseLocation(a.location);
+    if (parts.length > 0) allCities.add(parts[parts.length - 1]);
+  });
+
+  const labels = {};
+  const singleCity = allCities.size <= 1;
+
+  days.forEach(day => {
+    const dayActivities = activities.filter(a => a.day_number === day);
+    const dayLocations = dayActivities
+      .map(a => parseLocation(a.location))
+      .filter(parts => parts.length > 0);
+
+    if (dayLocations.length === 0) {
+      labels[day] = null;
+      return;
+    }
+
+    if (singleCity) {
+      const areas = [...new Set(
+        dayLocations
+          .filter(parts => parts.length >= 3)
+          .map(parts => parts[parts.length - 2])
+      )];
+      labels[day] = areas.length > 0 ? areas.join(', ') : null;
+    } else {
+      const cities = [...new Set(dayLocations.map(parts => parts[parts.length - 1]))];
+      labels[day] = cities.join(', ');
+    }
+  });
+
+  return labels;
+};
+
 function ItineraryViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -173,6 +215,7 @@ function ItineraryViewPage() {
   if (!itinerary) return null;
 
   const days = Array.from({ length: itinerary.trip_length }, (_, i) => i + 1);
+  const dayLocationLabels = getDayLocationLabels(activities, days);
   const activitiesWithCoords = activities.filter(a => a.latitude && a.longitude);
   const paceInfo = TRAVEL_PACE_OPTIONS.find(p => p.value === itinerary.travel_pace);
   const budgetInfo = BUDGET_OPTIONS.find(b => b.value === itinerary.budget);
@@ -273,7 +316,7 @@ function ItineraryViewPage() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-heading font-bold text-charcoal-500 mb-3">
+          <h1 className="text-4xl font-semibold text-charcoal-500 mb-3">
             {itinerary.title}
           </h1>
           <div className="flex flex-wrap gap-4 text-sm text-platinum-600">
@@ -380,7 +423,7 @@ function ItineraryViewPage() {
             const dayLabel = itinerary.start_date
               ? getDateForDay(itinerary.start_date, day)
               : `Day ${day}`;
-            const cityName = dayActivities[0]?.city_name;
+            const locationLabel = dayLocationLabels[day];
             const accommodation = getAccommodationForDay(day);
 
             return (
@@ -395,11 +438,11 @@ function ItineraryViewPage() {
                       {day}
                     </div>
                     <div>
-                      <h3 className="text-lg font-heading font-bold text-charcoal-500">
+                      <h3 className="text-lg font-semibold text-charcoal-500">
                         {dayLabel}
                       </h3>
-                      {cityName && (
-                        <p className="text-sm text-platinum-600">{cityName}</p>
+                      {locationLabel && (
+                        <p className="text-sm text-platinum-600">{locationLabel}</p>
                       )}
                     </div>
                   </div>

@@ -43,8 +43,8 @@ function ProfilePage() {
   if (!user) {
     return (
       <PageContainer>
-        <div className="text-center py-20">
-          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-4">
+        <div className="text-center py-24">
+          <h1 className="text-2xl text-charcoal-500 mb-5">
             Sign in to view your profile
           </h1>
           <Link to="/login">
@@ -91,18 +91,18 @@ function ProfilePage() {
   return (
     <PageContainer>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-heading font-bold text-charcoal-500 mb-8">
+        <h1 className="text-4xl text-charcoal-500 mb-10">
           My Profile
         </h1>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-8">
           {/* Profile Card */}
           <Card className="md:col-span-1">
             <div className="text-center">
-              <div className="w-24 h-24 bg-coral-400 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">
+              <div className="w-24 h-24 bg-gradient-to-br from-coral-400 to-coral-500 rounded-full mx-auto mb-5 flex items-center justify-center text-2xl font-semibold text-white shadow-md">
                 {initials}
               </div>
-              <h2 className="text-xl font-heading font-bold mb-1">
+              <h2 className="text-xl font-semibold mb-1">
                 {userName}
               </h2>
               <p className="text-sm text-platinum-600 mb-1">{userEmail}</p>
@@ -115,18 +115,18 @@ function ProfilePage() {
 
               {/* Bio */}
               {profile?.bio && (
-                <p className="text-sm text-platinum-600 mt-3 italic">
+                <p className="text-sm text-platinum-600 mt-4 italic leading-relaxed">
                   "{profile.bio}"
                 </p>
               )}
 
               {/* Travel Style Badges */}
               {travelStyleBadges.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
+                <div className="mt-5 flex flex-wrap gap-1.5 justify-center">
                   {travelStyleBadges.map(style => (
                     <span
                       key={style.id}
-                      className="text-xs px-2 py-1 bg-coral-50 text-coral-600 rounded-full"
+                      className="text-xs px-2.5 py-1 bg-coral-50 text-coral-600 rounded-full"
                       title={style.description}
                     >
                       {style.emoji} {style.title.replace('The ', '')}
@@ -138,27 +138,27 @@ function ProfilePage() {
           </Card>
 
           {/* Stats and Itineraries */}
-          <div className="md:col-span-2 space-y-6">
+          <div className="md:col-span-2 space-y-8">
             <Card>
-              <h3 className="text-xl font-heading font-bold mb-4">
+              <h3 className="text-xl font-semibold mb-5">
                 Travel Stats
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div>
-                  <div className="text-3xl font-bold text-coral-500">{totalItineraries}</div>
-                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><Calendar size={14} />Trips</div>
+                <div className="py-3">
+                  <div className="text-3xl font-semibold text-coral-400">{totalItineraries}</div>
+                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1.5 mt-1"><Calendar size={13} />Trips</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-columbia-500">{uniqueDestinations}</div>
-                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><MapPin size={14} />Destinations</div>
+                <div className="py-3">
+                  <div className="text-3xl font-semibold text-columbia-500">{uniqueDestinations}</div>
+                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1.5 mt-1"><MapPin size={13} />Destinations</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-naples-500">{totalDays}</div>
-                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><Clock size={14} />Days Planned</div>
+                <div className="py-3">
+                  <div className="text-3xl font-semibold text-naples-500">{totalDays}</div>
+                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1.5 mt-1"><Clock size={13} />Days Planned</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-green-500">{publishedCount}</div>
-                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1"><Send size={14} />Published</div>
+                <div className="py-3">
+                  <div className="text-3xl font-semibold text-green-500">{publishedCount}</div>
+                  <div className="text-sm text-platinum-600 flex items-center justify-center gap-1.5 mt-1"><Send size={13} />Published</div>
                 </div>
               </div>
             </Card>
@@ -166,31 +166,31 @@ function ProfilePage() {
             {/* Published Itineraries */}
             {publishedItineraries.length > 0 && (
               <Card>
-                <h3 className="text-xl font-heading font-bold mb-4 flex items-center gap-2">
-                  <Globe size={20} className="text-coral-500" />
+                <h3 className="text-xl font-semibold mb-5 flex items-center gap-2.5">
+                  <Globe size={20} className="text-coral-400" />
                   Published to Atlas Network
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   {publishedItineraries.map(it => (
                     <div
                       key={it.id}
-                      className="rounded-xl overflow-hidden border border-platinum-200 hover:border-coral-300 hover:shadow-md transition-all group"
+                      className="rounded-2xl overflow-hidden border border-platinum-200/60 hover:border-coral-200 shadow-card hover:shadow-card-hover transition-all duration-300 group"
                     >
                       <Link to={`/itinerary/${it.id}`}>
-                        <div className="h-24 bg-columbia-100 relative overflow-hidden">
+                        <div className="h-28 bg-columbia-50 relative overflow-hidden">
                           {it.thumbnail_url ? (
-                            <img src={it.thumbnail_url} alt={it.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                            <img src={it.thumbnail_url} alt={it.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-3xl">✈️</div>
                           )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                          <div className="absolute bottom-2 left-2 right-2">
-                            <p className="text-white text-xs font-bold truncate drop-shadow-lg">{it.title || it.destination}</p>
+                          <div className="absolute bottom-2.5 left-3 right-3">
+                            <p className="text-white text-xs font-semibold truncate drop-shadow-lg">{it.title || it.destination}</p>
                           </div>
                         </div>
                       </Link>
-                      <div className="p-2 flex items-center justify-between">
-                        <span className="flex items-center gap-1 text-xs text-platinum-600"><MapPin size={10} />{it.destination}</span>
+                      <div className="p-2.5 flex items-center justify-between">
+                        <span className="flex items-center gap-1 text-xs text-platinum-600"><MapPin size={10} className="text-coral-400" />{it.destination}</span>
                         <button
                           onClick={() => handleUnpublish(it.id)}
                           className="flex items-center gap-1 text-xs text-platinum-500 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
@@ -207,17 +207,17 @@ function ProfilePage() {
             )}
 
             <Card>
-              <h3 className="text-xl font-heading font-bold mb-4">
+              <h3 className="text-xl font-semibold mb-5">
                 My Itineraries
               </h3>
               {loading ? (
-                <div className="flex justify-center py-8">
+                <div className="flex justify-center py-10">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-coral-400"></div>
                 </div>
               ) : itineraries.length === 0 ? (
-                <div className="text-center py-8">
+                <div className="text-center py-10">
                   <div className="text-4xl mb-3">✈️</div>
-                  <p className="text-platinum-600 mb-4">
+                  <p className="text-platinum-600 mb-5">
                     You haven't created any itineraries yet
                   </p>
                   <Link to="/designer/create">
@@ -225,15 +225,15 @@ function ProfilePage() {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-1">
                   {itineraries.map(it => (
                     <Link
                       key={it.id}
                       to={`/designer/planner/${it.id}`}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-platinum-50 transition-colors group"
+                      className="flex items-center justify-between p-3.5 rounded-xl hover:bg-platinum-50 transition-colors group"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-platinum-100 overflow-hidden flex-shrink-0">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-xl bg-platinum-100 overflow-hidden flex-shrink-0">
                           {it.thumbnail_url ? (
                             <img src={it.thumbnail_url} alt="" className="w-full h-full object-cover" />
                           ) : (
@@ -244,14 +244,14 @@ function ProfilePage() {
                           <p className="font-medium text-charcoal-500 group-hover:text-coral-500 transition-colors">
                             {it.title || 'Untitled Trip'}
                           </p>
-                          <p className="text-xs text-platinum-500">
+                          <p className="text-xs text-platinum-500 mt-0.5">
                             {it.destination} · {it.trip_length} days · {new Date(it.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         {it.is_published && (
-                          <span className="text-xs px-2 py-0.5 bg-green-50 text-green-600 rounded-full">Published</span>
+                          <span className="text-xs px-2.5 py-0.5 bg-green-50 text-green-600 rounded-full font-medium">Published</span>
                         )}
                         <span className="text-platinum-400 group-hover:text-coral-400 transition-colors">→</span>
                       </div>

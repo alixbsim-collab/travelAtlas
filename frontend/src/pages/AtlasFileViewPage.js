@@ -151,7 +151,7 @@ function AtlasFileViewPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-4xl md:text-5xl font-heading font-bold text-white mb-4"
+                className="text-4xl md:text-5xl font-semibold text-white mb-4"
               >
                 {atlasFile.title}
               </motion.h1>
@@ -184,7 +184,7 @@ function AtlasFileViewPage() {
                 {config.label}
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4">{atlasFile.title}</h1>
+            <h1 className="text-4xl md:text-5xl font-semibold text-white mb-4">{atlasFile.title}</h1>
             <div className="flex flex-wrap gap-4 text-sm text-white/70">
               {atlasFile.author && <span className="flex items-center gap-1"><User size={16} /><span className="opacity-70">{config.authorPrefix}</span> {atlasFile.author}</span>}
               {atlasFile.destination && <span className="flex items-center gap-1"><MapPin size={16} />{atlasFile.destination}</span>}
@@ -301,10 +301,10 @@ function AtlasFileViewPage() {
             <ScrollReveal key={index} delay={index * 0.05}>
               <div className="mb-14">
                 <div className="flex items-center gap-4 mb-5">
-                  <div className={`w-12 h-12 rounded-full ${config.dayCircle.bg} ${config.dayCircle.text} flex items-center justify-center font-heading font-bold text-lg flex-shrink-0`}>
+                  <div className={`w-12 h-12 rounded-full ${config.dayCircle.bg} ${config.dayCircle.text} flex items-center justify-center font-semibold text-lg flex-shrink-0`}>
                     {index + 1}
                   </div>
-                  <h2 className={`text-2xl font-heading font-bold text-charcoal-500 pb-2 border-b ${config.sectionDivider} flex-1`}>
+                  <h2 className={`text-2xl font-semibold text-charcoal-500 pb-2 border-b ${config.sectionDivider} flex-1`}>
                     {day.title}
                   </h2>
                 </div>
@@ -338,7 +338,7 @@ function AtlasFileViewPage() {
           {content.tips && (
             <ScrollReveal>
               <div className={`mb-12 ${config.tipsSection.bg} rounded-2xl p-6 border ${config.tipsSection.border}`}>
-                <h2 className="text-2xl font-heading font-bold text-charcoal-500 mb-4">
+                <h2 className="text-2xl font-semibold text-charcoal-500 mb-4">
                   Travel Tips
                 </h2>
                 <div

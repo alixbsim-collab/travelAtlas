@@ -90,6 +90,56 @@ const createDayIcon = (dayNumber) => {
   });
 };
 
+/**
+ * Compute a location label for each day based on activity locations.
+ * - If activities span multiple cities → show city per day
+ * - If all in the same city → show area/neighborhood per day (when available)
+ */
+const getDayLocationLabels = (activities, days) => {
+  const parseLocation = (loc) => {
+    if (!loc) return [];
+    return loc.split(',').map(s => s.trim()).filter(Boolean);
+  };
+
+  // Collect all "city-level" locations (last segment) across all days
+  const allCities = new Set();
+  activities.forEach(a => {
+    const parts = parseLocation(a.location);
+    if (parts.length > 0) allCities.add(parts[parts.length - 1]);
+  });
+
+  const labels = {};
+  const singleCity = allCities.size <= 1;
+
+  days.forEach(day => {
+    const dayActivities = activities.filter(a => a.day_number === day);
+    const dayLocations = dayActivities
+      .map(a => parseLocation(a.location))
+      .filter(parts => parts.length > 0);
+
+    if (dayLocations.length === 0) {
+      labels[day] = null;
+      return;
+    }
+
+    if (singleCity) {
+      // Same city → show areas/neighborhoods (second-to-last segment)
+      const areas = [...new Set(
+        dayLocations
+          .filter(parts => parts.length >= 3)
+          .map(parts => parts[parts.length - 2])
+      )];
+      labels[day] = areas.length > 0 ? areas.join(', ') : null;
+    } else {
+      // Different cities → show city names (last segment)
+      const cities = [...new Set(dayLocations.map(parts => parts[parts.length - 1]))];
+      labels[day] = cities.join(', ');
+    }
+  });
+
+  return labels;
+};
+
 // Sortable Activity Component for Overview
 function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
   const [editingNotes, setEditingNotes] = useState(false);
@@ -154,7 +204,7 @@ function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="font-heading font-bold hover:text-coral-500 transition-colors"
+                className="font-semibold hover:text-coral-500 transition-colors"
               >
                 {activity.title}
               </a>
@@ -257,7 +307,7 @@ function NotesModal({ activity, onClose, onSave }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-platinum-200">
-          <h3 className="text-lg font-heading font-bold text-charcoal-500">
+          <h3 className="text-lg font-semibold text-charcoal-500">
             Notes for {activity.title}
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-platinum-200 rounded">
@@ -330,7 +380,7 @@ function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-platinum-200 sticky top-0 bg-white">
-          <h3 className="text-lg font-heading font-bold text-charcoal-500">
+          <h3 className="text-lg font-semibold text-charcoal-500">
             Add Activity to {dayLabel}
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-platinum-200 rounded">
@@ -1089,7 +1139,7 @@ function PlannerPage() {
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           </div>
 
-          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-1">
+          <h1 className="text-2xl font-semibold text-charcoal-500 mb-1">
             {itinerary.destination}
           </h1>
           <p className="text-sm text-platinum-500 mb-6">
@@ -1120,7 +1170,7 @@ function PlannerPage() {
             <span className="text-3xl">⏳</span>
           </div>
 
-          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-3">
+          <h1 className="text-3xl font-semibold text-charcoal-500 mb-3">
             Taking Longer Than Usual
           </h1>
           <p className="text-charcoal-400 mb-6 max-w-sm mx-auto">
@@ -1208,7 +1258,7 @@ function PlannerPage() {
           <div className="w-12 h-12 bg-columbia-100 rounded-full flex items-center justify-center mx-auto mb-3">
             <HotelIcon size={24} className="text-columbia-600" />
           </div>
-          <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-1">
+          <h3 className="text-lg font-semibold text-charcoal-500 mb-1">
             {hotelDropPrompt.hotel.name}
           </h3>
           <p className="text-sm text-platinum-600 mb-4">
@@ -1258,6 +1308,7 @@ function PlannerPage() {
   );
 
   const days = Array.from({ length: itinerary.trip_length }, (_, i) => i + 1);
+  const dayLocationLabels = getDayLocationLabels(activities, days);
   const activitiesWithCoords = activities.filter(a => a.latitude && a.longitude);
   const filteredActivities = selectedDay === 'all'
     ? activitiesWithCoords
@@ -1281,7 +1332,7 @@ function PlannerPage() {
             </button>
 
             <div>
-              <h1 className="text-xl font-heading font-bold text-charcoal-500">
+              <h1 className="text-xl font-semibold text-charcoal-500">
                 {itinerary.title}
               </h1>
               <p className="text-sm text-platinum-600">
@@ -1427,11 +1478,11 @@ function PlannerPage() {
                       {days.map(day => {
                         const dayActivities = activities.filter(a => a.day_number === day);
                         const isDragOver = dragOverDay === day;
-                        const cityName = dayActivities[0]?.city_name || null;
+                        const locationLabel = dayLocationLabels[day];
                         const dayLabel = itinerary.start_date
                           ? `${getDateForDay(itinerary.start_date, day)}`
                           : `Day ${day}`;
-                        const dayHeader = cityName ? `${dayLabel} — ${cityName}` : dayLabel;
+                        const dayHeader = locationLabel ? `${dayLabel} — ${locationLabel}` : dayLabel;
                         const skeletonCount = itinerary.travel_pace === 'relaxed' ? 2 : itinerary.travel_pace === 'packed' ? 4 : 3;
                         const dayAccommodation = getAccommodationForDay(day);
                         return (
@@ -1447,7 +1498,7 @@ function PlannerPage() {
                             onDragLeave={handleDragLeave}
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <h3 className="text-lg font-heading font-bold text-charcoal-500">
+                              <h3 className="text-lg font-semibold text-charcoal-500">
                                 {dayHeader}
                               </h3>
                               <button
@@ -1573,7 +1624,7 @@ function PlannerPage() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <Navigation className="text-coral-500" size={18} />
-                        <h3 className="font-heading font-bold text-charcoal-500 text-sm">
+                        <h3 className="font-semibold text-charcoal-500 text-sm">
                           Journey Overview
                         </h3>
                       </div>
@@ -1599,11 +1650,10 @@ function PlannerPage() {
                       </button>
                       {days.map(day => {
                         const count = activitiesWithCoords.filter(a => a.day_number === day).length;
-                        const dayCity = activities.find(a => a.day_number === day)?.city_name;
                         const dateLabel = itinerary.start_date
                           ? getDateForDay(itinerary.start_date, day)
                           : `Day ${day}`;
-                        const buttonLabel = dayCity ? `${dateLabel} — ${dayCity}` : dateLabel;
+                        const buttonLabel = dayLocationLabels[day] ? `${dateLabel} — ${dayLocationLabels[day]}` : dateLabel;
                         return (
                           <button
                             key={day}
@@ -1626,7 +1676,7 @@ function PlannerPage() {
                         <div className="w-12 h-12 bg-coral-50 rounded-full flex items-center justify-center mb-3">
                           <Globe size={24} className="text-coral-500" />
                         </div>
-                        <h3 className="text-base font-heading font-bold text-charcoal-500 mb-1">
+                        <h3 className="text-base font-semibold text-charcoal-500 mb-1">
                           No locations yet
                         </h3>
                         <p className="text-sm text-platinum-600">
@@ -1790,7 +1840,7 @@ function PlannerPage() {
                       <div className="flex-1 flex items-center justify-center bg-platinum-50">
                         <div className="text-center p-8">
                           <MapIcon size={48} className="mx-auto mb-4 text-platinum-500" />
-                          <h3 className="text-lg font-heading font-bold text-charcoal-500 mb-2">
+                          <h3 className="text-lg font-semibold text-charcoal-500 mb-2">
                             No locations to show yet
                           </h3>
                           <p className="text-sm text-platinum-600">
@@ -1834,6 +1884,7 @@ function PlannerPage() {
 // Build printable HTML for PDF export
 function buildPrintableHTML(itinerary, activities, accommodations) {
   const days = Array.from({ length: itinerary.trip_length }, (_, i) => i + 1);
+  const pdfLocationLabels = getDayLocationLabels(activities, days);
   const DAY_COLORS_PDF = [
     '#EF8557', '#4A7B91', '#FFDB70', '#2C4251', '#BBD3DD',
     '#C85A2E', '#7DADC1', '#F0C84D', '#386074', '#DEE3E1'
@@ -1865,13 +1916,13 @@ function buildPrintableHTML(itinerary, activities, accommodations) {
   days.forEach(day => {
     const dayActivities = activities.filter(a => a.day_number === day);
     const label = dayDate(itinerary.start_date, day);
-    const city = dayActivities[0]?.city_name;
+    const locationLabel = pdfLocationLabels[day];
 
     html += `
       <div style="margin-bottom: 24px; page-break-inside: avoid;">
         <div style="background: #F5F3F0; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid ${DAY_COLORS_PDF[(day - 1) % DAY_COLORS_PDF.length]};">
           <strong style="font-size: 16px;">Day ${day} — ${label}</strong>
-          ${city ? `<span style="color: #71717A; font-size: 13px; margin-left: 8px;">${city}</span>` : ''}
+          ${locationLabel ? `<span style="color: #71717A; font-size: 13px; margin-left: 8px;">${locationLabel}</span>` : ''}
         </div>
     `;
 

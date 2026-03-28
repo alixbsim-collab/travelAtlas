@@ -307,7 +307,7 @@ function AtlasFileEditorPage() {
             value={formData.title}
             onChange={(e) => handleFieldChange('title', e.target.value)}
             placeholder="Give your atlas file a title..."
-            className="w-full text-3xl md:text-4xl font-heading font-bold text-charcoal-500 bg-transparent border-none focus:outline-none placeholder:text-platinum-400 mb-3"
+            className="w-full text-3xl md:text-4xl font-semibold text-charcoal-500 bg-transparent border-none focus:outline-none placeholder:text-platinum-400 mb-3"
           />
           <textarea
             value={formData.description}
@@ -343,7 +343,7 @@ function AtlasFileEditorPage() {
 
         {/* Introduction */}
         <div className="mb-10 bg-white rounded-2xl border border-platinum-200 p-6 shadow-sm">
-          <h2 className="text-xl font-heading font-bold text-charcoal-500 mb-3 flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-charcoal-500 mb-3 flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-naples-400 flex items-center justify-center text-charcoal-500 text-sm" style={{ fontFamily: "'Fredoka', sans-serif" }}>i</span>
             Introduction
           </h2>
@@ -357,7 +357,7 @@ function AtlasFileEditorPage() {
         {/* Day-by-Day Sections */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-heading font-bold text-charcoal-500">Your Journey</h2>
+            <h2 className="text-xl font-semibold text-charcoal-500">Your Journey</h2>
             <Button variant="accent" size="sm" onClick={addDay} className="gap-2">
               <Plus size={16} />
               Add Day
@@ -378,7 +378,7 @@ function AtlasFileEditorPage() {
                       type="text"
                       value={day.title}
                       onChange={(e) => handleDayChange(index, 'title', e.target.value)}
-                      className="text-lg font-heading font-bold bg-transparent border-b-2 border-transparent hover:border-platinum-300 focus:border-coral-400 focus:outline-none px-1 py-0.5 flex-1 text-charcoal-500"
+                      className="text-lg font-semibold bg-transparent border-b-2 border-transparent hover:border-platinum-300 focus:border-coral-400 focus:outline-none px-1 py-0.5 flex-1 text-charcoal-500"
                     />
                     {days.length > 1 && (
                       <button
@@ -443,7 +443,7 @@ function AtlasFileEditorPage() {
 
         {/* Tips Section */}
         <div className="mb-10 bg-white rounded-2xl border border-platinum-200 p-6 shadow-sm">
-          <h2 className="text-xl font-heading font-bold text-charcoal-500 mb-3 flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-charcoal-500 mb-3 flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-columbia-600 flex items-center justify-center text-white text-sm">&#9733;</span>
             Travel Tips
           </h2>

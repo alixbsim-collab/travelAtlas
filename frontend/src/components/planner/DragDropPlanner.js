@@ -62,7 +62,7 @@ function SortableActivity({ activity, onEdit, onDelete }) {
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 flex-1">
               <span className="text-xl">{categoryInfo.emoji}</span>
-              <h4 className="font-heading font-bold">{activity.title}</h4>
+              <h4 className="font-semibold">{activity.title}</h4>
             </div>
             <div className="flex gap-1">
               <button
@@ -140,7 +140,7 @@ function DayBlock({ day, activities, onAddActivity, onEditActivity, onDeleteActi
       onDragOver={handleDragOver}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-heading font-bold text-charcoal-500">
+        <h3 className="text-lg font-semibold text-charcoal-500">
           Day {day}
         </h3>
         <button
@@ -290,7 +290,7 @@ function DragDropPlanner({ itinerary, activities, setActivities }) {
       {/* Header */}
       <div className="p-4 border-b border-platinum-200">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-heading font-bold text-charcoal-500">
+          <h2 className="text-xl font-semibold text-charcoal-500">
             Your Itinerary
           </h2>
 

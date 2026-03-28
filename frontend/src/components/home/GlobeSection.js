@@ -118,7 +118,7 @@ function GlobeSection() {
       <div className="container mx-auto px-4">
         <ScrollReveal>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-semibold text-white mb-4">
               Explore the World
             </h2>
             <p className="text-columbia-300 text-lg max-w-xl mx-auto">

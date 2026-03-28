@@ -110,8 +110,23 @@ module.exports = {
         },
       },
       fontFamily: {
-        heading: ['DM Serif Display', 'serif'],
-        body: ['Inter', 'sans-serif'],
+        heading: ['Fredoka', 'sans-serif'],
+        body: ['Fredoka', 'sans-serif'],
+      },
+      spacing: {
+        '18': '4.5rem',
+        '22': '5.5rem',
+      },
+      borderRadius: {
+        '4xl': '2rem',
+      },
+      boxShadow: {
+        'card': '0 1px 3px rgba(44,66,81,0.06), 0 4px 12px rgba(44,66,81,0.04)',
+        'card-hover': '0 8px 30px rgba(44,66,81,0.12), 0 2px 8px rgba(44,66,81,0.06)',
+        'button': '0 2px 8px rgba(224,110,60,0.25)',
+        'button-hover': '0 4px 16px rgba(224,110,60,0.35)',
+        'nav': '0 1px 2px rgba(44,66,81,0.05)',
+        'elevated': '0 12px 40px -8px rgba(44,66,81,0.15)',
       },
     },
   },

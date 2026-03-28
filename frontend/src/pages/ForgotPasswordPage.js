@@ -36,11 +36,11 @@ function ForgotPasswordPage() {
   if (success) {
     return (
       <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <Card className="w-full max-w-md text-center">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#D1FAE5' }}>
-            <CheckCircle size={32} style={{ color: '#10B981' }} />
+        <Card className="w-full max-w-md text-center !p-8">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center bg-green-50">
+            <CheckCircle size={30} className="text-green-500" />
           </div>
-          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-3">
+          <h1 className="text-2xl font-semibold text-charcoal-500 mb-3">
             Check Your Email
           </h1>
           <p className="text-platinum-600 mb-6">
@@ -67,17 +67,17 @@ function ForgotPasswordPage() {
 
   return (
     <PageContainer className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-      <Card className="w-full max-w-md">
-        <Link to="/login" className="inline-flex items-center gap-2 text-platinum-600 hover:text-coral-500 mb-6 text-sm">
+      <Card className="w-full max-w-md !p-8">
+        <Link to="/login" className="inline-flex items-center gap-2 text-platinum-600 hover:text-coral-500 mb-6 text-sm transition-colors">
           <ArrowLeft size={16} />
           Back to Sign In
         </Link>
 
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
-            <Mail size={28} style={{ color: '#FFDB70' }} />
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 mx-auto mb-5 rounded-full flex items-center justify-center bg-naples-100">
+            <Mail size={26} className="text-naples-500" />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-charcoal-500 mb-2">
+          <h1 className="text-3xl font-semibold text-charcoal-500 mb-2">
             Forgot Password?
           </h1>
           <p className="text-platinum-600">
@@ -85,9 +85,9 @@ function ForgotPasswordPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
@@ -106,9 +106,9 @@ function ForgotPasswordPage() {
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
+        <div className="mt-8 text-center text-sm">
           <span className="text-platinum-600">Remember your password? </span>
-          <Link to="/login" className="text-coral-500 hover:text-coral-500 font-medium">
+          <Link to="/login" className="text-coral-500 hover:text-coral-600 font-medium transition-colors">
             Sign in
           </Link>
         </div>

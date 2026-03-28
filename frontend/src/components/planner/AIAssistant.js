@@ -255,7 +255,7 @@ function AIAssistant({ itinerary, accommodations, activities, onActionExecuted, 
       <div className="p-4 border-b border-platinum-200 bg-charcoal-500">
         <div className="flex items-center gap-2 text-white">
           <Sparkles size={24} className="text-naples-400" />
-          <h2 className="text-xl font-heading font-bold">Travel Assistant</h2>
+          <h2 className="text-xl font-semibold">Travel Assistant</h2>
         </div>
         <p className="text-sm text-white/70 mt-1">
           Ask me to adjust your itinerary or add specific activities

@@ -8,7 +8,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import ScrollReveal from '../components/ui/ScrollReveal';
-import { PlusCircle, MapPin, Calendar, User, Edit, Trash2, GitFork, Copy, MoreVertical, Globe, Lock, Award } from 'lucide-react';
+import { PlusCircle, Calendar, User, Edit, Trash2, GitFork, Copy, MoreVertical, Globe, Lock, Award } from 'lucide-react';
 import { getSourceConfig } from '../constants/sourceTypeConfig';
 
 function AtlasFileCard({ file, isOwner, onDelete, onDuplicate, onFork }) {
@@ -20,18 +20,18 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate, onFork }) {
     <div className="relative group">
       <Link to={`/atlas/${file.id}`}>
         <Card hover className={`flex flex-col h-full p-0 overflow-hidden ${sourceConfig.cardAccent}`}>
-          <div className="h-44 overflow-hidden">
+          <div className="h-48 overflow-hidden">
             {file.cover_image_url ? (
               <motion.img
                 src={file.cover_image_url}
                 alt={file.title}
                 className="w-full h-full object-cover"
                 whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4 }}
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-columbia-300 to-coral-400 flex items-center justify-center">
-                <span className="text-6xl">📖</span>
+              <div className="w-full h-full bg-gradient-to-br from-columbia-200 to-coral-300 flex items-center justify-center">
+                <span className="text-5xl">📖</span>
               </div>
             )}
           </div>
@@ -53,7 +53,12 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate, onFork }) {
                 </span>
               )}
             </div>
-            <h3 className="text-xl font-heading font-bold line-clamp-2 text-charcoal-500 mb-2">
+            {file.destination && (
+              <p className="text-xs font-semibold uppercase tracking-wide text-platinum-500 mb-1">
+                {file.destination}
+              </p>
+            )}
+            <h3 className="text-xl font-semibold line-clamp-2 text-charcoal-500 mb-2">
               {file.title}
             </h3>
             {file.description && (
@@ -64,9 +69,6 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate, onFork }) {
             <div className="flex flex-wrap gap-3 text-sm text-platinum-600">
               {file.author && (
                 <span className="flex items-center gap-1"><User size={14} />{file.author}</span>
-              )}
-              {file.destination && (
-                <span className="flex items-center gap-1"><MapPin size={14} />{file.destination}</span>
               )}
               {file.trip_length && (
                 <span className="flex items-center gap-1"><Calendar size={14} />{file.trip_length}d</span>
@@ -92,7 +94,7 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate, onFork }) {
         {menuOpen && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-            <div className="absolute right-0 top-10 z-20 bg-white rounded-xl shadow-lg border border-platinum-200 py-1 w-40">
+            <div className="absolute right-0 top-10 z-20 bg-white rounded-2xl shadow-elevated border border-platinum-100 py-1.5 w-44">
               {isOwner && (
                 <Link
                   to={`/atlas/edit/${file.id}`}
@@ -254,9 +256,9 @@ function AtlasFilesPage() {
     <PageContainer>
       <div className="max-w-6xl mx-auto">
         <ScrollReveal>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-10">
             <div>
-              <h1 className="text-4xl font-heading font-bold text-charcoal-500 mb-2">
+              <h1 className="text-4xl text-charcoal-500 mb-2">
                 Atlas Files
               </h1>
               <p className="text-lg text-platinum-600">
@@ -276,18 +278,18 @@ function AtlasFilesPage() {
 
         {/* My Travel Stories (logged in only) */}
         {user && (
-          <section className="mb-12">
+          <section className="mb-14">
             <ScrollReveal>
-              <h2 className="text-2xl font-heading font-bold text-charcoal-500 mb-6">
+              <h2 className="text-2xl text-charcoal-500 mb-8">
                 My Travel Stories
               </h2>
             </ScrollReveal>
 
             {myFiles.length === 0 ? (
               <Card>
-                <div className="text-center py-12">
+                <div className="text-center py-14">
                   <div className="text-5xl mb-4">📝</div>
-                  <h3 className="text-xl font-heading font-bold mb-2 text-charcoal-500">
+                  <h3 className="text-xl font-semibold mb-2 text-charcoal-500">
                     No stories yet
                   </h3>
                   <p className="text-platinum-600 max-w-md mx-auto mb-6">
@@ -321,7 +323,7 @@ function AtlasFilesPage() {
         {/* Explore */}
         <section>
           <ScrollReveal>
-            <h2 className="text-2xl font-heading font-bold text-charcoal-500 mb-6">
+            <h2 className="text-2xl text-charcoal-500 mb-8">
               Explore
             </h2>
           </ScrollReveal>
@@ -329,8 +331,8 @@ function AtlasFilesPage() {
           {exploreFiles.length === 0 ? (
             <Card>
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">📚</div>
-                <h2 className="text-2xl font-heading font-bold mb-3 text-charcoal-500">
+                <div className="text-5xl mb-4">📚</div>
+                <h2 className="text-2xl font-semibold mb-3 text-charcoal-500">
                   No Stories to Explore Yet
                 </h2>
                 <p className="text-platinum-600 max-w-md mx-auto mb-6">
@@ -352,8 +354,8 @@ function AtlasFilesPage() {
               {exploreFiles.some(f => f.source_type === 'curated') && (
                 <div className="mb-10">
                   <ScrollReveal>
-                    <h3 className="text-lg font-heading font-bold text-charcoal-400 mb-4 flex items-center gap-2">
-                      <Award size={18} className="text-columbia-600" />
+                    <h3 className="text-lg font-semibold text-charcoal-400 mb-5 flex items-center gap-2">
+                      <Award size={18} className="text-columbia-500" />
                       Curated by Travel Atlas
                     </h3>
                   </ScrollReveal>
@@ -377,7 +379,7 @@ function AtlasFilesPage() {
               {exploreFiles.some(f => f.source_type !== 'curated') && (
                 <div>
                   <ScrollReveal>
-                    <h3 className="text-lg font-heading font-bold text-charcoal-400 mb-4 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-charcoal-400 mb-5 flex items-center gap-2">
                       <Globe size={18} className="text-naples-500" />
                       From the Community
                     </h3>

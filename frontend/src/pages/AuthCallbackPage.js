@@ -51,7 +51,7 @@ function AuthCallbackPage() {
       <PageContainer>
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
           <div className="text-5xl mb-6">😕</div>
-          <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-2">
+          <h1 className="text-2xl font-semibold text-charcoal-500 mb-2">
             Verification Failed
           </h1>
           <p className="text-platinum-600 max-w-md mb-6">{error}</p>
@@ -70,7 +70,7 @@ function AuthCallbackPage() {
     <PageContainer>
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-400 mb-6"></div>
-        <h1 className="text-2xl font-heading font-bold text-charcoal-500 mb-2">
+        <h1 className="text-2xl font-semibold text-charcoal-500 mb-2">
           {status}
         </h1>
         <p className="text-platinum-600">
