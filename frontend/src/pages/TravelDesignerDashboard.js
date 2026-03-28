@@ -285,6 +285,7 @@ function TravelDesignerDashboard() {
       .from('itineraries')
       .select('id, title, destination, trip_length, travel_pace, budget, thumbnail_url, created_at, user_id')
       .eq('is_published', true)
+      .eq('moderation_status', 'approved')
       .order('created_at', { ascending: false })
       .limit(12);
 

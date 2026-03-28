@@ -57,6 +57,7 @@ function AdminDashboardPage() {
   const [allAtlas, setAllAtlas] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -97,12 +98,14 @@ function AdminDashboardPage() {
   };
 
   const fetchUsers = async () => {
+    setUsersLoading(true);
     try {
       const data = await getUsers();
       setUsers(data || []);
     } catch (err) {
       console.error('Error fetching users:', err);
     }
+    setUsersLoading(false);
   };
 
   const handleTabChange = (tab) => {
@@ -358,8 +361,10 @@ function AdminDashboardPage() {
         {/* TAB: Users */}
         {activeTab === 'users' && (
           <div>
-            {users.length === 0 ? (
-              <Card><p className="text-platinum-600 text-center py-8">Loading users...</p></Card>
+            {usersLoading ? (
+              <Card><div className="flex items-center justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-coral-400" /></div></Card>
+            ) : users.length === 0 ? (
+              <Card><p className="text-platinum-600 text-center py-8">No users found</p></Card>
             ) : (
               <div className="space-y-2">
                 <div className="grid grid-cols-12 gap-4 px-5 py-2 text-xs font-medium text-platinum-500 uppercase tracking-wider">

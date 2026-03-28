@@ -739,11 +739,11 @@ function PlannerPage() {
     try {
       const { error } = await supabase
         .from('itineraries')
-        .update({ updated_at: new Date().toISOString(), is_published: true })
+        .update({ updated_at: new Date().toISOString(), is_published: true, moderation_status: 'pending' })
         .eq('id', id);
       if (error) throw error;
       setIsPublished(true);
-      alert('Itinerary saved & published!');
+      alert('Itinerary saved! It will be visible to the community once approved by an admin.');
     } catch (error) {
       console.error('Error saving itinerary:', error);
       alert('Failed to save itinerary');
@@ -867,7 +867,7 @@ function PlannerPage() {
     if (!isPublished) {
       const { error } = await supabase
         .from('itineraries')
-        .update({ is_published: true })
+        .update({ is_published: true, moderation_status: 'pending' })
         .eq('id', id);
       if (!error) setIsPublished(true);
     }
@@ -881,7 +881,7 @@ function PlannerPage() {
     if (!isPublished) {
       const { error } = await supabase
         .from('itineraries')
-        .update({ is_published: true })
+        .update({ is_published: true, moderation_status: 'pending' })
         .eq('id', id);
       if (!error) setIsPublished(true);
     }
@@ -895,7 +895,7 @@ function PlannerPage() {
     if (!isPublished) {
       const { error } = await supabase
         .from('itineraries')
-        .update({ is_published: true })
+        .update({ is_published: true, moderation_status: 'pending' })
         .eq('id', id);
       if (!error) setIsPublished(true);
     }

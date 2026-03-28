@@ -221,29 +221,20 @@ router.get('/users', async (_req: AuthenticatedRequest, res: Response) => {
       orderBy: { created_at: 'desc' },
     });
 
-    // Get content counts per user
-    const userIds = users.map(u => u.id);
-    const [atlasCounts, itineraryCounts] = await Promise.all([
-      prisma.atlasFile.groupBy({
-        by: ['author_id'],
-        where: { author_id: { in: userIds } },
-        _count: true,
-      }),
-      prisma.itinerary.groupBy({
-        by: ['user_id'],
-        where: { user_id: { in: userIds } },
-        _count: true,
-      }),
-    ]);
-
-    const atlasMap = new Map(atlasCounts.map(c => [c.author_id, c._count]));
-    const itineraryMap = new Map(itineraryCounts.map(c => [c.user_id, c._count]));
-
-    const enriched = users.map(u => ({
-      ...u,
-      atlas_count: atlasMap.get(u.id) || 0,
-      itinerary_count: itineraryMap.get(u.id) || 0,
-    }));
+    // Get content counts per user with individual count queries
+    const enriched = await Promise.all(
+      users.map(async (u) => {
+        const [atlasCount, itineraryCount] = await Promise.all([
+          prisma.atlasFile.count({ where: { author_id: u.id } }),
+          prisma.itinerary.count({ where: { user_id: u.id } }),
+        ]);
+        return {
+          ...u,
+          atlas_count: atlasCount,
+          itinerary_count: itineraryCount,
+        };
+      })
+    );
 
     res.json({ data: enriched });
   } catch (error: any) {
