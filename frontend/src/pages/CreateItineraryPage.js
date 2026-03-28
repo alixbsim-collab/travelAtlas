@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { TRAVELER_PROFILES, TRAVEL_PACE_OPTIONS, BUDGET_OPTIONS } from '../constants/travelerProfiles';
-import { MapPin, Calendar, Users, DollarSign, Gauge, Sparkles, ArrowRight, ArrowLeft, Check, Search, X, Globe, BookOpen, Plane, Train, Car, Shuffle } from 'lucide-react';
+import { MapPin, Calendar, Users, DollarSign, Gauge, Sparkles, ArrowRight, ArrowLeft, Check, Search, X, Globe, BookOpen, Plane, Train, Car, Shuffle, Map as MapIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
@@ -99,7 +99,7 @@ function CreateItineraryPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mapbox geocoding search helper
+  // Mapbox geocoding search helper — returns hierarchical results (country/region/city)
   const searchMapbox = async (query, setter) => {
     if (!query || query.length < 2 || !MAPBOX_TOKEN) {
       setter([]);
@@ -107,13 +107,29 @@ function CreateItineraryPage() {
     }
     try {
       const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&types=place,country,region&limit=6&language=en`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&types=place,country,region,locality&limit=8&language=en&autocomplete=true`
       );
       const data = await res.json();
-      const results = (data.features || []).map(f => ({
-        name: f.place_type[0] === 'country' ? f.text : f.place_name,
-        type: f.place_type[0] === 'country' ? 'country' : 'city',
-      }));
+      const queryLower = query.toLowerCase();
+      const results = (data.features || []).map(f => {
+        const placeType = f.place_type[0];
+        let typeLabel = 'city';
+        if (placeType === 'country') typeLabel = 'country';
+        else if (placeType === 'region') typeLabel = 'region';
+        return {
+          name: placeType === 'country' ? f.text : f.place_name,
+          shortName: f.text,
+          type: typeLabel,
+        };
+      });
+      // Sort: exact matches first, then by type hierarchy (country > region > city)
+      const typeOrder = { country: 0, region: 1, city: 2 };
+      results.sort((a, b) => {
+        const aExact = a.shortName.toLowerCase().startsWith(queryLower) ? 0 : 1;
+        const bExact = b.shortName.toLowerCase().startsWith(queryLower) ? 0 : 1;
+        if (aExact !== bExact) return aExact - bExact;
+        return (typeOrder[a.type] || 2) - (typeOrder[b.type] || 2);
+      });
       setter(results);
     } catch {
       setter([]);
@@ -285,44 +301,23 @@ function CreateItineraryPage() {
         return;
       }
 
-      // Build insert object (trip_origin and travel_mode require DB migration)
-      const insertData = {
-        user_id: user.id,
-        title: `${formData.destination} - ${formData.tripLength} days`,
-        destination: formData.destination,
-        trip_length: formData.tripLength,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
-        travel_pace: formData.travelPace,
-        budget: formData.budget,
-        traveler_profiles: formData.travelerProfiles,
-      };
-
-      // Try with new columns first, fall back without them
-      let itinerary, error;
-      const resultWithCols = await supabase
+      const { data: itinerary, error } = await supabase
         .from('itineraries')
         .insert({
-          ...insertData,
+          user_id: user.id,
+          title: `${formData.destination} - ${formData.tripLength} days`,
+          destination: formData.destination,
+          trip_length: formData.tripLength,
+          start_date: formData.startDate,
+          end_date: formData.endDate,
+          travel_pace: formData.travelPace,
+          budget: formData.budget,
+          traveler_profiles: formData.travelerProfiles,
           trip_origin: formData.tripOrigin || null,
-          travel_mode: formData.travelMode || null
+          travel_mode: formData.travelMode || null,
         })
         .select()
         .single();
-
-      if (resultWithCols.error) {
-        // Columns may not exist yet — retry without them
-        const resultWithout = await supabase
-          .from('itineraries')
-          .insert(insertData)
-          .select()
-          .single();
-        itinerary = resultWithout.data;
-        error = resultWithout.error;
-      } else {
-        itinerary = resultWithCols.data;
-        error = resultWithCols.error;
-      }
 
       if (error) throw error;
 
@@ -516,13 +511,15 @@ function CreateItineraryPage() {
                     >
                       {dest.type === 'country' ? (
                         <Globe size={18} className="text-platinum-500" />
+                      ) : dest.type === 'region' ? (
+                        <MapIcon size={18} className="text-platinum-500" />
                       ) : (
                         <MapPin size={18} className="text-platinum-500" />
                       )}
                       <span>{dest.name}</span>
-                      {dest.type === 'country' && (
-                        <span className="text-xs text-platinum-500 ml-auto">Country</span>
-                      )}
+                      <span className="text-xs bg-platinum-100 text-platinum-600 rounded px-2 py-0.5 ml-auto capitalize">
+                        {dest.type}
+                      </span>
                     </button>
                   ))}
                   {/* Show hint when no matches found but user typed something */}
@@ -645,10 +642,15 @@ function CreateItineraryPage() {
                     >
                       {dest.type === 'country' ? (
                         <Globe size={18} className="text-platinum-500" />
+                      ) : dest.type === 'region' ? (
+                        <MapIcon size={18} className="text-platinum-500" />
                       ) : (
                         <MapPin size={18} className="text-platinum-500" />
                       )}
                       <span>{dest.name}</span>
+                      <span className="text-xs bg-platinum-100 text-platinum-600 rounded px-2 py-0.5 ml-auto capitalize">
+                        {dest.type}
+                      </span>
                     </button>
                   ))}
                 </div>

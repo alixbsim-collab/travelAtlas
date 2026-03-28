@@ -128,7 +128,9 @@ function AIAssistant({ itinerary, accommodations, activities, onActionExecuted, 
             tripLength: itinerary.trip_length,
             travelPace: itinerary.travel_pace,
             budget: itinerary.budget,
-            travelerProfiles: itinerary.traveler_profiles
+            travelerProfiles: itinerary.traveler_profiles,
+            tripOrigin: itinerary.trip_origin || null,
+            travelMode: itinerary.travel_mode || null,
           },
           currentActivities: activitySummary
         })

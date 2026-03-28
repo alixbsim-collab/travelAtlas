@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import AIAssistant from '../components/planner/AIAssistant';
-import SkeletonActivityCard from '../components/planner/SkeletonActivityCard';
+import LeftPanel from '../components/planner/LeftPanel';
+import OverviewView from '../components/planner/OverviewView';
+import TimelineView from '../components/planner/TimelineView';
+import MapPanel from '../components/planner/MapPanel';
 import Button from '../components/ui/Button';
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, Plus, Trash2, Edit, GripVertical, Navigation, ExternalLink, Globe, X, MessageSquare, PanelLeftClose, PanelLeftOpen, Link2, MessageCircle, Check, Hotel as HotelIcon } from 'lucide-react';
+import { Save, Share2, Download, ArrowLeft, LayoutGrid, List, Map as MapIcon, X, PanelLeftClose, PanelLeftOpen, Link2, MessageCircle, Check, Hotel as HotelIcon } from 'lucide-react';
 import { ACTIVITY_CATEGORIES } from '../constants/travelerProfiles';
 import {
-  DndContext,
-  DragOverlay,
-  closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -21,35 +19,14 @@ import {
 } from '@dnd-kit/core';
 import {
   arrayMove,
-  SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
-// Helper to check if itinerary was created within the last 5 minutes
-const isRecentlyCreated = (createdAt) => {
-  if (!createdAt) return false;
-  const created = new Date(createdAt);
-  const now = new Date();
-  return (now - created) < 5 * 60 * 1000;
-};
-
-// Helper to format date
-const formatDate = (date) => {
-  if (!date) return null;
-  const d = new Date(date);
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-};
-
-// Helper to get date for a specific day number
-const getDateForDay = (startDate, dayNumber) => {
-  if (!startDate) return null;
-  const date = new Date(startDate);
-  date.setDate(date.getDate() + (dayNumber - 1));
-  return formatDate(date);
-};
+import {
+  isRecentlyCreated,
+  getDateForDay,
+  getDayLocationLabels,
+} from '../components/planner/plannerHelpers';
 
 // Fix Leaflet default marker icon issue with webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -58,236 +35,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
-
-// Day colors for map markers and route lines
-const DAY_COLORS = [
-  '#EF8557', '#4A7B91', '#FFDB70', '#2C4251', '#BBD3DD',
-  '#C85A2E', '#7DADC1', '#F0C84D', '#386074', '#DEE3E1'
-];
-
-// Create colored marker icon
-const createDayIcon = (dayNumber) => {
-  const color = DAY_COLORS[(dayNumber - 1) % DAY_COLORS.length];
-  return L.divIcon({
-    className: 'custom-map-marker',
-    html: `<div style="
-      background-color: ${color};
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 12px;
-    ">${dayNumber}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
-  });
-};
-
-/**
- * Compute a location label for each day based on activity locations.
- * - If activities span multiple cities → show city per day
- * - If all in the same city → show area/neighborhood per day (when available)
- */
-const getDayLocationLabels = (activities, days) => {
-  const parseLocation = (loc) => {
-    if (!loc) return [];
-    return loc.split(',').map(s => s.trim()).filter(Boolean);
-  };
-
-  // Collect all "city-level" locations (last segment) across all days
-  const allCities = new Set();
-  activities.forEach(a => {
-    const parts = parseLocation(a.location);
-    if (parts.length > 0) allCities.add(parts[parts.length - 1]);
-  });
-
-  const labels = {};
-  const singleCity = allCities.size <= 1;
-
-  days.forEach(day => {
-    const dayActivities = activities.filter(a => a.day_number === day);
-    const dayLocations = dayActivities
-      .map(a => parseLocation(a.location))
-      .filter(parts => parts.length > 0);
-
-    if (dayLocations.length === 0) {
-      labels[day] = null;
-      return;
-    }
-
-    if (singleCity) {
-      // Same city → show areas/neighborhoods (second-to-last segment)
-      const areas = [...new Set(
-        dayLocations
-          .filter(parts => parts.length >= 3)
-          .map(parts => parts[parts.length - 2])
-      )];
-      labels[day] = areas.length > 0 ? areas.join(', ') : null;
-    } else {
-      // Different cities → show city names (last segment)
-      const cities = [...new Set(dayLocations.map(parts => parts[parts.length - 1]))];
-      labels[day] = cities.join(', ');
-    }
-  });
-
-  return labels;
-};
-
-// Sortable Activity Component for Overview
-function SortableActivity({ activity, onEdit, onDelete, onSaveNotes }) {
-  const [editingNotes, setEditingNotes] = useState(false);
-  const [notesValue, setNotesValue] = useState(activity.custom_notes || '');
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: activity.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const getCategoryInfo = (category) => {
-    return ACTIVITY_CATEGORIES.find(c => c.value === category) || ACTIVITY_CATEGORIES[9];
-  };
-
-  const categoryInfo = getCategoryInfo(activity.category);
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        ...style,
-        borderLeftColor: categoryInfo.color,
-        backgroundColor: activity.category === 'transport' ? '#F5F3FF' : activity.category === 'accommodation' ? '#EFF6FF' : 'white'
-      }}
-      className="border-l-4 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow mb-3"
-    >
-      <div className="flex items-start gap-3">
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing mt-1"
-        >
-          <GripVertical size={20} className="text-platinum-500" />
-        </div>
-
-        <div className="flex-1">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 flex-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setEditingNotes(true);
-                }}
-                className="text-xl hover:scale-125 transition-transform cursor-pointer p-1 hover:bg-naples-100 rounded"
-                title="Click to add/edit notes"
-                type="button"
-              >
-                {categoryInfo.emoji}
-              </button>
-              <a
-                href={`https://www.google.com/search?q=${encodeURIComponent(activity.title + (activity.location ? ' ' + activity.location : ''))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="font-semibold hover:text-coral-500 transition-colors"
-              >
-                {activity.title}
-              </a>
-              {activity.custom_notes && (
-                <MessageSquare size={14} className="text-naples-600" title="Has notes" />
-              )}
-            </div>
-            <div className="flex gap-1">
-              <button
-                onClick={() => onEdit(activity)}
-                className="p-1 hover:bg-platinum-200 rounded transition-colors"
-              >
-                <Edit size={16} className="text-platinum-600" />
-              </button>
-              <button
-                onClick={() => onDelete(activity.id)}
-                className="p-1 hover:bg-red-50 rounded transition-colors"
-              >
-                <Trash2 size={16} className="text-red-500" />
-              </button>
-            </div>
-          </div>
-
-          {activity.description && (
-            <p className="text-sm text-platinum-600 mb-2">{activity.description}</p>
-          )}
-
-          {editingNotes ? (
-            <div className="mb-2">
-              <textarea
-                value={notesValue}
-                onChange={(e) => setNotesValue(e.target.value)}
-                onBlur={() => {
-                  setEditingNotes(false);
-                  if (notesValue !== (activity.custom_notes || '')) {
-                    onSaveNotes(activity.id, notesValue);
-                  }
-                }}
-                placeholder="Add your notes here..."
-                className="w-full h-20 px-2 py-1.5 text-xs border border-naples-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-naples-400 resize-none bg-naples-50"
-                autoFocus
-              />
-            </div>
-          ) : activity.custom_notes ? (
-            <div
-              className="mb-2 p-2 bg-naples-50 rounded text-xs text-naples-800 border border-naples-200 cursor-pointer hover:bg-naples-100"
-              onClick={(e) => { e.stopPropagation(); setEditingNotes(true); }}
-            >
-              📝 {activity.custom_notes}
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-3 text-xs text-platinum-600">
-            {activity.location && (
-              <a
-                href={activity.latitude && activity.longitude
-                  ? `https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`
-                  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-coral-500 hover:text-coral-600 hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                📍 {activity.location}
-                <ExternalLink size={10} />
-              </a>
-            )}
-            {activity.duration_minutes && (
-              <span className="flex items-center gap-1">
-                ⏱️ {Math.floor(activity.duration_minutes / 60)}h {activity.duration_minutes % 60}m
-              </span>
-            )}
-            {activity.time_of_day && (
-              <span className="px-2 py-0.5 bg-platinum-200 rounded">
-                {activity.time_of_day}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Notes Modal Component
 function NotesModal({ activity, onClose, onSave }) {
@@ -337,7 +84,7 @@ function NotesModal({ activity, onClose, onSave }) {
 }
 
 // Add Activity Modal Component
-function AddActivityModal({ dayNumber, dayLabel, onClose, onSave }) {
+function AddActivityModal({ dayLabel, onClose, onSave }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -559,6 +306,11 @@ function PlannerPage() {
   const [exporting, setExporting] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [hotelDropPrompt, setHotelDropPrompt] = useState(null); // { hotel, dayNumber }
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [dayNotes, setDayNotes] = useState({}); // { [dayNumber]: noteText }
+  const [highlightedDays, setHighlightedDays] = useState(new Set());
+  const [feedbackBanner, setFeedbackBanner] = useState(null); // 'regenerating' | 'done' | null
+  const previousActivitiesRef = useRef([]);
 
   // Augment accommodations from DB with day numbers computed from dates
   const augmentAccommodations = (accs, startDate) => {
@@ -623,6 +375,25 @@ function PlannerPage() {
         clearInterval(pollInterval);
         clearInterval(messageInterval);
 
+        // Compute highlighted days if we had previous activities (regeneration)
+        const prev = previousActivitiesRef.current;
+        if (prev.length > 0) {
+          const changed = new Set();
+          activitiesData.forEach(a => {
+            const old = prev.find(o => o.day_number === a.day_number && o.position === a.position);
+            if (!old || old.title !== a.title) changed.add(a.day_number);
+          });
+          setHighlightedDays(changed);
+          setIsRegenerating(false);
+          setFeedbackBanner('done');
+          previousActivitiesRef.current = [];
+          // Auto-dismiss highlight + banner after 5 seconds
+          setTimeout(() => {
+            setHighlightedDays(new Set());
+            setFeedbackBanner(null);
+          }, 5000);
+        }
+
         const [updatedItineraryResult, accResult] = await Promise.all([
           supabase.from('itineraries').select('*').eq('id', id).single(),
           supabase.from('accommodations').select('*').eq('itinerary_id', id)
@@ -678,6 +449,57 @@ function PlannerPage() {
     startPolling(180000);
   };
 
+  // Handle trip parameter changes from TripParametersPanel — update DB, delete activities, regenerate
+  const handleParametersChanged = async (updatedFields) => {
+    setIsRegenerating(true);
+    setFeedbackBanner('regenerating');
+    previousActivitiesRef.current = [...activities];
+    try {
+      // 1. Update itinerary in Supabase
+      const { error: updateError } = await supabase
+        .from('itineraries')
+        .update({
+          ...updatedFields,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+      if (updateError) throw updateError;
+
+      // 2. Update local state
+      setItinerary(prev => ({ ...prev, ...updatedFields }));
+
+      // 3. Delete existing activities so generation can replace them
+      await supabase.from('activities').delete().eq('itinerary_id', id);
+      setActivities([]);
+
+      // 4. Fire background generation with new params
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';
+      fetch(`${apiUrl}/api/ai/generate-itinerary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itineraryId: id,
+          destination: itinerary.destination,
+          tripLength: itinerary.trip_length,
+          travelPace: updatedFields.travel_pace || itinerary.travel_pace,
+          budget: updatedFields.budget || itinerary.budget,
+          travelerProfiles: updatedFields.traveler_profiles || itinerary.traveler_profiles || [],
+          region: null,
+          tripOrigin: updatedFields.trip_origin || itinerary.trip_origin || null,
+          travelMode: updatedFields.travel_mode || itinerary.travel_mode || null,
+        }),
+      }).catch((err) => console.error('Regeneration error:', err));
+
+      // 5. Start polling for new activities
+      startPolling(180000);
+    } catch (error) {
+      console.error('Error updating parameters:', error);
+      alert('Failed to update trip settings');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   useEffect(() => {
     fetchItineraryData();
   }, [id]);
@@ -709,7 +531,7 @@ function PlannerPage() {
       setItinerary(itineraryData);
       setIsPublished(itineraryData.is_published || false);
 
-      const [activitiesResult, accommodationsResult] = await Promise.all([
+      const [activitiesResult, accommodationsResult, dayNotesResult] = await Promise.all([
         supabase
           .from('activities')
           .select('*')
@@ -719,12 +541,23 @@ function PlannerPage() {
         supabase
           .from('accommodations')
           .select('*')
+          .eq('itinerary_id', id),
+        supabase
+          .from('day_notes')
+          .select('*')
           .eq('itinerary_id', id)
       ]);
 
       if (activitiesResult.error) throw activitiesResult.error;
       setActivities(activitiesResult.data || []);
       setAccommodations(augmentAccommodations(accommodationsResult.data || [], itineraryData.start_date));
+
+      // Build day notes map { dayNumber: notes }
+      if (dayNotesResult.data) {
+        const notesMap = {};
+        dayNotesResult.data.forEach(n => { notesMap[n.day_number] = n.notes; });
+        setDayNotes(notesMap);
+      }
     } catch (error) {
       console.error('Error fetching itinerary:', error);
       alert('Failed to load itinerary');
@@ -751,7 +584,6 @@ function PlannerPage() {
       setSaving(false);
     }
   };
-
 
   // Handle adding accommodation with date range (check-in / check-out)
   const handleAddAccommodationRange = async (hotel, checkInDay, checkOutDay) => {
@@ -801,7 +633,7 @@ function PlannerPage() {
   };
 
   // Handle AI structural action (add/delete/replace day) — refetch data from DB
-  const handleAIAction = async (action) => {
+  const handleAIAction = async () => {
     try {
       // Refetch itinerary (trip_length may have changed) + activities
       const [itineraryResult, activitiesResult, accommodationsResult] = await Promise.all([
@@ -1056,6 +888,18 @@ function PlannerPage() {
     }
   };
 
+  // Save day-level notes (auto-save on blur)
+  const handleSaveDayNote = async (dayNumber, text) => {
+    setDayNotes(prev => ({ ...prev, [dayNumber]: text }));
+    try {
+      await supabase
+        .from('day_notes')
+        .upsert({ itinerary_id: id, day_number: dayNumber, notes: text, updated_at: new Date().toISOString() }, { onConflict: 'itinerary_id,day_number' });
+    } catch (error) {
+      console.error('Error saving day note:', error);
+    }
+  };
+
   // Handle drop from AI chat
   const handleDrop = (e, dayNumber) => {
     e.preventDefault();
@@ -1095,11 +939,6 @@ function PlannerPage() {
     }
   };
 
-  // Get category info helper
-  const getCategoryInfo = (category) => {
-    return ACTIVITY_CATEGORIES.find(c => c.value === category) || { emoji: '📍', color: '#71717A' };
-  };
-
   // Open in Google Maps
   const openInGoogleMaps = (activity) => {
     const url = `https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`;
@@ -1107,9 +946,10 @@ function PlannerPage() {
   };
 
   const openAllInGoogleMaps = () => {
+    const activitiesWithCoords = activities.filter(a => a.latitude && a.longitude);
     const filtered = selectedDay === 'all'
-      ? activities.filter(a => a.latitude && a.longitude)
-      : activities.filter(a => a.day_number === parseInt(selectedDay) && a.latitude && a.longitude);
+      ? activitiesWithCoords
+      : activitiesWithCoords.filter(a => a.day_number === parseInt(selectedDay));
 
     if (filtered.length === 0) return;
     const waypoints = filtered.map(a => `${a.latitude},${a.longitude}`).join('/');
@@ -1167,7 +1007,7 @@ function PlannerPage() {
       <div className="min-h-screen bg-naples-100 flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 flex items-center justify-center">
-            <span className="text-3xl">⏳</span>
+            <span className="text-3xl">&#x23F3;</span>
           </div>
 
           <h1 className="text-3xl font-semibold text-charcoal-500 mb-3">
@@ -1309,10 +1149,6 @@ function PlannerPage() {
 
   const days = Array.from({ length: itinerary.trip_length }, (_, i) => i + 1);
   const dayLocationLabels = getDayLocationLabels(activities, days);
-  const activitiesWithCoords = activities.filter(a => a.latitude && a.longitude);
-  const filteredActivities = selectedDay === 'all'
-    ? activitiesWithCoords
-    : activitiesWithCoords.filter(a => a.day_number === parseInt(selectedDay));
 
   return (
     <div className="h-screen flex flex-col bg-naples-100">
@@ -1414,12 +1250,14 @@ function PlannerPage() {
             <>
               <Panel defaultSize="40%" minSize="20%" maxSize="65%" id="ai-panel">
                 <div className="h-full flex flex-col min-w-0">
-                  <AIAssistant
+                  <LeftPanel
                     itinerary={itinerary}
                     activities={activities}
                     accommodations={accommodations}
                     onActionExecuted={handleAIAction}
                     onAddAccommodation={handleAddAccommodationRange}
+                    onParametersChanged={handleParametersChanged}
+                    isRegenerating={isRegenerating}
                   />
                 </div>
               </Panel>
@@ -1464,411 +1302,74 @@ function PlannerPage() {
                 </Button>
               </div>
 
+              {/* Feedback banner */}
+              {feedbackBanner === 'regenerating' && (
+                <div className="mx-4 mb-2 px-4 py-2 bg-naples-100 border border-naples-300 rounded-lg flex items-center gap-2 text-sm text-naples-800">
+                  <div className="w-4 h-4 border-2 border-naples-600 border-t-transparent rounded-full animate-spin" />
+                  Updating itinerary...
+                </div>
+              )}
+              {feedbackBanner === 'done' && (
+                <div className="mx-4 mb-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-sm text-green-700">
+                  <Check size={14} />
+                  Itinerary updated! Changed days are highlighted.
+                </div>
+              )}
+
               {/* Content based on active view */}
               <div className="flex-1 overflow-y-auto p-4">
-                {/* OVERVIEW VIEW - Editable day blocks with drag & drop */}
                 {activeView === 'overview' && (
-                  <DndContext
+                  <OverviewView
+                    days={days}
+                    activities={activities}
+                    itinerary={itinerary}
                     sensors={sensors}
-                    collisionDetection={closestCenter}
+                    activeId={activeId}
+                    dragOverDay={dragOverDay}
+                    dayLocationLabels={dayLocationLabels}
+                    generatingActivities={generatingActivities}
+                    highlightedDays={highlightedDays}
+                    getAccommodationForDay={getAccommodationForDay}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
-                  >
-                    <div className="space-y-6">
-                      {days.map(day => {
-                        const dayActivities = activities.filter(a => a.day_number === day);
-                        const isDragOver = dragOverDay === day;
-                        const locationLabel = dayLocationLabels[day];
-                        const dayLabel = itinerary.start_date
-                          ? `${getDateForDay(itinerary.start_date, day)}`
-                          : `Day ${day}`;
-                        const dayHeader = locationLabel ? `${dayLabel} — ${locationLabel}` : dayLabel;
-                        const skeletonCount = itinerary.travel_pace === 'relaxed' ? 2 : itinerary.travel_pace === 'packed' ? 4 : 3;
-                        const dayAccommodation = getAccommodationForDay(day);
-                        return (
-                          <div
-                            key={day}
-                            className={`rounded-lg p-4 min-h-[150px] transition-all ${
-                              isDragOver
-                                ? 'bg-coral-50 border-2 border-dashed border-coral-400 shadow-lg'
-                                : 'bg-platinum-50 border-2 border-transparent'
-                            }`}
-                            onDrop={(e) => handleDrop(e, day)}
-                            onDragOver={(e) => handleDragOver(e, day)}
-                            onDragLeave={handleDragLeave}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className="text-lg font-semibold text-charcoal-500">
-                                {dayHeader}
-                              </h3>
-                              <button
-                                onClick={() => handleAddActivity(day)}
-                                className="text-sm text-coral-500 hover:text-coral-500 flex items-center gap-1"
-                              >
-                                <Plus size={16} />
-                                Add Activity
-                              </button>
-                            </div>
-                            {dayAccommodation ? (
-                              <div className="flex items-center gap-2 text-xs text-columbia-700 bg-columbia-50 px-3 py-1.5 rounded-lg mb-3 border border-columbia-200 group/acc">
-                                <HotelIcon size={12} />
-                                <a
-                                  href={`https://www.google.com/search?q=${encodeURIComponent(dayAccommodation.name + ' ' + (dayAccommodation.location || itinerary.destination))}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="font-medium hover:text-coral-500 transition-colors"
-                                >
-                                  {dayAccommodation.name}
-                                </a>
-                                {dayAccommodation.price_per_night && (
-                                  <span className="text-columbia-500">${dayAccommodation.price_per_night}/night</span>
-                                )}
-                                <button
-                                  onClick={() => handleDeleteAccommodation(dayAccommodation.id)}
-                                  className="ml-auto opacity-0 group-hover/acc:opacity-100 text-platinum-400 hover:text-red-500 transition-all"
-                                  title="Remove accommodation"
-                                >
-                                  <X size={12} />
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  const name = window.prompt('Enter hotel/accommodation name:');
-                                  if (name && name.trim()) {
-                                    handleAddAccommodationRange({ name: name.trim(), type: 'hotel' }, day, day + 1);
-                                  }
-                                }}
-                                onDrop={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  const rawData = e.dataTransfer.getData('application/json');
-                                  if (rawData) {
-                                    const data = JSON.parse(rawData);
-                                    if (data.__type === 'hotel') {
-                                      setHotelDropPrompt({ hotel: data, dayNumber: day });
-                                    }
-                                  }
-                                }}
-                                onDragOver={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.currentTarget.classList.add('border-columbia-400', 'bg-columbia-50', 'text-columbia-600');
-                                }}
-                                onDragLeave={(e) => {
-                                  e.currentTarget.classList.remove('border-columbia-400', 'bg-columbia-50', 'text-columbia-600');
-                                }}
-                                className="flex items-center gap-2 text-xs text-platinum-400 px-3 py-1.5 rounded-lg mb-3 border border-dashed border-platinum-200 w-full hover:border-columbia-300 hover:text-columbia-500 hover:bg-columbia-50/50 transition-all cursor-pointer"
-                              >
-                                <HotelIcon size={12} />
-                                <span className="italic">Accommodation to be defined</span>
-                                <span className="ml-auto text-[10px] opacity-0 group-hover:opacity-60">drag hotel here</span>
-                              </button>
-                            )}
-
-                            {isDragOver && (
-                              <div className="mb-3 p-2 bg-coral-100 rounded-lg text-center">
-                                <p className="text-sm text-coral-700 font-medium">Drop here to add to {dayLabel}</p>
-                              </div>
-                            )}
-
-                            {dayActivities.length === 0 && !isDragOver ? (
-                              generatingActivities ? (
-                                <div>
-                                  {Array.from({ length: skeletonCount }).map((_, i) => (
-                                    <SkeletonActivityCard key={i} />
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="border-2 border-dashed border-platinum-300 rounded-lg p-8 text-center text-platinum-500">
-                                  <p className="text-sm">Drop activities here or click "Add Activity"</p>
-                                </div>
-                              )
-                            ) : (
-                              <SortableContext
-                                items={dayActivities.map(a => a.id)}
-                                strategy={verticalListSortingStrategy}
-                              >
-                                {dayActivities.map(activity => (
-                                  <SortableActivity
-                                    key={activity.id}
-                                    activity={activity}
-                                    onEdit={handleEditActivity}
-                                    onDelete={handleDeleteActivity}
-                                    onSaveNotes={handleSaveNotes}
-                                  />
-                                ))}
-                              </SortableContext>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <DragOverlay>
-                      {activeId ? (
-                        <div className="bg-white p-4 rounded-lg shadow-lg border-2 border-coral-400">
-                          <p className="font-bold">
-                            {activities.find(a => a.id === activeId)?.title}
-                          </p>
-                        </div>
-                      ) : null}
-                    </DragOverlay>
-                  </DndContext>
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onAddActivity={handleAddActivity}
+                    onEditActivity={handleEditActivity}
+                    onDeleteActivity={handleDeleteActivity}
+                    onSaveNotes={handleSaveNotes}
+                    onAddAccommodationRange={handleAddAccommodationRange}
+                    onDeleteAccommodation={handleDeleteAccommodation}
+                    onSetHotelDropPrompt={setHotelDropPrompt}
+                  />
                 )}
 
-                {/* TIMELINE VIEW - Journey Overview list */}
                 {activeView === 'timeline' && (
-                  <div className="h-full flex flex-col">
-                    {/* Day selector */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <Navigation className="text-coral-500" size={18} />
-                        <h3 className="font-semibold text-charcoal-500 text-sm">
-                          Journey Overview
-                        </h3>
-                      </div>
-                      <button
-                        onClick={openAllInGoogleMaps}
-                        className="flex items-center gap-1 text-xs text-coral-500 hover:text-coral-600 font-medium"
-                      >
-                        <ExternalLink size={12} />
-                        Open in Maps
-                      </button>
-                    </div>
-
-                    <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4">
-                      <button
-                        onClick={() => setSelectedDay('all')}
-                        className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
-                          selectedDay === 'all'
-                            ? 'bg-coral-500 text-white'
-                            : 'bg-white text-charcoal-400 hover:bg-platinum-200 border border-platinum-200'
-                        }`}
-                      >
-                        All ({activitiesWithCoords.length})
-                      </button>
-                      {days.map(day => {
-                        const count = activitiesWithCoords.filter(a => a.day_number === day).length;
-                        const dateLabel = itinerary.start_date
-                          ? getDateForDay(itinerary.start_date, day)
-                          : `Day ${day}`;
-                        const buttonLabel = dayLocationLabels[day] ? `${dateLabel} — ${dayLocationLabels[day]}` : dateLabel;
-                        return (
-                          <button
-                            key={day}
-                            onClick={() => setSelectedDay(day.toString())}
-                            className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
-                              selectedDay === day.toString()
-                                ? 'bg-coral-500 text-white'
-                                : 'bg-white text-charcoal-400 hover:bg-platinum-200 border border-platinum-200'
-                            }`}
-                          >
-                            {buttonLabel} ({count})
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Activity list */}
-                    {filteredActivities.length === 0 ? (
-                      <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-                        <div className="w-12 h-12 bg-coral-50 rounded-full flex items-center justify-center mb-3">
-                          <Globe size={24} className="text-coral-500" />
-                        </div>
-                        <h3 className="text-base font-semibold text-charcoal-500 mb-1">
-                          No locations yet
-                        </h3>
-                        <p className="text-sm text-platinum-600">
-                          Activities will appear here once generated
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5 flex-1 overflow-y-auto">
-                        {filteredActivities.map((activity, index) => {
-                          const categoryInfo = getCategoryInfo(activity.category);
-
-                          return (
-                            <div
-                              key={activity.id}
-                              onClick={() => openInGoogleMaps(activity)}
-                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-platinum-50 cursor-pointer transition-colors border border-transparent hover:border-platinum-200"
-                            >
-                              <div className="w-auto min-w-[2.5rem] h-6 px-2 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-coral-100 text-coral-700">
-                                {selectedDay === 'all'
-                                  ? (itinerary.start_date
-                                      ? getDateForDay(itinerary.start_date, activity.day_number)?.split(', ')[0] || `D${activity.day_number}`
-                                      : `D${activity.day_number}`)
-                                  : index + 1}
-                              </div>
-
-                              <span className="text-lg flex-shrink-0">{categoryInfo.emoji}</span>
-
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-charcoal-500 truncate">
-                                  {activity.title}
-                                </p>
-                                <p className="text-xs text-platinum-600 truncate">
-                                  {activity.location}
-                                </p>
-                              </div>
-
-                              {activity.time_of_day && (
-                                <span className="text-xs px-1.5 py-0.5 bg-platinum-200 text-charcoal-400 rounded flex-shrink-0">
-                                  {activity.time_of_day}
-                                </span>
-                              )}
-
-                              <ExternalLink size={14} className="text-platinum-500 flex-shrink-0" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Legend */}
-                    <div className="pt-3 border-t border-platinum-200 mt-4">
-                      <div className="flex items-center justify-center gap-4 text-xs text-platinum-600">
-                        <span className="flex items-center gap-1">
-                          <ExternalLink size={10} />
-                          Click activity to view in Maps
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <TimelineView
+                    days={days}
+                    activities={activities}
+                    itinerary={itinerary}
+                    selectedDay={selectedDay}
+                    setSelectedDay={setSelectedDay}
+                    dayLocationLabels={dayLocationLabels}
+                    dayNotes={dayNotes}
+                    onSaveDayNote={handleSaveDayNote}
+                    onAddActivity={handleAddActivity}
+                    onEditActivity={handleEditActivity}
+                    openInGoogleMaps={openInGoogleMaps}
+                    openAllInGoogleMaps={openAllInGoogleMaps}
+                  />
                 )}
 
-                {/* MAP VIEW - Placeholder for Google Maps */}
                 {activeView === 'map' && (
-                  <div className="h-full flex flex-col rounded-lg overflow-hidden">
-                    {/* Day filter for map */}
-                    <div className="flex gap-2 p-3 bg-white border-b border-platinum-200 overflow-x-auto">
-                      <button
-                        onClick={() => setSelectedDay('all')}
-                        className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
-                          selectedDay === 'all'
-                            ? 'bg-coral-500 text-white'
-                            : 'bg-platinum-200 text-charcoal-400 hover:bg-platinum-200'
-                        }`}
-                      >
-                        All Days
-                      </button>
-                      {days.map(day => {
-                        const dayColor = DAY_COLORS[(day - 1) % DAY_COLORS.length];
-                        return (
-                          <button
-                            key={day}
-                            onClick={() => setSelectedDay(day.toString())}
-                            className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all ${
-                              selectedDay === day.toString()
-                                ? 'text-white'
-                                : 'bg-platinum-200 text-charcoal-400 hover:bg-platinum-200'
-                            }`}
-                            style={selectedDay === day.toString() ? { backgroundColor: dayColor } : {}}
-                          >
-                            {itinerary.start_date ? getDateForDay(itinerary.start_date, day) : `Day ${day}`}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Map */}
-                    {activitiesWithCoords.length > 0 ? (
-                      <div className="flex-1 relative" style={{ minHeight: '400px' }}>
-                        <MapContainer
-                          center={[
-                            filteredActivities.length > 0
-                              ? filteredActivities.reduce((sum, a) => sum + a.latitude, 0) / filteredActivities.length
-                              : activitiesWithCoords[0].latitude,
-                            filteredActivities.length > 0
-                              ? filteredActivities.reduce((sum, a) => sum + a.longitude, 0) / filteredActivities.length
-                              : activitiesWithCoords[0].longitude
-                          ]}
-                          zoom={13}
-                          style={{ height: '100%', width: '100%' }}
-                          key={`${selectedDay}-${filteredActivities.length}`}
-                        >
-                          <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          />
-
-                          {/* Markers for each activity */}
-                          {filteredActivities.map((activity) => (
-                            <Marker
-                              key={activity.id}
-                              position={[activity.latitude, activity.longitude]}
-                              icon={createDayIcon(activity.day_number)}
-                            >
-                              <Popup>
-                                <div className="text-sm">
-                                  <p className="font-bold">{activity.title}</p>
-                                  <p className="text-platinum-600">{activity.location}</p>
-                                  {activity.duration_minutes && (
-                                    <p className="text-xs text-platinum-500 mt-1">
-                                      {Math.floor(activity.duration_minutes / 60)}h {activity.duration_minutes % 60}m
-                                    </p>
-                                  )}
-                                </div>
-                              </Popup>
-                            </Marker>
-                          ))}
-
-                          {/* Dotted route lines connecting activities by day */}
-                          {(selectedDay === 'all' ? days : [parseInt(selectedDay)]).map(day => {
-                            const dayActs = filteredActivities
-                              .filter(a => a.day_number === day)
-                              .sort((a, b) => (a.position || 0) - (b.position || 0));
-                            if (dayActs.length < 2) return null;
-                            const positions = dayActs.map(a => [a.latitude, a.longitude]);
-                            return (
-                              <Polyline
-                                key={`route-day-${day}`}
-                                positions={positions}
-                                pathOptions={{
-                                  color: DAY_COLORS[(day - 1) % DAY_COLORS.length],
-                                  weight: 3,
-                                  dashArray: '8, 12',
-                                  opacity: 0.7
-                                }}
-                              />
-                            );
-                          })}
-                        </MapContainer>
-                      </div>
-                    ) : (
-                      <div className="flex-1 flex items-center justify-center bg-platinum-50">
-                        <div className="text-center p-8">
-                          <MapIcon size={48} className="mx-auto mb-4 text-platinum-500" />
-                          <h3 className="text-lg font-semibold text-charcoal-500 mb-2">
-                            No locations to show yet
-                          </h3>
-                          <p className="text-sm text-platinum-600">
-                            Activities with coordinates will appear on the map
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Legend */}
-                    <div className="p-3 bg-white border-t border-platinum-200">
-                      <div className="flex flex-wrap gap-3 justify-center">
-                        {(selectedDay === 'all' ? days : [parseInt(selectedDay)]).map(day => {
-                          const count = filteredActivities.filter(a => a.day_number === day).length;
-                          if (count === 0) return null;
-                          return (
-                            <span key={day} className="flex items-center gap-1 text-xs text-charcoal-400">
-                              <span
-                                className="w-3 h-3 rounded-full inline-block"
-                                style={{ backgroundColor: DAY_COLORS[(day - 1) % DAY_COLORS.length] }}
-                              />
-                              {itinerary.start_date ? getDateForDay(itinerary.start_date, day) : `Day ${day}`} ({count})
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
+                  <MapPanel
+                    days={days}
+                    activities={activities}
+                    itinerary={itinerary}
+                    selectedDay={selectedDay}
+                    setSelectedDay={setSelectedDay}
+                  />
                 )}
               </div>
             </div>
@@ -1935,7 +1436,7 @@ function buildPrintableHTML(itinerary, activities, accommodations) {
             <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">${activity.title}</div>
             ${activity.description ? `<div style="font-size: 12px; color: #71717A; margin-bottom: 2px;">${activity.description}</div>` : ''}
             <div style="font-size: 11px; color: #9CA3AF;">
-              ${activity.location ? `📍 ${activity.location}` : ''}
+              ${activity.location ? `${activity.location}` : ''}
               ${activity.duration_minutes ? ` &bull; ${Math.floor(activity.duration_minutes / 60)}h${activity.duration_minutes % 60 > 0 ? ` ${activity.duration_minutes % 60}m` : ''}` : ''}
               ${activity.time_of_day ? ` &bull; ${activity.time_of_day}` : ''}
               ${activity.estimated_cost_min != null ? ` &bull; $${activity.estimated_cost_min}${activity.estimated_cost_max && activity.estimated_cost_max !== activity.estimated_cost_min ? `–$${activity.estimated_cost_max}` : ''}` : ''}
@@ -1956,7 +1457,7 @@ function buildPrintableHTML(itinerary, activities, accommodations) {
     accommodations.forEach(acc => {
       html += `
         <div style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
-          <strong style="font-size: 14px;">🏨 ${acc.name}</strong>
+          <strong style="font-size: 14px;">${acc.name}</strong>
           <div style="font-size: 12px; color: #71717A;">
             ${acc.location || ''}
             ${acc.price_per_night ? ` &bull; $${acc.price_per_night}/night` : ''}

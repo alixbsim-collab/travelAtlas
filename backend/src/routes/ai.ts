@@ -373,14 +373,44 @@ async function generateOpenAIItinerary({ destination, tripLength, travelPace, bu
 
     let travelLogistics = '';
     if (tripOrigin) {
-      if (isFirstChunk && isLastChunk) {
-        travelLogistics = `Traveler arrives from ${tripOrigin}${travelMode ? ` by ${travelMode}` : ''} on Day 1. Departure home ONLY on Day ${tripLength} (last day).`;
-      } else if (isFirstChunk) {
-        travelLogistics = `Traveler arrives from ${tripOrigin}${travelMode ? ` by ${travelMode}` : ''} on Day 1. Do NOT include any return/departure home — the trip continues after Day ${endDay}.`;
-      } else if (isLastChunk) {
-        travelLogistics = `CRITICAL: Day ${tripLength} is the FINAL day. Include departure/return to ${tripOrigin} ONLY on Day ${tripLength}. Do NOT include return home on any earlier day.`;
-      } else {
+      const modeLabel = travelMode || 'flight';
+      const isVanOrCar = modeLabel === 'car' || (travelerProfiles || []).some((p: string) => p === 'van-lifer');
+
+      if (isFirstChunk) {
+        if (isVanOrCar) {
+          travelLogistics = `TRANSPORT — DAY 1: The traveler departs from ${tripOrigin} by car/van.
+- FIRST activity on Day 1 MUST be category:"transport", e.g. "Pick up rental vehicle" or "Depart ${tripOrigin}" with realistic duration (30-60 min for pickup, or driving hours to first stop).
+- If the drive from ${tripOrigin} to ${destination} is long (>3h), include it as a separate transport activity with estimated driving time.
+- Include driving segments between major stops as category:"transport" activities with realistic durations throughout the trip.`;
+        } else if (modeLabel === 'train') {
+          travelLogistics = `TRANSPORT — DAY 1: The traveler takes a train from ${tripOrigin} to ${destination}.
+- FIRST activity on Day 1 MUST be category:"transport", title like "Train ${tripOrigin} → [nearest station]", with realistic duration and cost.
+- If multi-leg (e.g. train + ferry, or train + bus), include EACH leg as a separate transport activity.`;
+        } else {
+          travelLogistics = `TRANSPORT — DAY 1: The traveler flies from ${tripOrigin} to ${destination}.
+- FIRST activity on Day 1 MUST be category:"transport", title like "Flight ${tripOrigin} → [nearest airport]", with realistic duration (include transit time) and estimated cost.
+- If a transfer is needed (e.g. airport to city, or connecting flight/ferry), include it as a SECOND transport activity.`;
+        }
+
+        if (!isLastChunk) {
+          travelLogistics += `\nDo NOT include any return/departure home — the trip continues after Day ${endDay}.`;
+        }
+      }
+
+      if (isLastChunk) {
+        if (isVanOrCar) {
+          travelLogistics += `\nTRANSPORT — DAY ${tripLength} (LAST DAY): Include "Return rental vehicle" or "Drive back to ${tripOrigin}" as the LAST activity, category:"transport".`;
+        } else {
+          travelLogistics += `\nTRANSPORT — DAY ${tripLength} (LAST DAY): The LAST activity MUST be category:"transport", title like "Flight [airport] → ${tripOrigin}" or "Train → ${tripOrigin}", with realistic duration and cost.`;
+        }
+        travelLogistics += `\nCRITICAL: Return/departure ONLY on Day ${tripLength}. NEVER on any earlier day.`;
+      }
+
+      if (!isFirstChunk && !isLastChunk) {
         travelLogistics = `Do NOT include any return/departure home activities. The trip continues after Day ${endDay}.`;
+        if (isVanOrCar) {
+          travelLogistics += ` Include driving segments between locations as category:"transport" activities.`;
+        }
       }
     }
 
@@ -641,6 +671,8 @@ async function generateOpenAIChat(message: string, conversationHistory: any[], i
   const budget = itineraryContext?.budget || 'medium';
   const travelPace = itineraryContext?.travelPace || 'balanced';
   const travelerProfiles = itineraryContext?.travelerProfiles || [];
+  const tripOrigin = itineraryContext?.tripOrigin || null;
+  const travelMode = itineraryContext?.travelMode || null;
   const profileDesc = describeProfiles(travelerProfiles);
 
   let currentItinerarySummary = '';
@@ -667,7 +699,7 @@ TRIP CONTEXT:
 - Trip length: ${tripLength} days
 - Budget: ${budget}
 - Pace: ${travelPace} (${baseDaily} activities/day)
-- Traveler style: ${profileDesc || travelerProfiles.join(', ') || 'general'}
+- Traveler style: ${profileDesc || travelerProfiles.join(', ') || 'general'}${tripOrigin ? `\n- Departure city: ${tripOrigin}` : ''}${travelMode ? `\n- Travel mode: ${travelMode}` : ''}
 
 CURRENT ITINERARY:
 ${currentItinerarySummary || '(empty — no activities yet)'}

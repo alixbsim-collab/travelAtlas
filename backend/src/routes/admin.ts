@@ -107,7 +107,7 @@ router.get('/atlas/all', async (_req: AuthenticatedRequest, res: Response) => {
  */
 router.post('/atlas/:id/approve', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const updated = await prisma.atlasFile.update({
       where: { id },
@@ -130,7 +130,7 @@ router.post('/atlas/:id/approve', async (req: AuthenticatedRequest, res: Respons
  */
 router.post('/atlas/:id/reject', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const updated = await prisma.atlasFile.update({
       where: { id },
@@ -174,7 +174,7 @@ router.get('/itineraries/pending', async (_req: AuthenticatedRequest, res: Respo
  */
 router.post('/itineraries/:id/approve', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const updated = await prisma.itinerary.update({
       where: { id },
@@ -193,7 +193,7 @@ router.post('/itineraries/:id/approve', async (req: AuthenticatedRequest, res: R
  */
 router.post('/itineraries/:id/reject', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const updated = await prisma.itinerary.update({
       where: { id },
@@ -249,7 +249,7 @@ router.get('/users', async (_req: AuthenticatedRequest, res: Response) => {
  */
 router.post('/users/:id/role', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { role } = req.body;
 
     if (!['user', 'admin'].includes(role)) {

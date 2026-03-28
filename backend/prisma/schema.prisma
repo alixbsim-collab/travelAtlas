@@ -73,11 +73,14 @@ model Itinerary {
   is_published      Boolean   @default(false)
   is_favorite       Boolean   @default(false)
   moderation_status String    @default("approved") // approved | pending | rejected
+  trip_origin       String?
+  travel_mode       String?
   notes             String?
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   updated_at        DateTime  @default(now()) @db.Timestamptz(6)
 
   activities        Activity[]
+  day_notes         DayNote[]
 
   @@map("itineraries")
 }
@@ -176,4 +179,18 @@ model ForkedItinerary {
   source_atlas          AtlasFile @relation(fields: [source_atlas_file_id], references: [id])
 
   @@map("forked_itineraries")
+}
+
+model DayNote {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  itinerary_id  String   @db.Uuid
+  day_number    Int
+  notes         String   @default("")
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  itinerary     Itinerary @relation(fields: [itinerary_id], references: [id], onDelete: Cascade)
+
+  @@unique([itinerary_id, day_number])
+  @@map("day_notes")
 }
