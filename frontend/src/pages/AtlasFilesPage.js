@@ -44,12 +44,14 @@ function AtlasFileCard({ file, isOwner, onDelete, onDuplicate, onFork }) {
               </span>
               {isOwner && (
                 <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                  file.published_at
-                    ? 'bg-coral-100 text-coral-700'
-                    : 'bg-platinum-100 text-platinum-600'
+                  file.moderation_status === 'pending'
+                    ? 'bg-amber-100 text-amber-700'
+                    : file.published_at
+                      ? 'bg-coral-100 text-coral-700'
+                      : 'bg-platinum-100 text-platinum-600'
                 }`}>
-                  {file.published_at ? <Globe size={10} /> : <Lock size={10} />}
-                  {file.published_at ? 'Public' : 'Draft'}
+                  {file.moderation_status === 'pending' ? '⏳' : file.published_at ? <Globe size={10} /> : <Lock size={10} />}
+                  {file.moderation_status === 'pending' ? 'Pending Review' : file.published_at ? 'Public' : 'Draft'}
                 </span>
               )}
             </div>

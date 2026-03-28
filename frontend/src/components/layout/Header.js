@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ChevronDown, LogIn, UserPlus, Settings, Heart, LogOut } from 'lucide-react';
+import { User, ChevronDown, LogIn, UserPlus, Settings, Heart, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 function Header() {
@@ -9,7 +9,7 @@ function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const isAuthenticated = !!user;
 
   useEffect(() => {
@@ -44,6 +44,11 @@ function Header() {
             <Link to="/" className={navLinkClass}>Home</Link>
             <Link to="/designer" className={navLinkClass}>Travel Designer</Link>
             <Link to="/atlas" className={navLinkClass}>Atlas Files</Link>
+            {isAdmin && (
+              <Link to="/admin" className="flex items-center gap-1.5 text-naples-400 hover:text-naples-300 font-medium transition-colors duration-200 text-[0.95rem]">
+                <Shield size={14} /> Admin
+              </Link>
+            )}
 
             {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
@@ -153,6 +158,11 @@ function Header() {
                 <Link to="/" className={`block py-3 px-3 rounded-xl hover:bg-white/5 ${navLinkClass}`} onClick={() => setIsMenuOpen(false)}>Home</Link>
                 <Link to="/designer" className={`block py-3 px-3 rounded-xl hover:bg-white/5 ${navLinkClass}`} onClick={() => setIsMenuOpen(false)}>Travel Designer</Link>
                 <Link to="/atlas" className={`block py-3 px-3 rounded-xl hover:bg-white/5 ${navLinkClass}`} onClick={() => setIsMenuOpen(false)}>Atlas Files</Link>
+                {isAdmin && (
+                  <Link to="/admin" className="flex items-center gap-2 py-3 px-3 rounded-xl hover:bg-white/5 text-naples-400 hover:text-naples-300 font-medium transition-colors duration-200 text-[0.95rem]" onClick={() => setIsMenuOpen(false)}>
+                    <Shield size={14} /> Admin
+                  </Link>
+                )}
 
                 <div className="border-t border-white/10 pt-3 mt-3">
                   <p className="text-xs text-white/40 mb-2 px-3 uppercase tracking-wider font-medium">

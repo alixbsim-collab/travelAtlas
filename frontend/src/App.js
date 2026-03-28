@@ -16,6 +16,7 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
         <Route path="/forgot-password" element={<MainLayout><ForgotPasswordPage /></MainLayout>} />
         <Route path="/reset-password" element={<MainLayout><ResetPasswordPage /></MainLayout>} />
         <Route path="/auth/callback" element={<MainLayout><AuthCallbackPage /></MainLayout>} />
+        <Route path="/admin" element={<MainLayout><AdminDashboardPage /></MainLayout>} />
         <Route path="/contact" element={<MainLayout><HomePage /></MainLayout>} />
 
         {/* Planner page without MainLayout (full screen) */}

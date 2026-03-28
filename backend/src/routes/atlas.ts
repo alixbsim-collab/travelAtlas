@@ -29,6 +29,7 @@ router.get('/', optionalAuth, async (req: AuthenticatedRequest, res: Response) =
     const atlasFiles = await prisma.atlasFile.findMany({
       where: {
         published_at: { not: null },
+        moderation_status: 'approved',
         versions: { some: { status: 'published' } },
       },
       orderBy: { published_at: 'desc' },
@@ -544,10 +545,10 @@ router.post('/:id/versions/:vid/publish', requireAuth, async (req: Authenticated
       data: { status: 'published', published_at: now },
     });
 
-    // Update atlas file published_at
+    // Update atlas file — set pending review for moderation
     await prisma.atlasFile.update({
       where: { id },
-      data: { published_at: now },
+      data: { published_at: now, moderation_status: 'pending' },
     });
 
     res.json({ data: published });

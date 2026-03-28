@@ -4,6 +4,7 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import aiRouter from './routes/ai';
 import atlasRouter from './routes/atlas';
+import adminRouter from './routes/admin';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -37,6 +38,7 @@ app.get('/api/destinations', async (_req, res) => {
 // Mount route modules
 app.use('/api/ai', aiRouter);
 app.use('/api/atlas', atlasRouter);
+app.use('/api/admin', adminRouter);
 
 // Start server
 app.listen(PORT, () => {

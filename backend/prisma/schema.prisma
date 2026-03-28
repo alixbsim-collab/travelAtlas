@@ -46,6 +46,7 @@ model AtlasFile {
   source_type       String    @default("traveler")
   view_count        Int       @default(0)
   like_count        Int       @default(0)
+  moderation_status String    @default("approved") // approved | pending | rejected
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   updated_at        DateTime  @default(now()) @db.Timestamptz(6)
   published_at      DateTime? @db.Timestamptz(6)
@@ -71,6 +72,7 @@ model Itinerary {
   is_template       Boolean   @default(false)
   is_published      Boolean   @default(false)
   is_favorite       Boolean   @default(false)
+  moderation_status String    @default("approved") // approved | pending | rejected
   notes             String?
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   updated_at        DateTime  @default(now()) @db.Timestamptz(6)

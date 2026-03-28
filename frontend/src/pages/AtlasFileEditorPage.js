@@ -214,7 +214,7 @@ function AtlasFileEditorPage() {
         navigate(`/atlas/edit/${data.id}`, { replace: true });
       }
 
-      alert(isPublic ? 'Published!' : 'Draft saved!');
+      alert(isPublic ? 'Submitted for review! Your content will be visible once approved by an admin.' : 'Draft saved!');
     } catch (error) {
       console.error('Error saving atlas file:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));
