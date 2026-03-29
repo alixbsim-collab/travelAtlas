@@ -61,45 +61,17 @@ export const createDayIcon = (dayNumber) => {
  * - If all in the same city → show area/neighborhood per day (when available)
  */
 export const getDayLocationLabels = (activities, days) => {
-  const parseLocation = (loc) => {
-    if (!loc) return [];
-    return loc.split(',').map(s => s.trim()).filter(Boolean);
-  };
-
-  // Collect all "city-level" locations (last segment) across all days
-  const allCities = new Set();
-  activities.forEach(a => {
-    const parts = parseLocation(a.location);
-    if (parts.length > 0) allCities.add(parts[parts.length - 1]);
-  });
-
   const labels = {};
-  const singleCity = allCities.size <= 1;
 
   days.forEach(day => {
     const dayActivities = activities.filter(a => a.day_number === day);
-    const dayLocations = dayActivities
-      .map(a => parseLocation(a.location))
-      .filter(parts => parts.length > 0);
-
-    if (dayLocations.length === 0) {
-      labels[day] = null;
-      return;
-    }
-
-    if (singleCity) {
-      // Same city → show areas/neighborhoods (second-to-last segment)
-      const areas = [...new Set(
-        dayLocations
-          .filter(parts => parts.length >= 3)
-          .map(parts => parts[parts.length - 2])
-      )];
-      labels[day] = areas.length > 0 ? areas.join(', ') : null;
-    } else {
-      // Different cities → show city names (last segment)
-      const cities = [...new Set(dayLocations.map(parts => parts[parts.length - 1]))];
-      labels[day] = cities.join(', ');
-    }
+    // Use city_name field from AI generation — deduplicate and join
+    const cities = [...new Set(
+      dayActivities
+        .map(a => a.city_name)
+        .filter(Boolean)
+    )];
+    labels[day] = cities.length > 0 ? cities.join(', ') : null;
   });
 
   return labels;

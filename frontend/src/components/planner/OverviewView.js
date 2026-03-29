@@ -42,7 +42,9 @@ export default function OverviewView({
           const dayLabel = itinerary.start_date
             ? `${getDateForDay(itinerary.start_date, day)}`
             : `Day ${day}`;
-          const dayHeader = locationLabel ? `${dayLabel} — ${locationLabel}` : dayLabel;
+          const dayHeader = locationLabel
+            ? <>{dayLabel} — <span className="font-bold">{locationLabel}</span></>
+            : dayLabel;
           const skeletonCount = itinerary.travel_pace === 'relaxed' ? 2 : itinerary.travel_pace === 'packed' ? 4 : 3;
           const dayAccommodation = getAccommodationForDay(day);
 

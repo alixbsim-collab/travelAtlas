@@ -126,7 +126,7 @@ export default function TimelineView({
                       {dateLabel}
                     </div>
                     {locationLabel && (
-                      <div className="text-xs text-platinum-500 truncate">
+                      <div className="text-xs font-bold text-charcoal-400 truncate">
                         {locationLabel}
                       </div>
                     )}
