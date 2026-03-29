@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ExternalLink, Plus } from 'lucide-react';
-import { getDateForDay, getCategoryInfo } from './plannerHelpers';
+import { getDateForDay } from './plannerHelpers';
 
 export default function TimelineView({
   days,
@@ -115,55 +115,39 @@ export default function TimelineView({
                 </span>
               </div>
 
-              {/* Activities as bullet points */}
+              {/* Activities */}
               {dayActivities.length === 0 ? (
-                <p className="text-xs text-platinum-400 italic pl-4 mb-2">No activities yet</p>
+                <p className="text-xs text-platinum-400 italic pl-5 mb-2">No activities yet</p>
               ) : (
-                <ul className="space-y-1 mb-2">
+                <ul className="mb-2">
                   {dayActivities.map((activity) => {
-                    const catInfo = getCategoryInfo(activity.category);
                     const hasCoords = activity.latitude && activity.longitude;
                     const duration = formatDuration(activity.duration_minutes);
 
                     return (
-                      <li key={activity.id} className="flex items-start gap-2 pl-1 group">
-                        <span className="text-sm flex-shrink-0 mt-0.5">{catInfo.emoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <span className="inline-flex items-baseline gap-1.5 flex-wrap">
-                            <button
-                              onClick={() => onEditActivity(activity)}
-                              className="text-sm text-charcoal-500 hover:text-coral-500 transition-colors text-left font-medium"
-                            >
-                              {activity.title}
-                            </button>
-                            {activity.location && (
-                              <span className="text-xs text-platinum-400">
-                                · {activity.location}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-                          {activity.time_of_day && (
-                            <span className="text-[11px] text-platinum-400">
-                              {activity.time_of_day}
-                            </span>
-                          )}
-                          {duration && (
-                            <span className="text-[11px] text-platinum-400">
-                              · {duration}
-                            </span>
-                          )}
-                          {hasCoords && (
-                            <button
-                              onClick={() => openInGoogleMaps(activity)}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="View in Maps"
-                            >
-                              <ExternalLink size={11} className="text-platinum-400 hover:text-coral-500" />
-                            </button>
-                          )}
-                        </div>
+                      <li key={activity.id} className="flex items-baseline gap-2 py-0.5 pl-2 group">
+                        <span className="text-platinum-300 text-xs select-none">-</span>
+                        <button
+                          onClick={() => onEditActivity(activity)}
+                          className="text-sm text-charcoal-500 hover:text-coral-500 transition-colors text-left"
+                        >
+                          {activity.title}
+                        </button>
+                        {duration && (
+                          <span className="text-[11px] text-platinum-400">{duration}</span>
+                        )}
+                        {activity.time_of_day && (
+                          <span className="text-[11px] text-platinum-300">{activity.time_of_day}</span>
+                        )}
+                        {hasCoords && (
+                          <button
+                            onClick={() => openInGoogleMaps(activity)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="View in Maps"
+                          >
+                            <ExternalLink size={10} className="text-platinum-300 hover:text-coral-500" />
+                          </button>
+                        )}
                       </li>
                     );
                   })}
