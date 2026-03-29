@@ -677,15 +677,18 @@ async function generateOpenAIChat(message: string, conversationHistory: any[], i
 
   let currentItinerarySummary = '';
   if (currentActivities && currentActivities.length > 0) {
-    const dayGroups: Record<number, string[]> = {};
+    const dayGroups: Record<number, { city: string | null, activities: string[] }> = {};
     currentActivities.forEach((a: any) => {
       const day = a.day_number || 1;
-      if (!dayGroups[day]) dayGroups[day] = [];
-      dayGroups[day].push(`${a.title} (${a.category}, ${a.location || 'no location'})`);
+      if (!dayGroups[day]) dayGroups[day] = { city: null, activities: [] };
+      if (a.city_name && !dayGroups[day].city) dayGroups[day].city = a.city_name;
+      dayGroups[day].activities.push(`${a.title} (${a.category}, ${a.location || 'no location'})`);
     });
-    const dayLines = Object.keys(dayGroups).sort((a, b) => Number(a) - Number(b)).map(day =>
-      `Day ${day}: ${dayGroups[Number(day)].join(', ')}`
-    );
+    const dayLines = Object.keys(dayGroups).sort((a, b) => Number(a) - Number(b)).map(day => {
+      const g = dayGroups[Number(day)];
+      const cityTag = g.city ? ` [${g.city}]` : '';
+      return `Day ${day}${cityTag}: ${g.activities.join(', ')}`;
+    });
     currentItinerarySummary = dayLines.join('\n');
   }
 
@@ -762,7 +765,14 @@ CRITICAL RULES FOR ALL ACTIONS:
 - time_of_day MUST be one of: morning, afternoon, evening.
 - When the user asks to add/delete/modify days, ALWAYS execute the action immediately.
 - For simple recommendations/suggestions/questions, set "action": null and put suggestions in the "activities" array.
-- If action is null, set "action": null (not "action": {"type": "null"}).`;
+- If action is null, set "action": null (not "action": {"type": "null"}).
+
+MULTI-DESTINATION AWARENESS:
+- Look at the [CityName] tags in the CURRENT ITINERARY above to know which city each day is in.
+- When the user asks for suggestions (restaurants, activities, etc.), provide options for EACH city in the trip, not just one.
+- For each suggested activity, set the "city_name" field to the correct city AND set "day_number" to a day that is actually in that city.
+- When suggesting restaurants or venues, pick ones that are near activities already planned for that day — e.g., a dinner spot in the same neighborhood as that day's afternoon activity.
+- Aim for 3-4 suggestions per city so the user has good coverage across the whole trip.`;
 
   const messages: any[] = [{ role: 'system', content: systemPrompt }];
 

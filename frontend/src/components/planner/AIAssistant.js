@@ -284,7 +284,7 @@ function AIAssistant({ itinerary, accommodations, activities, onActionExecuted, 
               {message.activities && message.activities.length > 0 && (
                 <div className="mt-4 space-y-2">
                   <p className="text-sm font-bold mb-2">Suggested Activities:</p>
-                  {message.activities.slice(0, 5).map((activity, actIdx) => (
+                  {message.activities.slice(0, 8).map((activity, actIdx) => (
                     <div
                       key={actIdx}
                       draggable
@@ -304,12 +304,19 @@ function AIAssistant({ itinerary, accommodations, activities, onActionExecuted, 
                           </span>
                           <h4 className="font-bold text-sm">{activity.title}</h4>
                         </div>
-                        <span
-                          className="text-xs px-2 py-1 rounded-full text-white font-medium"
-                          style={{ backgroundColor: getCategoryColor(activity.category) }}
-                        >
-                          Day {activity.day_number}
-                        </span>
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          {activity.city_name && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-charcoal-500 text-white font-medium">
+                              {activity.city_name}
+                            </span>
+                          )}
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full text-white font-medium"
+                            style={{ backgroundColor: getCategoryColor(activity.category) }}
+                          >
+                            Day {activity.day_number}
+                          </span>
+                        </div>
                       </div>
 
                       <p className="text-xs text-platinum-600 mb-2">{activity.description}</p>
@@ -317,10 +324,10 @@ function AIAssistant({ itinerary, accommodations, activities, onActionExecuted, 
                       <div className="flex items-center justify-between text-xs text-platinum-600">
                         <span>📍 {activity.location}</span>
                         <span>⏱️ {activity.duration_minutes} min</span>
-                        {activity.estimated_cost_min && (
+                        {activity.estimated_cost_min != null && (
                           <span>
                             💰 ${activity.estimated_cost_min}
-                            {activity.estimated_cost_max && `-$${activity.estimated_cost_max}`}
+                            {activity.estimated_cost_max != null && `-$${activity.estimated_cost_max}`}
                           </span>
                         )}
                       </div>
