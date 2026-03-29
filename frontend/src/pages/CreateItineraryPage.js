@@ -301,25 +301,42 @@ function CreateItineraryPage() {
         return;
       }
 
-      const { data: itinerary, error } = await supabase
+      // Try with trip_origin/travel_mode columns first, fallback without them
+      let itinerary;
+      const basePayload = {
+        user_id: user.id,
+        title: `${formData.destination} - ${formData.tripLength} days`,
+        destination: formData.destination,
+        trip_length: formData.tripLength,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+        travel_pace: formData.travelPace,
+        budget: formData.budget,
+        traveler_profiles: formData.travelerProfiles,
+      };
+
+      const { data, error } = await supabase
         .from('itineraries')
         .insert({
-          user_id: user.id,
-          title: `${formData.destination} - ${formData.tripLength} days`,
-          destination: formData.destination,
-          trip_length: formData.tripLength,
-          start_date: formData.startDate,
-          end_date: formData.endDate,
-          travel_pace: formData.travelPace,
-          budget: formData.budget,
-          traveler_profiles: formData.travelerProfiles,
+          ...basePayload,
           trip_origin: formData.tripOrigin || null,
           travel_mode: formData.travelMode || null,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Fallback: columns may not exist yet — retry without them
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('itineraries')
+          .insert(basePayload)
+          .select()
+          .single();
+        if (fallbackError) throw fallbackError;
+        itinerary = fallbackData;
+      } else {
+        itinerary = data;
+      }
 
       const itineraryId = itinerary.id;
       const apiUrl = process.env.REACT_APP_API_URL || 'https://travelatlas.onrender.com';

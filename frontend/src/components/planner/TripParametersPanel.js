@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plane, Train, Car, Shuffle, RefreshCw } from 'lucide-react';
+import { Search, Plane, Train, Car, Shuffle, RefreshCw, MapPin } from 'lucide-react';
 import { TRAVEL_PACE_OPTIONS, BUDGET_OPTIONS, TRAVELER_PROFILES } from '../../constants/travelerProfiles';
 import Button from '../ui/Button';
 
@@ -12,31 +12,68 @@ const TRAVEL_MODE_OPTIONS = [
 
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
 
+function useMapboxSearch(query, debounceRef) {
+  const [suggestions, setSuggestions] = useState([]);
+
+  useEffect(() => {
+    if (query.length < 2 || !MAPBOX_TOKEN) {
+      setSuggestions([]);
+      return;
+    }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&types=place,country,region,locality&limit=5&language=en&autocomplete=true`
+        );
+        const data = await res.json();
+        setSuggestions(
+          (data.features || []).map(f => ({
+            name: f.place_type[0] === 'country' ? f.text : f.place_name,
+          }))
+        );
+      } catch {
+        setSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [query, debounceRef]);
+
+  return [suggestions, setSuggestions];
+}
+
 export default function TripParametersPanel({ itinerary, onParametersChanged, isRegenerating }) {
+  const [destination, setDestination] = useState(itinerary.destination || '');
   const [tripOrigin, setTripOrigin] = useState(itinerary.trip_origin || '');
   const [travelMode, setTravelMode] = useState(itinerary.travel_mode || '');
   const [travelPace, setTravelPace] = useState(itinerary.travel_pace || 'balanced');
   const [budget, setBudget] = useState(itinerary.budget || 'medium');
   const [travelerProfiles, setTravelerProfiles] = useState(itinerary.traveler_profiles || []);
 
-  const [originSuggestions, setOriginSuggestions] = useState([]);
+  const [showDestSuggestions, setShowDestSuggestions] = useState(false);
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const debounceRef = useRef(null);
+  const destDebounceRef = useRef(null);
+  const originDebounceRef = useRef(null);
+
+  const [destSuggestions, setDestSuggestions] = useMapboxSearch(destination, destDebounceRef);
+  const [originSuggestions, setOriginSuggestions] = useMapboxSearch(tripOrigin, originDebounceRef);
 
   // Track changes vs current itinerary
   useEffect(() => {
     const changed =
+      destination !== (itinerary.destination || '') ||
       tripOrigin !== (itinerary.trip_origin || '') ||
       travelMode !== (itinerary.travel_mode || '') ||
       travelPace !== (itinerary.travel_pace || 'balanced') ||
       budget !== (itinerary.budget || 'medium') ||
       JSON.stringify(travelerProfiles) !== JSON.stringify(itinerary.traveler_profiles || []);
     setHasChanges(changed);
-  }, [tripOrigin, travelMode, travelPace, budget, travelerProfiles, itinerary]);
+  }, [destination, tripOrigin, travelMode, travelPace, budget, travelerProfiles, itinerary]);
 
   // Sync from parent when itinerary changes (e.g., after regeneration)
   useEffect(() => {
+    setDestination(itinerary.destination || '');
     setTripOrigin(itinerary.trip_origin || '');
     setTravelMode(itinerary.travel_mode || '');
     setTravelPace(itinerary.travel_pace || 'balanced');
@@ -44,33 +81,10 @@ export default function TripParametersPanel({ itinerary, onParametersChanged, is
     setTravelerProfiles(itinerary.traveler_profiles || []);
   }, [itinerary.id]);
 
-  // Debounced origin search
-  useEffect(() => {
-    if (tripOrigin.length < 2 || !MAPBOX_TOKEN) {
-      setOriginSuggestions([]);
-      return;
-    }
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(tripOrigin)}.json?access_token=${MAPBOX_TOKEN}&types=place,country,region,locality&limit=5&language=en&autocomplete=true`
-        );
-        const data = await res.json();
-        setOriginSuggestions(
-          (data.features || []).map(f => ({
-            name: f.place_type[0] === 'country' ? f.text : f.place_name,
-          }))
-        );
-      } catch {
-        setOriginSuggestions([]);
-      }
-    }, 300);
-    return () => clearTimeout(debounceRef.current);
-  }, [tripOrigin]);
-
   const handleRegenerate = () => {
     onParametersChanged({
+      destination: destination || itinerary.destination,
+      title: `${destination || itinerary.destination} - ${itinerary.trip_length} days`,
       trip_origin: tripOrigin || null,
       travel_mode: travelMode || null,
       travel_pace: travelPace,
@@ -92,11 +106,41 @@ export default function TripParametersPanel({ itinerary, onParametersChanged, is
       <div className="px-4 py-3 border-b border-platinum-200">
         <h3 className="text-sm font-semibold text-charcoal-500">Trip Settings</h3>
         <p className="text-xs text-platinum-500 mt-0.5">
-          {itinerary.destination} — {itinerary.trip_length} days
+          {itinerary.trip_length} days
         </p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {/* Destination */}
+        <div>
+          <label className="block text-xs font-medium text-charcoal-500 mb-1.5">Destination</label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-coral-400" size={14} />
+            <input
+              type="text"
+              value={destination}
+              onChange={(e) => { setDestination(e.target.value); setShowDestSuggestions(true); }}
+              onFocus={() => setShowDestSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowDestSuggestions(false), 200)}
+              placeholder="e.g., Norway, Lofoten"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-platinum-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400"
+            />
+            {showDestSuggestions && destSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-platinum-200 z-20 max-h-40 overflow-y-auto">
+                {destSuggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onMouseDown={() => { setDestination(s.name); setShowDestSuggestions(false); }}
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-coral-50 transition-colors"
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Trip Origin */}
         <div>
           <label className="block text-xs font-medium text-charcoal-500 mb-1.5">Departure City</label>

@@ -479,7 +479,7 @@ function PlannerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           itineraryId: id,
-          destination: itinerary.destination,
+          destination: updatedFields.destination || itinerary.destination,
           tripLength: itinerary.trip_length,
           travelPace: updatedFields.travel_pace || itinerary.travel_pace,
           budget: updatedFields.budget || itinerary.budget,
