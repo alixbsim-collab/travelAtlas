@@ -57,19 +57,6 @@ export default function TimelineView({
   openInGoogleMaps,
   openAllInGoogleMaps,
 }) {
-  const [editingNoteDay, setEditingNoteDay] = useState(null);
-  const [noteText, setNoteText] = useState('');
-
-  const startEditingNote = (day) => {
-    setEditingNoteDay(day);
-    setNoteText(dayNotes[day] || '');
-  };
-
-  const saveNote = (day) => {
-    onSaveDayNote(day, noteText);
-    setEditingNoteDay(null);
-  };
-
   const filteredDays = selectedDay === 'all' ? days : days.filter(d => d === parseInt(selectedDay));
 
   return (
@@ -129,7 +116,6 @@ export default function TimelineView({
             ? getDateForDay(itinerary.start_date, day)
             : `Day ${day}`;
           const note = dayNotes[day] || '';
-          const isEditingNote = editingNoteDay === day;
 
           return (
             <div key={day} className="mb-6">
@@ -181,35 +167,13 @@ export default function TimelineView({
               )}
 
               {/* Notes */}
-              <div className="pl-1 mb-1">
-                {isEditingNote ? (
-                  <textarea
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                    onBlur={() => saveNote(day)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        saveNote(day);
-                      }
-                    }}
-                    placeholder="Add notes..."
-                    className="w-full text-xs px-2 py-1.5 border border-naples-300 rounded focus:outline-none focus:ring-1 focus:ring-naples-400 resize-none bg-naples-50/50"
-                    rows={2}
-                    autoFocus
-                  />
-                ) : (
-                  <button
-                    onClick={() => startEditingNote(day)}
-                    className="text-xs text-left hover:text-charcoal-500 transition-colors"
-                  >
-                    {note ? (
-                      <span className="text-naples-700 italic">{note}</span>
-                    ) : (
-                      <span className="text-platinum-300 italic">+ notes...</span>
-                    )}
-                  </button>
-                )}
+              <div className="pl-2">
+                <InlineEdit
+                  value={note}
+                  onSave={(val) => onSaveDayNote(day, val)}
+                  className="text-xs text-platinum-500 italic"
+                  placeholder="notes..."
+                />
               </div>
 
               {/* Add activity */}
