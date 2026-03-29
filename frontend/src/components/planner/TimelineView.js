@@ -1,6 +1,48 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ExternalLink, Plus } from 'lucide-react';
 import { getDateForDay } from './plannerHelpers';
+
+const TIME_OPTIONS = ['morning', 'afternoon', 'evening'];
+
+function InlineEdit({ value, onSave, className, placeholder }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value || '');
+  const inputRef = useRef(null);
+
+  useEffect(() => { setText(value || ''); }, [value]);
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+
+  const save = () => {
+    setEditing(false);
+    if (text.trim() !== (value || '')) onSave(text.trim());
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') save();
+          if (e.key === 'Escape') { setText(value || ''); setEditing(false); }
+        }}
+        className={`bg-transparent border-b border-coral-300 outline-none ${className}`}
+        placeholder={placeholder}
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      className={`text-left hover:text-coral-500 transition-colors cursor-text ${className}`}
+    >
+      {value || <span className="text-platinum-300 italic">{placeholder}</span>}
+    </button>
+  );
+}
 
 export default function TimelineView({
   days,
@@ -13,6 +55,7 @@ export default function TimelineView({
   onSaveDayNote,
   onAddActivity,
   onEditActivity,
+  onUpdateActivityField,
   openInGoogleMaps,
   openAllInGoogleMaps,
 }) {
@@ -37,6 +80,12 @@ export default function TimelineView({
     const m = mins % 60;
     if (h === 0) return `${m}min`;
     return m > 0 ? `${h}h${m}` : `${h}h`;
+  };
+
+  const cycleTime = (activity) => {
+    const idx = TIME_OPTIONS.indexOf(activity.time_of_day);
+    const next = TIME_OPTIONS[(idx + 1) % TIME_OPTIONS.length];
+    onUpdateActivityField(activity.id, { time_of_day: next });
   };
 
   return (
@@ -85,7 +134,7 @@ export default function TimelineView({
         })}
       </div>
 
-      {/* Journal-style timeline */}
+      {/* Timeline */}
       <div className="flex-1 overflow-y-auto">
         {filteredDays.map((day) => {
           const dayActivities = activities
@@ -100,7 +149,7 @@ export default function TimelineView({
 
           return (
             <div key={day} className="mb-6">
-              {/* Day heading — simple text */}
+              {/* Day heading */}
               <div className="flex items-baseline gap-2 mb-2 pb-1.5 border-b border-platinum-200">
                 <span className="text-base font-bold text-charcoal-500">
                   Day {day}
@@ -127,17 +176,23 @@ export default function TimelineView({
                     return (
                       <li key={activity.id} className="flex items-baseline gap-2 py-0.5 pl-2 group">
                         <span className="text-platinum-300 text-xs select-none">-</span>
-                        <button
-                          onClick={() => onEditActivity(activity)}
-                          className="text-sm text-charcoal-500 hover:text-coral-500 transition-colors text-left"
-                        >
-                          {activity.title}
-                        </button>
+                        <InlineEdit
+                          value={activity.title}
+                          onSave={(val) => onUpdateActivityField(activity.id, { title: val })}
+                          className="text-sm text-charcoal-500"
+                          placeholder="activity name"
+                        />
                         {duration && (
                           <span className="text-[11px] text-platinum-400">{duration}</span>
                         )}
                         {activity.time_of_day && (
-                          <span className="text-[11px] text-platinum-300">{activity.time_of_day}</span>
+                          <button
+                            onClick={() => cycleTime(activity)}
+                            className="text-[11px] text-platinum-300 hover:text-coral-500 transition-colors"
+                            title="Click to change"
+                          >
+                            {activity.time_of_day}
+                          </button>
                         )}
                         {hasCoords && (
                           <button
@@ -154,7 +209,7 @@ export default function TimelineView({
                 </ul>
               )}
 
-              {/* Notes — inline */}
+              {/* Notes */}
               <div className="pl-1 mb-1">
                 {isEditingNote ? (
                   <textarea
@@ -186,7 +241,7 @@ export default function TimelineView({
                 )}
               </div>
 
-              {/* Add activity — minimal */}
+              {/* Add activity */}
               <button
                 onClick={() => onAddActivity(day)}
                 className="flex items-center gap-1 text-xs text-coral-400 hover:text-coral-500 pl-1 transition-colors"

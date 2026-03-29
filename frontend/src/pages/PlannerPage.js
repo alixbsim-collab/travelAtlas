@@ -888,6 +888,22 @@ function PlannerPage() {
     }
   };
 
+  // Inline update of any activity field (used by TimelineView)
+  const handleUpdateActivityField = async (activityId, fields) => {
+    try {
+      const { error } = await supabase
+        .from('activities')
+        .update(fields)
+        .eq('id', activityId);
+      if (error) throw error;
+      setActivities(prev => prev.map(a =>
+        a.id === activityId ? { ...a, ...fields } : a
+      ));
+    } catch (error) {
+      console.error('Error updating activity:', error);
+    }
+  };
+
   // Save day-level notes (auto-save on blur)
   const handleSaveDayNote = async (dayNumber, text) => {
     setDayNotes(prev => ({ ...prev, [dayNumber]: text }));
@@ -1357,6 +1373,7 @@ function PlannerPage() {
                     onSaveDayNote={handleSaveDayNote}
                     onAddActivity={handleAddActivity}
                     onEditActivity={handleEditActivity}
+                    onUpdateActivityField={handleUpdateActivityField}
                     openInGoogleMaps={openInGoogleMaps}
                     openAllInGoogleMaps={openAllInGoogleMaps}
                   />
