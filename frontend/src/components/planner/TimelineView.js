@@ -2,8 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { ExternalLink, Plus } from 'lucide-react';
 import { getDateForDay } from './plannerHelpers';
 
-const TIME_OPTIONS = ['morning', 'afternoon', 'evening'];
-
 function InlineEdit({ value, onSave, className, placeholder }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value || '');
@@ -73,20 +71,6 @@ export default function TimelineView({
   };
 
   const filteredDays = selectedDay === 'all' ? days : days.filter(d => d === parseInt(selectedDay));
-
-  const formatDuration = (mins) => {
-    if (!mins) return null;
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    if (h === 0) return `${m}min`;
-    return m > 0 ? `${h}h${m}` : `${h}h`;
-  };
-
-  const cycleTime = (activity) => {
-    const idx = TIME_OPTIONS.indexOf(activity.time_of_day);
-    const next = TIME_OPTIONS[(idx + 1) % TIME_OPTIONS.length];
-    onUpdateActivityField(activity.id, { time_of_day: next });
-  };
 
   return (
     <div className="h-full flex flex-col">
@@ -171,7 +155,6 @@ export default function TimelineView({
                 <ul className="mb-2">
                   {dayActivities.map((activity) => {
                     const hasCoords = activity.latitude && activity.longitude;
-                    const duration = formatDuration(activity.duration_minutes);
 
                     return (
                       <li key={activity.id} className="flex items-baseline gap-2 py-0.5 pl-2 group">
@@ -182,18 +165,6 @@ export default function TimelineView({
                           className="text-sm text-charcoal-500"
                           placeholder="activity name"
                         />
-                        {duration && (
-                          <span className="text-[11px] text-platinum-400">{duration}</span>
-                        )}
-                        {activity.time_of_day && (
-                          <button
-                            onClick={() => cycleTime(activity)}
-                            className="text-[11px] text-platinum-300 hover:text-coral-500 transition-colors"
-                            title="Click to change"
-                          >
-                            {activity.time_of_day}
-                          </button>
-                        )}
                         {hasCoords && (
                           <button
                             onClick={() => openInGoogleMaps(activity)}
